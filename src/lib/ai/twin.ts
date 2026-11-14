@@ -13,6 +13,7 @@ import {
   type TwinProfile,
   type TwinResult,
 } from "../types";
+import { defaultProfile } from "../profile";
 import { generateJson } from "./gemini";
 
 export const TWIN_TIMEOUT_MS = 10_000;
@@ -54,27 +55,9 @@ const schema: Schema = {
   ],
 };
 
-const SPECIES_DEFAULTS: Record<Species, Pick<TwinProfile, "sizeClass" | "earShape" | "muzzle">> = {
-  dog: { sizeClass: "medium", earShape: "floppy", muzzle: "medium" },
-  cat: { sizeClass: "small", earShape: "upright", muzzle: "short" },
-  rabbit: { sizeClass: "small", earShape: "upright", muzzle: "short" },
-  horse: { sizeClass: "giant", earShape: "upright", muzzle: "long" },
-  other: { sizeClass: "small", earShape: "upright", muzzle: "medium" },
-};
-
 /** Neutral profile used when the AI is off, slow or unsure. The UI asks the owner to pick instead. */
 export function fallbackTwin(species: Species = "dog"): TwinProfile {
-  return {
-    species,
-    breedGuess: "",
-    breedConfidence: 0,
-    ...SPECIES_DEFAULTS[species],
-    coatColours: [],
-    coatPattern: "solid",
-    bodyCondition: "unknown",
-    ageGuess: "adult",
-    notes: "",
-  };
+  return defaultProfile(species);
 }
 
 export async function geminiTwin(input: TwinInput): Promise<TwinResult> {

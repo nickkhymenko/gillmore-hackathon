@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Instrument_Serif, Inter_Tight } from "next/font/google";
-import { HeaderAvatar } from "@/components/HeaderAvatar";
+import { DeleteAllData } from "@/components/DeleteAllData";
+import { PetSwitcher } from "@/components/PetSwitcher";
+import { ThemeSync } from "@/components/ThemeSync";
+import { Toaster } from "@/components/Toaster";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -22,10 +25,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#F7F5F0" };
 
 const NAV = [
-  { href: "/twin", label: "Pet Twin" },
-  { href: "/checkin", label: "Scan" },
+  { href: "/walk", label: "Walk" },
+  { href: "/checkin", label: "Check-in" },
   { href: "/pet", label: "History" },
-  { href: "/partner", label: "For insurers" },
+  { href: "/partner", label: "For insurers", wide: true },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -44,21 +47,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Link>
             <div className="-mr-1 ml-auto flex min-w-0 items-center overflow-x-auto text-[13px] font-medium sm:gap-1 sm:text-sm">
               {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-brand px-2 py-1.5 hover:bg-ink/5 sm:px-3">
+                <Link key={n.href} href={n.href} className={`min-h-11 items-center whitespace-nowrap rounded-brand px-2 hover:bg-ink/5 sm:px-3 ${n.wide ? "hidden sm:flex" : "flex"}`}>
                   {n.label}
                 </Link>
               ))}
             </div>
-            <HeaderAvatar />
+            <PetSwitcher />
           </nav>
         </header>
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6">{children}</main>
         <footer className="border-t border-line">
-          <div className="mx-auto flex max-w-[1200px] flex-col gap-1 px-4 py-5 text-xs text-muted sm:flex-row sm:justify-between sm:px-6">
+          <div className="mx-auto flex max-w-[1200px] flex-col gap-1 px-4 py-5 text-xs text-muted sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6 sm:px-6">
             <span>Triage and monitoring support only, not a diagnosis.</span>
+            <span className="flex flex-wrap gap-x-5">
+              <Link href="/partner" className="link min-h-11 content-center sm:hidden">
+                For insurers
+              </Link>
+              <DeleteAllData />
+            </span>
             <span>Built for the Gillmore Hackathon 2026</span>
           </div>
         </footer>
+        <ThemeSync />
+        <Toaster />
       </body>
     </html>
   );

@@ -7,12 +7,19 @@ export const SIZE_CLASSES = ["toy", "small", "medium", "large", "giant"] as cons
 export type Species = (typeof SPECIES)[number];
 export type SizeClass = (typeof SIZE_CLASSES)[number];
 
+export const ACTIVITY_LEVELS = ["low", "moderate", "high"] as const;
+export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
+
 export const PetSchema = z.object({
   name: z.string().min(1).max(40),
   species: z.enum(SPECIES),
   breed: z.string().max(60).default(""),
-  ageYears: z.number().min(0).max(30),
-  weightKg: z.number().min(0).max(120).optional(),
+  ageYears: z.number().min(0).max(40),
+  weightKg: z.number().min(0).max(1200).optional(), // horses weigh 200 to 1,000 kg
+  // Optional onboarding details (additive: older clients can omit them).
+  sizeClass: z.enum(SIZE_CLASSES).optional(),
+  neutered: z.boolean().optional(),
+  activity: z.enum(ACTIVITY_LEVELS).optional(),
 });
 
 export const AnswersSchema = z.object({
@@ -134,6 +141,10 @@ export type TwinResult = {
   /** False when the model could not see an animal: the UI then asks the owner to pick. */
   petVisible: boolean;
 };
+
+/** Granular, revocable consent (UK GDPR). All off until the owner turns them on. */
+export type Consent = { vet: boolean; insurer: boolean; research: boolean; updatedAt: string | null };
+export const NO_CONSENT: Consent = { vet: false, insurer: false, research: false, updatedAt: null };
 
 /** Owner-facing wording. Never a diagnosis: a visual impression to confirm with a vet. */
 export const BODY_CONDITION_LABEL: Record<(typeof BODY_CONDITIONS)[number], string | null> = {
