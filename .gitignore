@@ -46,3 +46,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /tests/e2e/screenshots/
+demo/videos/youtube_raw/
+demo/videos/reddit_raw/
+demo/videos/reddit_out/

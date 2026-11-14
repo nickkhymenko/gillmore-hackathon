@@ -30,6 +30,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 const NAV = [
   { href: "/walk", label: "Walk" },
+  { href: "/gait", label: "Gait check" },
   { href: "/blackbox", label: "Black Box" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/partner", label: "For insurers", wide: true },
