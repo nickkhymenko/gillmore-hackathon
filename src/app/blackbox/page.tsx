@@ -9,6 +9,7 @@ import { WalkMode } from "@/components/blackbox/WalkMode";
 import { Connect, DataRules, Diagnostics, PriceCard, Today } from "@/components/blackbox/sections";
 import { blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
+import { useScans } from "@/lib/video/scans";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
@@ -30,6 +31,7 @@ export default function BlackBoxPage() {
   const log = useCheckins(rec?.id, rec?.pet.name);
   const walks = useWalks(rec?.id);
   const collar = useCollarDays(rec?.id);
+  const latestScan = useScans(rec?.id).at(-1);
   const now = useNow();
   const [hr, setHr] = useState<{ name: string; bpm: number | null } | null>(null);
   const [rules, setRules] = useState(false);
@@ -115,6 +117,17 @@ export default function BlackBoxPage() {
 
           <Block n="04" title="Black Box diagnostics">
             <Diagnostics rec={rec} days={collar} result={diag} now={now} />
+            {latestScan && (
+              <p className="text-sm">
+                Latest video scan ({new Date(latestScan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                {latestScan.source === "mock" ? ", demo" : ""}):{" "}
+                {[latestScan.metrics.mobilityScore !== null && `mobility ${Math.round(latestScan.metrics.mobilityScore)}/100`, latestScan.metrics.breathingRatePerMin !== null && `breathing ${Math.round(latestScan.metrics.breathingRatePerMin)} a minute`].filter(Boolean).join(", ") || "no metrics"}
+                {latestScan.flags.length ? `. ${latestScan.flags.map((f) => f.label).join("; ")}.` : "."}{" "}
+                <Link href="/dashboard#video" className="link">
+                  Video scans
+                </Link>
+              </p>
+            )}
           </Block>
 
           <PriceCard rec={rec} discount={discount} />

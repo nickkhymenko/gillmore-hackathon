@@ -18,6 +18,8 @@ export default defineConfig({
     baseURL: process.env.BASE_URL ?? "http://localhost:3111",
     channel: "chrome",
     trace: "off",
+    // A fake camera, so the video scan can be tested headless.
+    launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
   },
   projects: [
     { name: "mobile-390", use: { ...devices["Desktop Chrome"], channel: "chrome", viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 } },
