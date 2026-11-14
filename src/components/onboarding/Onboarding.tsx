@@ -117,17 +117,22 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
           eyebrow="Welcome back"
           title={
             <>
-              {active.pet.name}&apos;s walk is <span className="accent-word">ready.</span>
+              Good to see <span className="accent-word">{active.pet.name}.</span>
             </>
           }
           sub="A minute a week. Catch the small changes before they turn into big bills."
-          cta={`Continue to ${active.pet.name}'s walk`}
-          onStart={() => router.push("/walk")}
+          cta={`Open ${active.pet.name}'s dashboard`}
+          onStart={() => router.push("/dashboard")}
           avatar={active}
           secondary={
-            <Link href="/add" className="link min-h-11 py-2">
-              Add another pet
-            </Link>
+            <>
+              <Link href="/walk" className="link min-h-11 py-2">
+                Take this week&apos;s walk
+              </Link>
+              <Link href="/add" className="link min-h-11 py-2">
+                Add another pet
+              </Link>
+            </>
           }
         />
       );

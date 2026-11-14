@@ -25,9 +25,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#F7F5F0" };
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/walk", label: "Walk" },
-  { href: "/checkin", label: "Check-in" },
-  { href: "/pet", label: "History" },
+  { href: "/pet", label: "History", wide: true },
   { href: "/partner", label: "For insurers", wide: true },
 ];
 

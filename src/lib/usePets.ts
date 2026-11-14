@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { HOUSEHOLD_KEY, LOG_KEY, readRaw, subscribe, type Household, type PetRecord, type StoredCheckin } from "./store";
 
 const EMPTY: Household = { activeId: null, pets: [] };
@@ -42,8 +42,14 @@ export function useActivePet(): { pet: PetRecord | null; ready: boolean } {
   return { pet, ready };
 }
 
-/** The time when the component first rendered on the client. Stable across re-renders (pure render). */
+let clientNow: number | null = null;
+const noSubscribe = () => () => {};
+
+/**
+ * The time the page was first rendered on the client, stable across re-renders.
+ * 0 on the server: prerendering must not read the clock (Next.js Cache Components). Pages using it
+ * only show time-based values after `ready`, so the 0 is never displayed.
+ */
 export function useNow() {
-  const [now] = useState(() => Date.now());
-  return now;
+  return useSyncExternalStore(noSubscribe, () => (clientNow ??= Date.now()), () => 0);
 }
