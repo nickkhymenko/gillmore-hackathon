@@ -6,6 +6,7 @@ import { downloadIcs, nextWeekSameDay } from "@/lib/ics";
 import { streak } from "@/lib/discount";
 import type { PetRecord, StoredCheckin } from "@/lib/store";
 import { useNow } from "@/lib/usePets";
+import { CheaperCta } from "./YourWalkStop";
 
 export function NextWeekStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[] }) {
   const now = useNow();
@@ -38,6 +39,12 @@ export function NextWeekStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[
         </Link>
       </div>
       <p className="text-sm text-muted">The reminder is a calendar file for your own calendar. Nothing is sent anywhere.</p>
+      <div className="border-t border-line pt-8">
+        <p className="display mb-5 max-w-2xl text-[clamp(1.75rem,4vw,2.75rem)]">
+          Make {rec.pet.name}&apos;s walks <span className="accent-word">pay.</span>
+        </p>
+        <CheaperCta name={rec.pet.name} />
+      </div>
     </div>
   );
 }

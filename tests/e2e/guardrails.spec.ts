@@ -66,7 +66,16 @@ test("19: nothing is sent to any insurer or third party without an owner action"
   await expect(page.getByText("Health score").first()).toBeVisible({ timeout: 20_000 });
   const origin = new URL(page.url()).origin;
   const external = requests.filter((r) => !r.url.startsWith(origin) && !r.url.startsWith("data:"));
-  expect(external.map((r) => r.url)).toEqual([]);
+  // The only third party allowed is the owner's own weather lookup (docs/12): Open-Meteo, default Coventry
+  // coordinates unless the owner taps "Use my location", and no pet or owner details in the request.
+  const weather = external.filter((r) => r.url.startsWith("https://api.open-meteo.com/v1/forecast"));
+  expect(external.filter((r) => !weather.includes(r)).map((r) => r.url)).toEqual([]);
+  for (const w of weather) {
+    const q = new URL(w.url).searchParams;
+    expect([q.get("latitude"), q.get("longitude")]).toEqual(["52.38", "-1.56"]);
+    expect(w.url).not.toMatch(/Biscuit|Labrador/i);
+    expect(w.method).toBe("GET");
+  }
   const posts = requests.filter((r) => r.method === "POST").map((r) => new URL(r.url).pathname);
   expect(posts.every((p) => p === "/api/checkin")).toBe(true);
   // The check-in payload holds this pet's answers only: no owner identity, no location, no insurer fields.
