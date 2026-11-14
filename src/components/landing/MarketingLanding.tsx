@@ -115,7 +115,7 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
       <section className="grid items-end gap-8 pt-6 lg:grid-cols-12 lg:pt-12">
         <div className="lg:col-span-7">
           <p className="eyebrow">Petra / Pet health, early</p>
-          <h1 className="display mt-4 text-[clamp(3rem,8.5vw,7rem)]">
+          <h1 className="display mt-4 text-[clamp(2.75rem,6.2vw,5.5rem)]">
             Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
           </h1>
           <p className="mt-5 text-[clamp(1.5rem,3vw,2.25rem)] font-semibold tracking-[-0.03em]">Make your pet bills work for you.</p>
