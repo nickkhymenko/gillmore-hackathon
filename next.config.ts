@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/checkin", destination: "/walk#check-in", permanent: false },
       { source: "/pet", destination: "/dashboard", permanent: false },
+      // The video scan lives on the dashboard (docs/13).
+      { source: "/scan", destination: "/dashboard#video", permanent: false },
     ];
   },
   partialPrefetching: true,

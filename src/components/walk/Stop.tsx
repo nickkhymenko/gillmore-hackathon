@@ -51,6 +51,7 @@ export function Stop({ id, n, label, traits, children }: { id: string; n: number
           <span className="tnum text-ink">{String(n).padStart(2, "0")}</span> / {label}
         </h2>
         <motion.span
+          data-reveal
           initial={reduce ? false : { opacity: 0, x: -14, y: -6 }}
           whileInView={{ opacity: 1, x: 0, y: 0 }}
           viewport={{ once: true, margin: "0px 0px -38% 0px" }}
@@ -61,6 +62,7 @@ export function Stop({ id, n, label, traits, children }: { id: string; n: number
         </motion.span>
       </div>
       <motion.div
+        data-reveal
         className="mt-6"
         initial={reduce ? false : { opacity: 0, y: 28 }}
         whileInView={{ opacity: 1, y: 0 }}

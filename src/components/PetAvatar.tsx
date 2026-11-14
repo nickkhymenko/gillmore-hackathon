@@ -90,8 +90,7 @@ export function PetAvatar({
       viewBox="0 0 120 120"
       width={size}
       height={size}
-      role="img"
-      aria-label={title ?? `Illustrated ${SPECIES_THEME[traits.species].label.toLowerCase()} avatar`}
+      {...(title === "" ? { "aria-hidden": true } : { role: "img", "aria-label": title ?? `Illustrated ${SPECIES_THEME[traits.species].label.toLowerCase()} avatar` })}
       className={`pet-avatar shrink-0 ${animated ? "pet-avatar-live" : ""} ${className}`}
     >
       <defs>

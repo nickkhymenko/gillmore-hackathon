@@ -54,7 +54,7 @@ function ScoreSparkline({ log }: { log: StoredCheckin[] }) {
   return (
     <div className="h-14 w-40" aria-hidden>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={pts} margin={{ top: 4, right: 6, bottom: 4, left: 6 }}>
+        <LineChart data={pts} margin={{ top: 4, right: 6, bottom: 4, left: 6 }} accessibilityLayer={false}>
           <YAxis hide domain={[0, 100]} />
           <ReferenceArea y1={Math.max(0, base - 8)} y2={Math.min(100, base + 8)} fill="var(--accent-soft)" fillOpacity={1} stroke="none" />
           <Line dataKey="v" stroke="#141414" strokeWidth={2} dot={false} isAnimationActive={false} />

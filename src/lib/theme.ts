@@ -10,7 +10,7 @@ export const THEME_KEY = "prevently.theme";
 
 export const TOKENS = {
   ink: "#141414",
-  muted: "#6B6B6B",
+  muted: "#5E5E5E",
   radius: 6,
   maxWidth: 1200,
   ...DEFAULT_THEME,
