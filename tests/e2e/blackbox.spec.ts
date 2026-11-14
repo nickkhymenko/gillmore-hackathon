@@ -13,7 +13,7 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   await page.goto("/savings");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
   await expect(page.locator("#compare")).toContainText("Your price today");
-  const priceBefore = await page.locator("#your-price").textContent();
+  await expect(page.locator("#your-price, #plans, #partners, #estimate")).toHaveCount(0); // the wearable only
 
   await page.getByRole("button", { name: "Start a walk" }).click();
   await expect(page.getByText("Example walk, sped up")).toBeVisible();
@@ -22,13 +22,14 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   await expect(page.getByText(/Target: \d+ of \d+ minutes today/)).toBeVisible();
   await expect(page.getByText(/35 min/)).toBeVisible();
 
-  const priceAfter = await page.locator("#your-price").textContent();
-  expect(priceAfter).not.toBe(priceBefore);
-  await expect(page.locator("#your-price")).toContainText("Target met in");
+  await expect(page.getByTestId("finish-saving")).toContainText(/Down from £[\d.]+/);
 
   await page.goto("/dashboard");
   await expect(page.locator("#savings-title")).toHaveText(/Petra Savings/);
+  await page.getByRole("tab", { name: "Walks" }).click();
   await expect(page.getByText(/of \d+ minutes/).first()).toBeVisible();
+  await expect(page.locator("#your-price")).toContainText("Target met in");
+  await expect(page.getByTestId("walk-history")).toContainText("35 min");
 
   // Routes never leave the device: no location in any request to our API.
   const api = requests.filter((r) => new URL(r.url).pathname.startsWith("/api/"));
@@ -39,7 +40,7 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
 
 test("pairing the simulated collar adds vitals; a 10-day dip raises an amber vet flag", async ({ page }) => {
   await seedPet(page);
-  await page.goto("/savings");
+  await page.goto("/dashboard#walks");
   await page.getByRole("button", { name: "Pair Petra Walk Companion" }).click();
   await expect(page.getByText("Paired (simulated for the demo)")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(/No sustained changes against Biscuit's own baseline/)).toBeVisible();
@@ -63,12 +64,13 @@ test("rest mode protects the discount", async ({ page }) => {
     }, restDaysAgo);
 
   await setup(null);
-  await page.goto("/savings");
+  await page.goto("/dashboard#walks");
   const without = await page.locator("#your-price").textContent();
   expect(without).toContain("Target met in 5 of 6 weeks");
 
   await setup(8);
-  await page.goto("/savings");
+  await page.goto("/dashboard#walks");
+  await page.reload(); // same URL: a hash-only goto does not reload
   await expect(page.getByText("Rest mode: no target today.")).toBeVisible();
   await expect(page.locator("#your-price")).toContainText("Target met in 6 of 6 weeks");
   const pct = (t: string | null) => Number(/Petra Savings discount \(([\d.]+)%\)/.exec(t ?? "")?.[1] ?? -1);
@@ -81,18 +83,15 @@ test("Web Bluetooth option is hidden when the browser does not support it", asyn
     delete (Navigator.prototype as unknown as Record<string, unknown>).bluetooth;
   });
   await seedPet(page);
-  await page.goto("/savings");
+  await page.goto("/dashboard#walks");
   await expect(page.getByRole("button", { name: "Pair Petra Walk Companion" })).toBeVisible();
   await expect(page.getByText("Connect a heart rate sensor")).toHaveCount(0);
 });
 
-test("the data rules are always one tap or one glance away", async ({ page }, info) => {
+test("the data promise sits under the one CTA", async ({ page }) => {
   await seedPet(page);
   await page.goto("/savings");
-  if (info.project.name.startsWith("mobile")) {
-    await page.getByRole("button", { name: /Your data, your rules/ }).click();
-    await expect(page.getByRole("dialog")).toContainText("It can only lower your premium");
-  } else {
-    await expect(page.getByRole("complementary", { name: "Your data, your rules" })).toContainText("Routes and locations stay on your device");
-  }
+  await expect(page.getByRole("button", { name: "Try it today" })).toHaveCount(1);
+  await expect(page.getByTestId("data-promise")).toContainText("can only lower your premium");
+  await expect(page.getByTestId("data-promise")).toContainText("Routes and locations stay on your device");
 });

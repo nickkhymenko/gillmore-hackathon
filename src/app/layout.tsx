@@ -5,6 +5,8 @@ import { PetraLogo, PETRA_TAGLINE } from "@/components/brand/PetraLogo";
 import { DeleteAllData } from "@/components/DeleteAllData";
 import { DemoLoader } from "@/components/DemoLoader";
 import { PetSwitcher } from "@/components/PetSwitcher";
+import { PremiumBadge } from "@/components/PremiumBadge";
+import { SourcesLink } from "@/components/SourcesLink";
 import { ThemeSync } from "@/components/ThemeSync";
 import { Toaster } from "@/components/Toaster";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -55,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 </Link>
               ))}
             </div>
+            <PremiumBadge />
             <PetSwitcher />
           </nav>
         </header>
@@ -66,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/partner" className="link min-h-11 content-center sm:hidden">
                 For insurers
               </Link>
+              <SourcesLink />
               <DeleteAllData />
             </span>
             <span>Built for the Gillmore Hackathon 2026</span>

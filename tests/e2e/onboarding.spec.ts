@@ -71,8 +71,9 @@ test("empty dashboard: designed state with 'See a demo pet' loading Biscuit", as
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Biscuit", { timeout: 10_000 });
   await page.waitForURL((u) => u.pathname === "/dashboard" && u.search === "");
   await expect(page.locator("#savings-title")).toHaveText(/Petra Savings/);
+  await page.getByRole("tab", { name: "Health" }).click();
   await expect(page.getByText(/supplement and product ideas are paused/i)).toBeVisible();
-  await page.goto("/savings");
+  await page.getByRole("tab", { name: "Walks" }).click();
   await expect(page.getByText("A change worth a vet's look")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -80,6 +81,7 @@ test("empty dashboard: designed state with 'See a demo pet' loading Biscuit", as
 test("?demo=miso loads the cat with a play plan and an indoor tracker", async ({ page }) => {
   await page.goto("/dashboard?demo=miso");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Miso", { timeout: 10_000 });
+  await page.getByRole("tab", { name: "Health" }).click();
   await expect(page.getByText(/Help your cat drink more/)).toBeVisible();
   await page.goto("/walk");
   await expect(page.locator("#your-walk")).toContainText("here is her play plan");

@@ -89,33 +89,30 @@ test("3: multiple pets: switch, separate data, remove with undo", async ({ page 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Miso");
 });
 
-test("4 and 5: the walk: stops, Doctapet line, charts, cover only when reached, payment only after a plan; amber check-in shows next step and vet brief", async ({ page }) => {
+test("4 and 5: the walk: a short story ending on the poo; amber check-in shows next step and vet brief", async ({ page }) => {
   const { errors } = watch(page);
   await page.route("https://api.open-meteo.com/**", (r) => r.fulfill({ json: { current: { temperature_2m: 10 }, hourly: { time: ["2026-11-14T12:00"], temperature_2m: [10], precipitation_probability: [0] }, daily: { sunrise: ["2026-11-14T07:30"], sunset: ["2026-11-14T16:15"], temperature_2m_max: [11] } } }));
   await seedPet(page, { checkins: 6 });
   await page.goto("/walk");
   await expect(page.getByText("Powered by Doctapet.")).toBeVisible();
   await expect(page.getByText("Here with you.")).toBeVisible();
-  expect(await page.locator("section[id] [data-stop]").count()).toBe(7);
-  await expect(page.locator("#care-plan, #next-week")).toHaveCount(0);
-  await expect(page.locator("#sources summary")).toHaveText("Sources");
-  // One lifetime chart: typical owner against Petra, drawn when the paw arrives.
+  expect(await page.locator("section[id] [data-stop]").count()).toBe(6);
+  await expect(page.locator("#care-plan, #next-week, #movement, #sources")).toHaveCount(0);
+  // One lifetime chart: typical owner, average member and Petra's top tier, drawn when the paw arrives.
   await page.locator("#lifetime").scrollIntoViewIfNeeded();
-  await expect(page.locator("#lifetime .recharts-line")).toHaveCount(2);
-  await expect(page.getByTestId("lifetime-saved")).toHaveText(/^£\d+ saved by age \d+\.$/);
+  await expect(page.locator("#lifetime .recharts-line")).toHaveCount(3);
+  await expect(page.getByTestId("lifetime-saved")).toHaveText(/^Up to £[\d,]+ by age \d+\.$/);
   await expect(page.locator("#lifetime")).toContainText("Illustrative");
-
-  // Cover is not shown until the paw reaches it; payment only after a plan is chosen.
-  const cover = page.locator("#cover > div").last();
-  expect(Number(await cover.evaluate((e) => getComputedStyle(e).opacity))).toBeLessThan(0.5);
-  await page.locator("#cover").scrollIntoViewIfNeeded();
-  await expect.poll(() => cover.evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.9);
-  await expect(cover).toContainText("You're probably overpaying for Biscuit's insurance.");
-  // The plans moved to Savings: payment still appears only after a plan is chosen.
-  await page.goto("/savings");
-  await expect(page.locator("#how-you-pay")).toHaveCount(0);
-  await page.getByRole("radio", { name: /Lifetime/ }).click();
-  await expect(page.locator("#how-you-pay")).toBeVisible();
+  // Healthspan: only the main point; the levers live on the dashboard.
+  await page.locator("#healthspan").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("healthy-years")).toHaveText(/^Biscuit could have about [\d.]+ more healthy years\.$/);
+  await expect(page.locator("#healthspan [role=switch]")).toHaveCount(0);
+  // Then the teaser, then the poo alone.
+  await page.getByTestId("insurance-teaser").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("insurance-teaser")).toHaveText("Now, about Biscuit's insurance…");
+  await page.locator("#uh-oh").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("overpay")).toHaveText(/^You and owners like you could save up to £\d+ a year\.$/);
+  await expect(page.locator("#uh-oh img, #uh-oh [role=img]")).toHaveCount(0); // no avatar beside the poo
   await shot(page, "04-walk-cover-and-pay");
 
   // Amber check-in (flow 5): the last seeded week was 5 days ago, so check in again.
@@ -143,6 +140,8 @@ test("7: dashboard: savings hero, streak, care plan and trends", async ({ page }
   await expect(page.locator("#savings-title")).toBeVisible();
   await expect(page.getByText(/You've saved £\d+/)).toBeVisible();
   await expect(page.getByText(/weeks in a row/)).toBeVisible();
+  await expect(page.getByTestId("premium-status")).toBeVisible();
+  await page.getByRole("tab", { name: "Health" }).click();
   await expect(page.getByRole("heading", { name: /Care plan/i }).or(page.getByText("/ Care plan"))).toBeVisible();
   expect(await page.locator(".recharts-line").count()).toBeGreaterThanOrEqual(4);
   await shot(page, "07-dashboard");
@@ -181,9 +180,9 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   await expect(page.getByText("Hello,")).toBeVisible();
   // The moving paw is the only accent-filled circle in the walk path's own SVG.
   expect(await page.locator('svg.absolute.inset-0 circle[fill="var(--accent)"]').count()).toBe(0);
-  await page.locator("#cover").scrollIntoViewIfNeeded();
-  await expect(page.locator("#uh-oh")).toContainText("You're probably overpaying for Biscuit's insurance.");
-  await page.goto("/savings");
-  await page.getByRole("radio", { name: /Lifetime/ }).click();
-  await expect(page.locator("#how-you-pay")).toBeVisible();
+  await page.locator("#uh-oh").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("overpay")).toContainText("You and owners like you could save up to £");
+  // Reduced motion: Pick it up goes straight to the insurance page.
+  await page.getByRole("button", { name: "Pick it up" }).click();
+  await page.waitForURL("**/savings");
 });

@@ -39,9 +39,9 @@ test("senior Labrador: Kennel Club target, adjusted for age, split into walks, c
   await expect(card.locator("ul li", { hasText: "Midday" })).toBeVisible();
   await expect(card).toContainText("Weight: Labradors gain easily");
   await expect(card.getByRole("alert")).toHaveCount(0);
-  // Seniors get healthspan before the money chart.
+  // The story ends: lifetime chart, the healthy pet, then the poo.
   const ids = await page.locator("section[id]").evaluateAll((s) => s.map((x) => x.id));
-  expect(ids.indexOf("healthspan")).toBeLessThan(ids.indexOf("lifetime"));
+  expect(ids.slice(-3)).toEqual(["lifetime", "healthspan", "cover"]);
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
 });
@@ -83,11 +83,11 @@ test("the poo moment: scroll to it, Pick it up, land on Savings", async ({ page 
   await page.goto("/walk");
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment).toContainText("You're probably overpaying for Biscuit's insurance.");
+  await expect(moment.getByTestId("overpay")).toContainText("You and owners like you could save up to £");
   await moment.getByRole("button", { name: "Pick it up" }).click();
   await page.waitForURL("**/savings");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
-  await expect(page.getByText("First-time owner? Start lower.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try it today" })).toBeVisible();
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
 });
@@ -99,7 +99,7 @@ test("the poo moment resets on refresh: unpicked, then Pick it up lands on Savin
   await page.reload();
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment.getByTestId("overpay")).toHaveText(/^Up to £\d+ a year\.$/);
+  await expect(moment.getByTestId("overpay")).toHaveText(/^You and owners like you could save up to £\d+ a year\.$/);
   await expect(moment).toContainText("Your premium ignores the walks and care you already do.");
   await expect(moment.getByText("Picked up")).toHaveCount(0);
   await moment.getByRole("button", { name: "Pick it up" }).click();

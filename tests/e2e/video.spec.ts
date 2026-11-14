@@ -40,12 +40,15 @@ test.describe("contract", () => {
 
 const PILOT = "Live analysis of your own videos is coming in the pilot. Try a demo walk.";
 
-test("/walk: the demo walk analyses in one tap; the result feeds the stop, the dashboard and Savings; Send to my vet needs a tap", async ({ page }) => {
+test("dashboard Movement tab: the demo walk analyses in one tap; the result feeds the dashboard and the Walks tab; Send to my vet needs a tap", async ({ page }) => {
   const { errors, requests } = watch(page);
   await seedPet(page, { checkins: 6 });
-  await page.goto("/walk#movement");
+  await page.goto("/walk");
+  await expect(page.locator("#movement")).toHaveCount(0); // not on the walk any more
+  await page.goto("/dashboard#movement");
   const stop = page.locator("#movement");
-  await expect(stop.getByRole("heading", { name: /Check Biscuit's walk/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Movement" })).toHaveAttribute("aria-selected", "true");
+  await expect(stop.getByRole("heading", { name: "Movement check" })).toBeVisible();
   await expect(stop.getByRole("tab", { name: "Walk" })).toHaveAttribute("aria-selected", "true");
   await expect(stop.getByRole("radio", { name: "Demo walk" })).toHaveAttribute("aria-checked", "true");
   await expect(stop.getByRole("tab", { name: /Face|General/ })).toHaveCount(0);
@@ -55,7 +58,6 @@ test("/walk: the demo walk analyses in one tap; the result feeds the stop, the d
   await expect(stop.getByRole("img", { name: /^Symmetry: Even/ })).toBeVisible();
   await expect(stop.getByTestId("mobility-summary")).toHaveText("Mobility 89, in line with Biscuit's usual.");
   await expect(stop.getByText("Signs worth a vet's look, never a diagnosis.").first()).toBeVisible();
-  await expect(stop.getByTestId("movement-stop-summary")).toContainText("Mobility 89, in line with Biscuit's usual");
   // nothing is sent until the owner taps Send to my vet
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(requests.filter((r) => r.method === "POST")).toEqual([]);
@@ -63,10 +65,9 @@ test("/walk: the demo walk analyses in one tap; the result feeds the stop, the d
   await expect(page.getByRole("dialog")).toContainText("Coming in the pilot");
   await page.keyboard.press("Escape");
 
-  await page.goto("/dashboard#movement");
   await expect(page.getByTestId("dashboard-mobility")).toHaveText("Mobility 89, in line with Biscuit's usual.");
   await expect(page.getByText("mobility 89 (demo walk)")).toBeVisible();
-  await page.goto("/savings");
+  await page.getByRole("tab", { name: "Walks" }).click();
   await expect(page.getByTestId("savings-health")).toContainText("demo walk): Mobility 89, in line with Biscuit's usual");
   expect(errors).toEqual([]);
 });
@@ -93,8 +94,11 @@ test("/dashboard: the same Movement check; a cat demo walk gives the model's own
 
 test("pet names are shown capitalised", async ({ page }) => {
   await seedPet(page, { name: "biscuit" });
-  await page.goto("/walk#movement");
-  await expect(page.locator("#movement").getByRole("heading", { name: /Check Biscuit's walk/ })).toBeVisible();
+  await page.goto("/walk");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Hello, Biscuit.");
+  await expect(page.getByText(/\bbiscuit\b/)).toHaveCount(0);
+  await page.goto("/dashboard#movement");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Biscuit");
   await expect(page.getByText(/\bbiscuit\b/)).toHaveCount(0);
 });
 
