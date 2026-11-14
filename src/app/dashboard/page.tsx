@@ -20,7 +20,7 @@ import { Connect, Diagnostics, PriceCard, Today } from "@/components/blackbox/se
 import { HealthspanStop } from "@/components/walk/HealthspanStop";
 import { blackBoxDiscount, dailyTarget, diagnostics, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
-import { PetScanner } from "@/components/gait/PetScanner";
+import { MovementCheck } from "@/components/gait/movement/MovementCheck";
 import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
 import { useScans } from "@/lib/video/scans";
 import { TrendChart } from "@/components/walk/TrendsStop";
@@ -45,11 +45,11 @@ const TABS = [
   ["savings", "Savings"],
 ] as const;
 type TabId = (typeof TABS)[number][0];
-/** Old links to the movement check and the video scan open the Walks tab at the Pet Scanner. */
-const SCANNER_HASHES = ["pet-scanner", "movement", "video"];
+/** Links to the Movement check (and the old Pet Scanner and video scan links) open the Health tab at the Movement check. */
+const SCANNER_HASHES = ["movement", "pet-scanner", "video"];
 function tabFromHash(hash: string): TabId {
   const h = hash.replace(/^#/, "");
-  if (SCANNER_HASHES.includes(h)) return "walks";
+  if (SCANNER_HASHES.includes(h)) return "health";
   return (TABS.find(([id]) => id === h)?.[0] ?? "overview") as TabId;
 }
 
@@ -154,8 +154,8 @@ export default function DashboardPage() {
 
   const [focusScanner, setFocusScanner] = useState(false);
 
-  // The tab follows the URL hash, so /dashboard#walks or #savings opens that tab; #pet-scanner (and the old
-  // #movement and #video links) open Walks and scroll to the Pet Scanner.
+  // The tab follows the URL hash, so /dashboard#walks or #savings opens that tab; #movement (and the old
+  // #pet-scanner and #video links) open Health and scroll to the Movement check.
   useEffect(() => {
     const sync = () => {
       setTab(tabFromHash(window.location.hash));
@@ -167,9 +167,9 @@ export default function DashboardPage() {
   }, []);
   const hasPet = Boolean(rec && rec.setupStep === null);
   useEffect(() => {
-    if (!focusScanner || tab !== "walks" || !ready || !hasPet) return;
+    if (!focusScanner || tab !== "health" || !ready || !hasPet) return;
     const t = window.setTimeout(() => {
-      document.getElementById("pet-scanner")?.scrollIntoView({ block: "start" });
+      document.getElementById("movement")?.scrollIntoView({ block: "start" });
       setFocusScanner(false);
     }, 80);
     return () => window.clearTimeout(t);
@@ -177,7 +177,7 @@ export default function DashboardPage() {
   const pick = (id: TabId, scanner = false) => {
     setTab(id);
     setFocusScanner(scanner);
-    window.history.replaceState(null, "", scanner ? "#pet-scanner" : id === "overview" ? window.location.pathname : `#${id}`);
+    window.history.replaceState(null, "", scanner ? "#movement" : id === "overview" ? window.location.pathname : `#${id}`);
   };
 
   if (!ready) return <div className="min-h-svh" aria-busy="true" />;
@@ -386,49 +386,6 @@ export default function DashboardPage() {
           <Section title="Walk tracker" id="walks">
             <WalkMode rec={rec} target={target} todayBefore={todayMinutes(walks, collarDays, now)} collar={rec.blackBox?.device === "collar"} liveHr={hr?.bpm ?? null} discountPct={bb?.total ?? 0} onFinished={() => undefined} />
           </Section>
-          <section id="pet-scanner" className="scroll-mt-28 border-t border-line pt-12">
-            <div id="movement" className="space-y-10">
-              <PetScanner rec={rec} log={log} />
-              <div className="min-w-0 space-y-4 lg:max-w-[60%]">
-                <p className="eyebrow">Earlier scans</p>
-                {scans.length === 0 ? (
-                  <p className="text-sm text-muted">No scans yet. A scan adds mobility to {pet.name}&apos;s trends.</p>
-                ) : (
-                  <>
-                    {mobility && <p className="text-lg font-semibold" data-testid="dashboard-mobility">{mobility.text}.</p>}
-                    {(() => {
-                      const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
-                      const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
-                      if (pts.length < 2) return null;
-                      const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
-                      return (
-                        <figure>
-                          <figcaption className="text-sm font-medium">Mobility from Pet Scanner</figcaption>
-                          <TrendChart s={series} reduce={reduce} />
-                        </figure>
-                      );
-                    })()}
-                    <ul className="divide-y divide-line border-y border-line text-sm">
-                      {scans
-                        .slice(-4)
-                        .reverse()
-                        .map((s) => (
-                          <li key={s.scanId} className="flex flex-wrap justify-between gap-2 py-2">
-                            <span>
-                              {new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, {s.scanType.replace("_", " ")}
-                            </span>
-                            <span className="text-muted">
-                              {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
-                              {isDemoScan(s) ? " (demo walk)" : ""}
-                            </span>
-                          </li>
-                        ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
           <Section title="Today">
             <Today rec={rec} target={target} today={todayMinutes(walks, collarDays, now)} weeksMet={wkDiscount.weeksMet} weeksCounted={wkDiscount.weeksCounted} />
               {activitySeries && (
@@ -475,8 +432,8 @@ export default function DashboardPage() {
                 Latest scan ({new Date(mobility.scan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                 {isDemoScan(mobility.scan) ? ", demo walk" : ""}): {mobility.text}
                 {mobility.scan.flags.length ? `. ${mobility.scan.flags.map((f) => f.label).join("; ")}` : ""}.{" "}
-                <button type="button" onClick={() => pick("walks", true)} className="link">
-                  Pet Scanner
+                <button type="button" onClick={() => pick("health", true)} className="link">
+                  Movement check
                 </button>
               </p>
             )}
@@ -486,6 +443,49 @@ export default function DashboardPage() {
 
       {tab === "health" && (
         <div role="tabpanel" id="panel-health" aria-labelledby="tab-health" className="space-y-14">
+          <section id="movement" className="scroll-mt-28">
+            <div className="space-y-10">
+              <MovementCheck rec={rec} />
+              <div className="min-w-0 space-y-4 lg:max-w-[60%]">
+                <p className="eyebrow">Earlier checks</p>
+                {scans.length === 0 ? (
+                  <p className="text-sm text-muted">No checks yet. A Movement check adds mobility to {pet.name}&apos;s trends.</p>
+                ) : (
+                  <>
+                    {mobility && <p className="text-lg font-semibold" data-testid="dashboard-mobility">{mobility.text}.</p>}
+                    {(() => {
+                      const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
+                      const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
+                      if (pts.length < 2) return null;
+                      const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
+                      return (
+                        <figure>
+                          <figcaption className="text-sm font-medium">Mobility from Movement checks</figcaption>
+                          <TrendChart s={series} reduce={reduce} />
+                        </figure>
+                      );
+                    })()}
+                    <ul className="divide-y divide-line border-y border-line text-sm">
+                      {scans
+                        .slice(-4)
+                        .reverse()
+                        .map((s) => (
+                          <li key={s.scanId} className="flex flex-wrap justify-between gap-2 py-2">
+                            <span>
+                              {new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, {s.scanType.replace("_", " ")}
+                            </span>
+                            <span className="text-muted">
+                              {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
+                              {isDemoScan(s) ? " (demo walk)" : ""}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
           <Section title="Healthspan" id="health">
             <HealthspanStop rec={rec} reduce={reduce} />
           </Section>

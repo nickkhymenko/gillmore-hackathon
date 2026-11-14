@@ -10,7 +10,7 @@ import { noHorizontalScroll, watch } from "./helpers";
 const LIVE_AI = Boolean(process.env.LIVE_AI);
 const cssVar = (page: Page, v: string) => page.evaluate((v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim(), v);
 
-test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Pet Scanner, member offers", async ({ page }) => {
+test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Movement check, member offers", async ({ page }) => {
   test.setTimeout(240_000);
   const { errors } = watch(page);
   await page.route("https://tile.openstreetmap.org/**", (r) => r.fulfill({ status: 204, body: "" }));
@@ -114,33 +114,26 @@ test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Pet Scanner,
   await noHorizontalScroll(page);
   await sheet.getByRole("link", { name: "Go to your dashboard" }).click();
 
-  // 5. Dashboard: a first-day pet sees its potential, never a made-up saving. Then Walks, the Pet Scanner,
-  //    the dog clip, the keypoints build, Analyse, and the result card.
+  // 5. Dashboard: a first-day pet sees its potential, never a made-up saving. Then Health, the Movement check,
+  //    the healthy demo walk, the skeleton plays once, Analyse, and the result.
   await page.waitForURL("**/dashboard");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Luna");
   await expect(page.getByTestId("savings-card")).toHaveAttribute("data-state", "building");
   await expect(page.getByTestId("savings-card")).not.toContainText(/saved £/i);
   await expect(page.getByTestId("premium-status")).toContainText("Petra Plus member");
   await noHorizontalScroll(page);
-  await page.getByRole("tab", { name: "Walks" }).click();
-  await expect(page.getByRole("tab", { name: "Walks" })).toHaveAttribute("aria-selected", "true");
-  const scanner = page.getByTestId("pet-scanner");
-  await scanner.scrollIntoViewIfNeeded();
-  await expect(scanner.getByRole("heading", { name: /Pet Scanner/ })).toBeVisible();
-  await expect(scanner.locator("video")).toHaveCount(0); // nothing autoplays
-  await scanner.getByRole("button", { name: /Scan: Healthy dog on a city walk/ }).click();
-  await expect(scanner).toHaveAttribute("data-phase", /sweep|build/, { timeout: 15_000 });
-  const points = () => scanner.getByTestId("scan-points").textContent().then((t) => Number((t ?? "0").split("/")[0]));
-  await expect.poll(points, { timeout: 15_000 }).toBeGreaterThan(0); // the keypoints build
-  await expect(scanner).toHaveAttribute("data-phase", "live", { timeout: 15_000 });
-  await expect.poll(points).toBeGreaterThanOrEqual(15);
-  await scanner.getByRole("button", { name: "Analyse" }).click();
-  const result = scanner.getByTestId("scan-result");
-  await expect(result).toBeVisible({ timeout: 15_000 });
-  await expect(result.getByRole("img", { name: /^Symmetry: Even/ })).toBeVisible();
-  await expect(result.getByTestId("mobility-summary")).toHaveText("Mobility 89, the first check, so it sets Luna's usual.");
-  await expect(result).toContainText("Signs worth a vet's look, never a diagnosis.");
-  await expect(page.getByRole("dialog")).toHaveCount(0); // Send to my vet only on tap
+  await page.getByRole("tab", { name: "Health" }).click();
+  await expect(page.getByRole("tab", { name: "Health" })).toHaveAttribute("aria-selected", "true");
+  const check = page.getByTestId("movement-check");
+  await check.scrollIntoViewIfNeeded();
+  await expect(check.getByRole("heading", { name: /Ten seconds of walking/ })).toBeVisible();
+  await expect(check.locator("video")).toHaveCount(0); // nothing autoplays
+  await check.getByRole("button", { name: /Healthy dog on a city walk/ }).click();
+  await expect(check).toHaveAttribute("data-phase", "live", { timeout: 15_000 });
+  await expect(check.getByText("Steps look even so far.", { exact: false })).toBeVisible({ timeout: 20_000 });
+  await check.getByRole("button", { name: /^Analyse/ }).click();
+  await expect(check.getByRole("heading", { name: /Moving evenly/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await noHorizontalScroll(page);
 
   // 6. The Savings tab: the member offers.

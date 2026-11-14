@@ -18,10 +18,9 @@ import type { PetRecord, StoredCheckin } from "@/lib/store";
 
 type Mode = "walk" | "sleep_breathing";
 type View = { kind: "gallery" } | { kind: "clip"; id: string } | { kind: "own"; source: "upload" | "camera" };
-/** loading: the clip and its keypoints are fetched. sweep: the scan line crosses. build: points appear. live: the clip plays. */
-type Phase = "loading" | "sweep" | "build" | "live" | "analysing" | "done";
+/** loading: the clip and its keypoints are fetched. build: points appear. live: the clip plays. */
+type Phase = "loading" | "build" | "live" | "analysing" | "done";
 
-const SWEEP_MS = 1300;
 const MODES: [Mode, string][] = [
   ["walk", "Walk"],
   ["sleep_breathing", "Sleeping breathing"],
@@ -30,7 +29,7 @@ const SPRING = { type: "spring", stiffness: 260, damping: 26 } as const;
 
 /**
  * Pet Scanner: the one video feature. Nothing plays until the owner picks something.
- * A gallery of example clips (plus Upload and Camera) leads into the scanner: a scan line sweeps the first frame,
+ * A gallery of example clips (plus Upload and Camera) leads into the scanner: on the first frame
  * the model's 21 body points appear one by one and join into a skeleton, the clip plays with live counters and the
  * head and hip rhythm traces, and Analyse reveals the result card.
  * Example clips carry the model's real keypoints (DeepLabCut SuperAnimal-Quadruped, run offline; JSON in
@@ -80,16 +79,10 @@ export function PetScanner({ rec, log }: { rec: PetRecord; log: StoredCheckin[] 
     };
   }, [clipId]);
 
-  // Once the first frame and the keypoints are both here, the scan starts. Reduced motion goes straight to the clip.
+  // Once the first frame and the keypoints are both here, the body points build. Reduced motion goes straight to the clip.
   useEffect(() => {
-    if (phase === "loading" && clip && ready) setPhase(reduce ? "live" : "sweep"); // eslint-disable-line react-hooks/set-state-in-effect -- starts when its two inputs have loaded
+    if (phase === "loading" && clip && ready) setPhase(reduce ? "live" : "build"); // eslint-disable-line react-hooks/set-state-in-effect -- starts when its two inputs have loaded
   }, [phase, clip, ready, reduce]);
-  // The scan line crosses once, then the body points build.
-  useEffect(() => {
-    if (phase !== "sweep") return;
-    const t = window.setTimeout(() => setPhase("build"), SWEEP_MS);
-    return () => window.clearTimeout(t);
-  }, [phase]);
 
   const open = (v: View) => {
     setClip(null);
@@ -131,8 +124,8 @@ export function PetScanner({ rec, log }: { rec: PetRecord; log: StoredCheckin[] 
   };
 
   const total = clip?.bodyparts.length ?? 21;
-  const scanning = phase === "loading" || phase === "sweep" || phase === "build";
-  const stage: ScanStage = phase === "loading" || phase === "sweep" ? "wait" : phase === "build" ? "build" : "live";
+  const scanning = phase === "loading" || phase === "build";
+  const stage: ScanStage = phase === "loading" ? "wait" : phase === "build" ? "build" : "live";
   const points = scanning ? built : played || phase !== "live" ? (clip?.frames.at(-1)?.filter(Boolean).length ?? frame.points) : frame.points;
   const steps = clip && !scanning ? stepsSeen(clip, played || phase !== "live" ? clip.duration : frame.t) : 0;
   const fps = clip ? (scanning ? Math.round((clip.fps * built) / Math.max(1, clip.frames[0]?.filter(Boolean).length ?? total)) : Math.round(clip.fps)) : 0;
@@ -205,7 +198,6 @@ export function PetScanner({ rec, log }: { rec: PetRecord; log: StoredCheckin[] 
             <div className="grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="min-w-0 space-y-3 lg:col-span-7">
                 <SkeletonPlayer src={row.sample!} poster={row.thumb ?? undefined} clip={clip} stage={stage} instant={reduce} onReady={onReady} onBuild={onBuild} onBuilt={onBuilt} onFrame={onFrame} onEnd={onEnd} replayKey={replayKey}>
-                  {phase === "sweep" && <span className="scan-line" data-testid="scan-line" aria-hidden />}
                   {scanning && (
                     <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold text-ink shadow-soft backdrop-blur-sm" role="status">
                       <Scan size={16} weight="bold" className="animate-pulse" aria-hidden /> {phase === "build" ? "Finding body points" : "Scanning"}

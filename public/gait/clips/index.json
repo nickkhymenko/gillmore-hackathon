@@ -1,5 +1,57 @@
 [
  {
+  "id": "cat1",
+  "species": "cat",
+  "title": "Tabby and white cat at home",
+  "bytes": 2460981,
+  "sample": "/gait/samples/cat1.mp4",
+  "thumb": "/gait/samples/cat1.jpg",
+  "healthy": false,
+  "area": "front left",
+  "source": "Reddit r/CATHELP owner video",
+  "duration": 6.5,
+  "kb": 80
+ },
+ {
+  "id": "cat2",
+  "species": "cat",
+  "title": "Ginger cat in the hallway",
+  "bytes": 1983917,
+  "sample": "/gait/samples/cat2.mp4",
+  "thumb": "/gait/samples/cat2.jpg",
+  "healthy": false,
+  "area": "hind",
+  "source": "Reddit r/cats owner video",
+  "duration": 3.33,
+  "kb": 34
+ },
+ {
+  "id": "dog1",
+  "species": "dog",
+  "title": "Black Labrador in the living room",
+  "bytes": 3617065,
+  "sample": "/gait/samples/dog1.mp4",
+  "thumb": "/gait/samples/dog1.jpg",
+  "healthy": false,
+  "area": "hind",
+  "source": "Reddit r/labrador owner video",
+  "duration": 2.6,
+  "kb": 32
+ },
+ {
+  "id": "dog2",
+  "species": "dog",
+  "title": "Pomeranian at home",
+  "bytes": 3750392,
+  "sample": "/gait/samples/dog2.mp4",
+  "thumb": "/gait/samples/dog2.jpg",
+  "healthy": false,
+  "area": "front left",
+  "source": "Reddit r/DogAdvice owner video",
+  "duration": 7.5,
+  "kb": 88
+ },
+ {
   "id": "sample-healthy",
   "species": "dog",
   "title": "Healthy dog on a city walk",
