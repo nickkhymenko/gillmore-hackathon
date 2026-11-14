@@ -16,5 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # LayoutProps / PageProps are global types Next generates; create them before type-checking.
+      - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npm run build
