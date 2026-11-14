@@ -69,7 +69,7 @@ test("'Make my insurance cheaper today' leads to the Black Box", async ({ page }
   await mockWeather(page, 12);
   await seedPet(page);
   await page.goto("/walk");
-  await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(1); // the next-week stop that repeated it is gone
   await page.getByRole("link", { name: /Make my insurance cheaper today/ }).first().click();
   await page.waitForURL("**/savings");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");

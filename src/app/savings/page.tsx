@@ -180,7 +180,7 @@ export default function SavingsPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: YELLOW }}>
               Petra Walk Companion
             </p>
-            <h1 className="display mt-4 text-[clamp(2.75rem,7vw,5.75rem)]">
+            <h1 className="display mt-4 text-[clamp(2.75rem,6vw,4.75rem)]">
               Save on {name}&apos;s insurance <span style={{ color: YELLOW }}>with every walk.</span>
             </h1>
             <p className="mt-6 max-w-[44ch] text-lg text-white/75 sm:text-xl">

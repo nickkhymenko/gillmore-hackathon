@@ -21,7 +21,7 @@ export function CompanionTag({ className = "" }: { className?: string }) {
           <stop offset="100%" stopColor="#D9A514" />
         </linearGradient>
       </defs>
-      <circle cx="160" cy="176" r="150" fill="url(#tag-glow)" />
+      <circle cx="160" cy="176" r="140" fill="url(#tag-glow)" />
       {/* collar strap */}
       <path d="M8 96 Q160 150 312 96 L312 124 Q160 178 8 124 Z" fill="url(#strap)" />
       <path d="M8 104 Q160 158 312 104" fill="none" stroke="#141414" strokeOpacity="0.18" strokeWidth="1.5" strokeDasharray="4 6" />

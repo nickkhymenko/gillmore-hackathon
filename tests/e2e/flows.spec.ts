@@ -179,8 +179,8 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   await seedPet(page, { checkins: 6 });
   await page.goto("/walk");
   await expect(page.getByText("Hello,")).toBeVisible();
-  // The moving paw is the only accent-filled circle with a 20px radius in the walk path.
-  expect(await page.locator('svg circle[fill="var(--accent)"]').count()).toBe(0);
+  // The moving paw is the only accent-filled circle in the walk path's own SVG.
+  expect(await page.locator('svg.absolute.inset-0 circle[fill="var(--accent)"]').count()).toBe(0);
   await page.locator("#cover").scrollIntoViewIfNeeded();
   await expect(page.locator("#uh-oh")).toContainText("You're probably overpaying for Biscuit's insurance.");
   await page.goto("/savings");
