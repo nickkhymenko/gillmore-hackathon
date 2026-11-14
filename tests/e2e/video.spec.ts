@@ -86,7 +86,7 @@ test("server mode with a dead model: falls back within 20 s; the video goes only
   const panel = page.locator("#video");
   await panel.getByRole("button", { name: "Upload a video" }).first().click({ trial: true });
   await panel.getByLabel("Upload a video of your pet").setInputFiles(fakeClip());
-  await expect(panel.getByText("sends this clip to the Prevently scan service")).toBeVisible();
+  await expect(panel.getByText("sends this clip to the Petra scan service")).toBeVisible();
   expect(requests.filter((r) => r.method === "POST")).toEqual([]);
   const t0 = Date.now();
   await panel.getByRole("button", { name: "Analyse" }).click();

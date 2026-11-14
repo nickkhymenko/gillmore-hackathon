@@ -11,7 +11,7 @@ import { DEFAULT_PLACE, bestWindow, fetchWeather, heatLevel, sunsetTime, type We
 /** The big call to action that leads into the Black Box. */
 export function CheaperCta({ name }: { name: string }) {
   return (
-    <Link href="/blackbox" className="btn btn-primary min-h-14 px-6 text-lg sm:text-xl">
+    <Link href="/savings" className="btn btn-primary min-h-14 px-6 text-lg sm:text-xl">
       Make my insurance cheaper today <ArrowUpRight size={20} weight="bold" aria-hidden />
       <span className="sr-only">with {name}&apos;s walks</span>
     </Link>

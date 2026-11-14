@@ -41,7 +41,7 @@ function checkin(rec: PetRecord, daysAgo: number, now: number, answers: Partial<
     flags: [],
     nextStep: flagged ? { action: "online_consult", rationale: "Triggered by: Increased thirst in an older pet" } : { action: "keep_monitoring", rationale: "Normal week." },
     preventionTips: [],
-    vetBrief: flagged ? `Patient: ${rec.pet.name}, ${rec.pet.species} (${rec.pet.breed}), ${rec.pet.ageYears}y, ${rec.pet.weightKg}kg. Owner-reported over 3 weeks: water=more, mobility=stiff. Black Box: activity well down over the last 10 days against own baseline; resting breathing up.` : "",
+    vetBrief: flagged ? `Patient: ${rec.pet.name}, ${rec.pet.species} (${rec.pet.breed}), ${rec.pet.ageYears}y, ${rec.pet.weightKg}kg. Owner-reported over 3 weeks: water=more, mobility=stiff. Activity tracker: activity well down over the last 10 days against own baseline; resting breathing up.` : "",
     source: "rules",
     safetyOverride: false,
     safetyReasons: flagged ? ["Increased thirst in an older pet"] : [],

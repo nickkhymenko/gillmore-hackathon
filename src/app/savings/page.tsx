@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowUpRight, ShieldCheck } from "@phosphor-icons/react";
+import { EmptyPetState } from "@/components/EmptyPetState";
 import { PetAvatar } from "@/components/PetAvatar";
 import { Sheet } from "@/components/Sheet";
 import { WalkMode } from "@/components/blackbox/WalkMode";
@@ -25,7 +26,7 @@ function Block({ n, title, children, id }: { n: string; title: string; children:
   );
 }
 
-/** Petra Black Box: telematics for pet insurance. "Make your pet bills work for you." */
+/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make your pet bills work for you." */
 export default function BlackBoxPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
@@ -37,16 +38,28 @@ export default function BlackBoxPage() {
   const [rules, setRules] = useState(false);
 
   if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
-  if (!rec || rec.setupStep !== null)
+  if (!rec)
+    return (
+      <EmptyPetState
+        where="Savings"
+        title={
+          <>
+            Make your pet bills <span className="accent-word">work for you.</span>
+          </>
+        }
+        line="Meet your pet first: their savings targets are personal to their breed, age and health."
+      />
+    );
+  if (rec.setupStep !== null)
     return (
       <section className="space-y-6 py-16">
-        <p className="eyebrow">Petra / Black Box</p>
+        <p className="eyebrow">Petra / Savings</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
           Make your pet bills <span className="accent-word">work for you.</span>
         </h1>
         <p className="max-w-[48ch] text-lg text-muted">First, a minute to meet your pet. Their targets are personal to their breed, age and health.</p>
         <Link href="/" className="btn btn-primary text-lg">
-          {rec ? "Carry on" : "Meet your Pet Twin"} <ArrowUpRight size={18} weight="bold" aria-hidden />
+          Carry on <ArrowUpRight size={18} weight="bold" aria-hidden />
         </Link>
       </section>
     );
@@ -66,12 +79,12 @@ export default function BlackBoxPage() {
     <div className="space-y-16 py-6 pb-28 sm:py-10 lg:pb-10">
       <header className="grid items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <p className="eyebrow">Petra / Black Box</p>
+          <p className="eyebrow">Petra / Savings</p>
           <h1 className="display mt-4 text-[clamp(3rem,8vw,7rem)]">
             Make your pet bills <span className="accent-word">work for you.</span>
           </h1>
           <p className="mt-6 max-w-[52ch] text-lg text-muted">
-            UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Black Box turns good care into a lower premium.
+            UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Savings turns good care into a lower premium. Like a black box for car insurance, but for your pet.
           </p>
         </div>
         <div className="flex justify-center lg:col-span-4">
@@ -115,7 +128,7 @@ export default function BlackBoxPage() {
             {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the collar, or log a session with your phone.</p>}
           </Block>
 
-          <Block n="04" title="Black Box diagnostics">
+          <Block n="04" title="Collar diagnostics">
             <Diagnostics rec={rec} days={collar} result={diag} now={now} />
             {latestScan && (
               <p className="text-sm">

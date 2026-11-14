@@ -74,7 +74,7 @@ test("'Make my insurance cheaper today' leads to the Black Box", async ({ page }
   await page.goto("/walk");
   await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(2);
   await page.getByRole("link", { name: /Make my insurance cheaper today/ }).first().click();
-  await page.waitForURL("**/blackbox");
+  await page.waitForURL("**/savings");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills");
   await expect(page.getByText(/Up to £\d+ a year off Biscuit's cover/)).toBeVisible();
 });

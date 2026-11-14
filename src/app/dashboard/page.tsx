@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { Line, LineChart, ReferenceArea, ResponsiveContainer, YAxis } from "recharts";
 import { ArrowUpRight, CalendarPlus, ChatCircleText } from "@phosphor-icons/react";
@@ -16,6 +16,7 @@ import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
 import { blackBoxDiscount, dailyTarget, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
 import { VideoScanPanel } from "@/components/video/VideoScanPanel";
+import { MovementCheck } from "@/components/gait/MovementCheck";
 import { useScans } from "@/lib/video/scans";
 import { TrendChart } from "@/components/walk/TrendsStop";
 import type { CareRec } from "@/data/careRules";
@@ -31,9 +32,9 @@ import { ACTION_LABEL } from "@/lib/types";
 
 const DAY = 24 * 3600 * 1000;
 
-function Section({ n, title, children, aside }: { n: string; title: string; children: React.ReactNode; aside?: React.ReactNode }) {
+function Section({ n, title, children, aside, id }: { n: string; title: string; children: React.ReactNode; aside?: React.ReactNode; id?: string }) {
   return (
-    <section className="space-y-5">
+    <section id={id} className="scroll-mt-24 space-y-5">
       <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
         <h2 className="eyebrow">
           <span className="tnum text-ink">{n}</span> / {title}
@@ -130,6 +131,13 @@ export default function DashboardPage() {
   const reduce = Boolean(useReducedMotion());
   const [sheet, setSheet] = useState<string | null>(null);
 
+  // The page renders after the pet loads, so the browser cannot jump to #movement or #video on its own.
+  const shown = Boolean(ready && rec && rec.setupStep === null);
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (shown && hash) document.getElementById(hash)?.scrollIntoView({ block: "start" });
+  }, [shown]);
+
   if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
   if (!rec) return <EmptyPetState />;
   if (rec.setupStep !== null)
@@ -173,7 +181,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-5 lg:col-span-7">
           <PetAvatar traits={rec.profile} size={112} title={`${pet.name}'s avatar`} />
           <div className="min-w-0">
-            <p className="eyebrow">Prevently / Dashboard</p>
+            <p className="eyebrow">Petra / Dashboard</p>
             <h1 className="display mt-2 text-[clamp(2.75rem,7vw,5.5rem)]">{pet.name}</h1>
             <p className="mt-2 text-muted">
               {[pet.breed || "Mixed or not sure", `${pet.ageYears} ${pet.ageYears === 1 ? "year" : "years"}`, pet.weightKg !== undefined ? `${pet.weightKg} kg` : null].filter(Boolean).join(" · ")}
@@ -199,31 +207,6 @@ export default function DashboardPage() {
       </header>
 
       {bb ? <BlackBoxHero rec={rec} d={bb} /> : <SavingsHero rec={rec} log={log} now={now} />}
-
-      {rec.blackBox && (
-        <Section n="00" title="Black Box" aside={<Link href="/blackbox" className="link text-sm">Open</Link>}>
-          <div className="grid gap-8 lg:grid-cols-12">
-            <div className="space-y-3 lg:col-span-5">
-              <p className="eyebrow">Today</p>
-              <p className="text-3xl font-semibold tracking-[-0.03em]">
-                {rec.blackBox.restSince ? "Rest mode: no target" : `${Math.min(todayMinutes(walks, collarDays, now), target)} of ${target} minutes`}
-              </p>
-              <Link href="/blackbox#walk-mode" className="btn btn-primary">
-                Start a walk <ArrowUpRight size={16} weight="bold" aria-hidden />
-              </Link>
-            </div>
-            {activitySeries && (
-              <figure className="min-w-0 lg:col-span-7">
-                <figcaption>
-                  <p className="eyebrow">Activity, last 14 days</p>
-                  <p className="mt-1 text-sm font-medium">Shaded band: at or above {pet.name}&apos;s daily target of {target} minutes.</p>
-                </figcaption>
-                <TrendChart s={activitySeries} reduce={reduce} />
-              </figure>
-            )}
-          </div>
-        </Section>
-      )}
 
       <div className="grid gap-14 lg:grid-cols-12">
         <div className="lg:col-span-7">
@@ -272,8 +255,8 @@ export default function DashboardPage() {
               <CalendarPlus size={16} aria-hidden /> Add a weekly reminder
             </button>
           </Section>
-          <Section n="03" title="Ask Prevently">
-            <button type="button" onClick={() => setSheet("Ask Prevently")} className="flex min-h-14 w-full items-center gap-3 rounded-brand border border-line bg-white/60 px-4 text-left text-muted hover:border-ink/40">
+          <Section n="03" title="Ask Petra">
+            <button type="button" onClick={() => setSheet("Ask Petra")} className="flex min-h-14 w-full items-center gap-3 rounded-brand border border-line bg-white/60 px-4 text-left text-muted hover:border-ink/40">
               <ChatCircleText size={20} aria-hidden /> Is it normal that {pet.name}&hellip;
             </button>
           </Section>
@@ -312,47 +295,75 @@ export default function DashboardPage() {
         )}
       </Section>
 
-      <Section n="06" title="Video scan" aside={<span className="text-xs text-muted">Optional</span>}>
-        <div className="grid gap-10 lg:grid-cols-12">
-          <div className="min-w-0 lg:col-span-7">
-            <VideoScanPanel rec={rec} />
-          </div>
-          <div className="min-w-0 space-y-4 lg:col-span-5">
-            <p className="eyebrow">From video scans</p>
-            {scans.length === 0 ? (
-              <p className="text-sm text-muted">No scans yet. A 15-second walk or sleeping-breathing clip adds mobility and breathing to {pet.name}&apos;s trends.</p>
-            ) : (
-              <>
-                {(() => {
-                  const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
-                  const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
-                  if (pts.length < 2) return null;
-                  const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
-                  return (
-                    <figure>
-                      <figcaption className="text-sm font-medium">Mobility from walk scans</figcaption>
-                      <TrendChart s={series} reduce={reduce} />
-                    </figure>
-                  );
-                })()}
-                <ul className="divide-y divide-line border-y border-line text-sm">
-                  {scans
-                    .slice(-4)
-                    .reverse()
-                    .map((s) => (
-                      <li key={s.scanId} className="flex flex-wrap justify-between gap-2 py-2">
-                        <span>
-                          {new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, {s.scanType.replace("_", " ")}
-                        </span>
-                        <span className="text-muted">
-                          {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
-                          {s.source === "mock" ? " (demo)" : ""}
-                        </span>
-                      </li>
-                    ))}
-                </ul>
-              </>
-            )}
+      <Section n="06" title="Walks and movement" id="movement" aside={rec.blackBox ? <Link href="/savings" className="link text-sm">Savings</Link> : undefined}>
+        <div className="space-y-14">
+          {rec.blackBox && (
+            <div className="grid gap-8 lg:grid-cols-12">
+              <div className="space-y-3 lg:col-span-5">
+                <p className="eyebrow">Today</p>
+                <p className="text-3xl font-semibold tracking-[-0.03em]">
+                  {rec.blackBox.restSince ? "Rest mode: no target" : `${Math.min(todayMinutes(walks, collarDays, now), target)} of ${target} minutes`}
+                </p>
+                <Link href="/savings#walk-mode" className="btn btn-primary">
+                  Start a walk <ArrowUpRight size={16} weight="bold" aria-hidden />
+                </Link>
+              </div>
+              {activitySeries && (
+                <figure className="min-w-0 lg:col-span-7">
+                  <figcaption>
+                    <p className="eyebrow">Activity, last 14 days</p>
+                    <p className="mt-1 text-sm font-medium">Shaded band: at or above {pet.name}&apos;s daily target of {target} minutes.</p>
+                  </figcaption>
+                  <TrendChart s={activitySeries} reduce={reduce} />
+                </figure>
+              )}
+            </div>
+          )}
+          <MovementCheck />
+          <div className="space-y-5">
+            <h3 className="text-2xl font-semibold tracking-[-0.03em]">Walk or breathing scan <span className="text-sm font-normal tracking-normal text-muted">Optional</span></h3>
+            <div className="grid gap-10 lg:grid-cols-12">
+              <div className="min-w-0 lg:col-span-7">
+                <VideoScanPanel rec={rec} />
+              </div>
+              <div className="min-w-0 space-y-4 lg:col-span-5">
+                <p className="eyebrow">From video scans</p>
+                {scans.length === 0 ? (
+                  <p className="text-sm text-muted">No scans yet. A 15-second walk or sleeping-breathing clip adds mobility and breathing to {pet.name}&apos;s trends.</p>
+                ) : (
+                  <>
+                    {(() => {
+                      const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
+                      const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
+                      if (pts.length < 2) return null;
+                      const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
+                      return (
+                        <figure>
+                          <figcaption className="text-sm font-medium">Mobility from walk scans</figcaption>
+                          <TrendChart s={series} reduce={reduce} />
+                        </figure>
+                      );
+                    })()}
+                    <ul className="divide-y divide-line border-y border-line text-sm">
+                      {scans
+                        .slice(-4)
+                        .reverse()
+                        .map((s) => (
+                          <li key={s.scanId} className="flex flex-wrap justify-between gap-2 py-2">
+                            <span>
+                              {new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, {s.scanType.replace("_", " ")}
+                            </span>
+                            <span className="text-muted">
+                              {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
+                              {s.source === "mock" ? " (demo)" : ""}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </Section>
@@ -395,7 +406,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <PilotSheet open={sheet !== null} onClose={() => setSheet(null)} what={sheet === "Ask Prevently" ? "Ask Prevently, the pet care assistant," : (sheet ?? "")} />
+      <PilotSheet open={sheet !== null} onClose={() => setSheet(null)} what={sheet === "Ask Petra" ? "Ask Petra, the pet care assistant," : (sheet ?? "")} />
     </div>
   );
 }

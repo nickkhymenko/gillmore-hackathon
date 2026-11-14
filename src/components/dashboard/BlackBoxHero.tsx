@@ -15,7 +15,7 @@ export function BlackBoxHero({ rec, d }: { rec: PetRecord; d: ReturnType<typeof 
   return (
     <section aria-labelledby="savings-title" className="rounded-brand p-6 text-white sm:p-10" style={{ background: "var(--dark)" }}>
       <p id="savings-title" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
-        Premium savings, Black Box
+        Premium savings, Petra Savings
       </p>
       <h2 className="mt-4 max-w-3xl text-[clamp(2rem,5vw,3.75rem)] font-semibold leading-[1.02] tracking-[-0.04em]">
         {d.total > 0 ? (
@@ -57,8 +57,8 @@ export function BlackBoxHero({ rec, d }: { rec: PetRecord; d: ReturnType<typeof 
       </div>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/15 pt-4">
         <p className="text-sm text-white/75">It can only lower your premium. Never raise it, never add exclusions. Illustrative, example premium of {gbp(premium)} a year.</p>
-        <Link href="/blackbox" className="btn btn-primary">
-          Open Black Box <ArrowUpRight size={16} weight="bold" aria-hidden />
+        <Link href="/savings" className="btn btn-primary">
+          Open Savings <ArrowUpRight size={16} weight="bold" aria-hidden />
         </Link>
       </div>
     </section>

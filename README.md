@@ -1,4 +1,4 @@
-# Prevently: prevention that pays
+# Petra: prevention that pays
 
 **Gillmore Hackathon 2026 · Pet Healthcare in the AI Era · Warwick Business School, 14 to 15 Nov**
 

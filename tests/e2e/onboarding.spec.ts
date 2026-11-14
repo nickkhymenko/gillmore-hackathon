@@ -62,13 +62,13 @@ test("empty dashboard: designed state with 'See a demo pet' loading Biscuit", as
   await page.evaluate(() => localStorage.clear());
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("This space is for your pet.");
-  await expect(page.getByText("A personalised walk")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Meet your Pet Twin" })).toBeVisible();
   await page.getByRole("link", { name: "See a demo pet" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Biscuit", { timeout: 10_000 });
   await page.waitForURL((u) => u.pathname === "/dashboard" && u.search === "");
-  await expect(page.locator("#savings-title")).toHaveText(/Black Box/);
+  await expect(page.locator("#savings-title")).toHaveText(/Petra Savings/);
   await expect(page.getByText(/supplement and product ideas are paused/i)).toBeVisible();
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   await expect(page.getByText("A change worth a vet's look")).toBeVisible();
   expect(errors).toEqual([]);
 });

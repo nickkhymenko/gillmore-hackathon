@@ -179,7 +179,7 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
             <p className="text-lg font-semibold">A change worth a vet&apos;s look</p>
             <p className="text-sm">{result.summary} This is not a diagnosis: it is {rec.pet.name} compared with {rec.pet.name}.</p>
             <button type="button" onClick={() => setSheet(true)} className="btn btn-primary">
-              Online vet consult, Black Box summary attached <ArrowUpRight size={16} weight="bold" aria-hidden />
+              Online vet consult, savings summary attached <ArrowUpRight size={16} weight="bold" aria-hidden />
             </button>
           </div>
         </div>
@@ -206,7 +206,7 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
       <button type="button" onClick={() => setCollarDays(rec.id, simulateCollarHistory(rec, Math.max(20, result.signals[0].baseline), now, !result.amber))} className="link min-h-11 text-sm">
         {result.amber ? "Demo: back to normal" : "Demo: simulate a 10-day dip"}
       </button>
-      <PilotSheet open={sheet} onClose={() => setSheet(false)} what="Booking an online vet consult with the Black Box summary attached" />
+      <PilotSheet open={sheet} onClose={() => setSheet(false)} what="Booking an online vet consult with the savings summary attached" />
     </div>
   );
 }
@@ -227,7 +227,7 @@ export function PriceCard({ rec, discount }: { rec: PetRecord; discount: { metRa
         <dl className="tnum grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 text-lg lg:col-span-6">
           <dt className="text-white/70">Base premium</dt>
           <dd>{gbp(monthly, 2)} a month</dd>
-          <dt className="text-white/70">Black Box discount ({discount.total}%)</dt>
+          <dt className="text-white/70">Petra Savings discount ({discount.total}%)</dt>
           <dd>−{gbp(monthly - newMonthly, 2)}</dd>
           <dt className="border-t border-white/15 pt-2 font-semibold">Your new price</dt>
           <dd className="border-t border-white/15 pt-2 text-3xl font-semibold tracking-[-0.03em] text-accent">{gbp(newMonthly, 2)}</dd>

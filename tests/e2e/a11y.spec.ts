@@ -9,7 +9,7 @@ const PAGES: [string, boolean][] = [
   ["/", false],
   ["/walk", true],
   ["/dashboard", true],
-  ["/blackbox", true],
+  ["/savings", true],
   ["/partner", false],
   ["/twin", true],
 ];

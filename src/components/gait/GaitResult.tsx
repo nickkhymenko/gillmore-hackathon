@@ -27,7 +27,7 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
       {/* verdict */}
       {healthy ? (
         <div className="rounded-brand bg-accent-soft p-6 sm:p-8">
-          <p className="eyebrow">Gait check result</p>
+          <p className="eyebrow">Movement check result</p>
           <h3 className="display mt-3 text-[clamp(2rem,5vw,3.25rem)]">
             Moving <span className="accent-word">evenly.</span>
           </h3>
@@ -45,7 +45,7 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
           </div>
           <div className="grid gap-8 bg-dark p-6 text-paper sm:p-8 lg:grid-cols-12">
             <div className="space-y-4 lg:col-span-8">
-              <p className="eyebrow text-paper/60">Gait check result</p>
+              <p className="eyebrow text-paper/60">Movement check result</p>
               <h3 className="display text-[clamp(2rem,5vw,3.25rem)]">
                 A change worth <span className="accent-word text-accent">a vet&apos;s look.</span>
               </h3>
@@ -124,7 +124,7 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
         {healthy ? (
           <div className="grid gap-4 sm:grid-cols-3">
             <Tile icon={<TrendDown size={22} weight="bold" />} title="+1 healthy check">
-              Counts towards this month&apos;s Black Box target.
+              Counts towards this month&apos;s savings target.
             </Tile>
             <Tile icon={<ShieldCheck size={22} weight="bold" />} title={`${gbp(MONTHLY * 0.95)} a month`}>
               Was {gbp(MONTHLY)}. Regular checks keep {pet} on the 5% tier.
@@ -152,8 +152,8 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
               Book the free vet check <ArrowUpRight size={18} weight="bold" aria-hidden />
             </button>
           )}
-          <Link href="/blackbox" className={`btn ${healthy ? "btn-primary" : "btn-ghost"} text-lg`}>
-            See my Black Box price <ArrowUpRight size={18} weight="bold" aria-hidden />
+          <Link href="/savings" className={`btn ${healthy ? "btn-primary" : "btn-ghost"} text-lg`}>
+            See my savings <ArrowUpRight size={18} weight="bold" aria-hidden />
           </Link>
         </div>
       </section>

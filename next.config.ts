@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       { source: "/pet", destination: "/dashboard", permanent: false },
       // The video scan lives on the dashboard (docs/13).
       { source: "/scan", destination: "/dashboard#video", permanent: false },
+      // Black Box is now Savings; the gait check is the dashboard's movement check.
+      { source: "/blackbox", destination: "/savings", permanent: true },
+      { source: "/gait", destination: "/dashboard#movement", permanent: false },
     ];
   },
   partialPrefetching: true,

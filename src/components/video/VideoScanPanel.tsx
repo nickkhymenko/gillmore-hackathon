@@ -275,7 +275,7 @@ export function VideoScanPanel({ rec }: { rec: PetRecord }) {
             </button>
           </div>
           <p className="text-xs text-muted">
-            {provider.mode === "server" ? "Pressing Analyse sends this clip to the Prevently scan service for analysis. It is not stored." : "Analysed on this device. Nothing is uploaded."}
+            {provider.mode === "server" ? "Pressing Analyse sends this clip to the Petra scan service for analysis. It is not stored." : "Analysed on this device. Nothing is uploaded."}
           </p>
         </div>
       )}
