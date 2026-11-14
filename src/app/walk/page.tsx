@@ -1,17 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
+import { useReducedMotion } from "motion/react";
 import { ArrowUpRight } from "@phosphor-icons/react";
-import { PetAvatar } from "@/components/PetAvatar";
-import { useActivePet } from "@/lib/usePets";
+import { CarePlanStop } from "@/components/walk/CarePlanStop";
+import { CheckinStop } from "@/components/walk/CheckinStop";
+import { CoverStop } from "@/components/walk/CoverStop";
+import { HealthspanStop } from "@/components/walk/HealthspanStop";
+import { HelloStop } from "@/components/walk/HelloStop";
+import { NextWeekStop } from "@/components/walk/NextWeekStop";
+import { Footnotes, Stop } from "@/components/walk/Stop";
+import { TrendsStop } from "@/components/walk/TrendsStop";
+import { WalkBackdrop, WalkPath, WalkProgress } from "@/components/walk/WalkPath";
+import { useActivePet, useCheckins } from "@/lib/usePets";
+
+const STOPS = [
+  { id: "hello", label: "Hello" },
+  { id: "check-in", label: "This week" },
+  { id: "trends", label: "Your trends" },
+  { id: "healthspan", label: "Healthspan" },
+  { id: "care-plan", label: "Care plan" },
+  { id: "cover", label: "Your cover" },
+  { id: "next-week", label: "Next week" },
+];
 
 /**
- * Health Walk. Stand-in until the scroll-driven walk lands (Part 2 of docs/10):
- * greets the pet and links to this week's check-in so the onboarding never ends on a dead page.
+ * The Health Walk: one scroll-driven page per pet. The paw follows the scroll along a winding path and each
+ * stop opens as it arrives. Insurance and payment only appear near the end, once the owner has got value first.
  */
 export default function WalkPage() {
   const { pet: rec, ready } = useActivePet();
-  if (!ready) return <div className="min-h-[60svh]" aria-busy="true" />;
+  const log = useCheckins(rec?.id, rec?.pet.name);
+  const reduce = Boolean(useReducedMotion());
+  const container = useRef<HTMLDivElement>(null);
+
+  if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
   if (!rec || rec.setupStep !== null)
     return (
       <section className="space-y-6 py-16">
@@ -22,23 +46,41 @@ export default function WalkPage() {
         </Link>
       </section>
     );
+
+  const traits = rec.profile;
   return (
-    <section className="grid min-h-[70svh] items-center gap-10 py-10 lg:grid-cols-12">
-      <div className="space-y-6 lg:col-span-8">
-        <p className="eyebrow">01 / Hello</p>
-        <h1 className="display text-[clamp(3rem,8vw,7.5rem)]">
-          Hello, <span className="accent-word">{rec.pet.name}.</span>
-        </h1>
-        <p className="max-w-[48ch] text-lg text-muted">
-          {[rec.pet.breed, `${rec.pet.ageYears} ${rec.pet.ageYears === 1 ? "year" : "years"}`, rec.pet.weightKg ? `${rec.pet.weightKg} kg` : null].filter(Boolean).join(" · ")}
-        </p>
-        <Link href="/checkin" className="btn btn-primary text-lg">
-          Start this week&apos;s check-in <ArrowUpRight size={18} weight="bold" aria-hidden />
-        </Link>
+    <>
+      <WalkBackdrop reduce={reduce} />
+      <WalkProgress stops={STOPS} species={rec.pet.species} />
+      <div ref={container} key={rec.id} className="relative pl-12 lg:pl-[220px]">
+        <WalkPath containerRef={container} species={rec.pet.species} reduce={reduce} />
+        <div className="relative" data-walk-content>
+          <Stop id="hello" n={1} label="Hello" traits={traits}>
+            <HelloStop rec={rec} />
+          </Stop>
+          <Stop id="check-in" n={2} label="This week's check-in" traits={traits}>
+            <CheckinStop rec={rec} log={log} />
+          </Stop>
+          <Stop id="trends" n={3} label="Your trends" traits={traits}>
+            <TrendsStop rec={rec} log={log} reduce={reduce} />
+          </Stop>
+          <Stop id="healthspan" n={4} label="Healthspan" traits={traits}>
+            <HealthspanStop rec={rec} reduce={reduce} />
+          </Stop>
+          <Stop id="care-plan" n={5} label="Care plan" traits={traits}>
+            <CarePlanStop rec={rec} log={log} />
+          </Stop>
+          <Stop id="cover" n={6} label="Your cover" traits={traits}>
+            <CoverStop rec={rec} log={log} />
+          </Stop>
+          <Stop id="next-week" n={7} label="Same time next week" traits={traits}>
+            <NextWeekStop rec={rec} log={log} />
+          </Stop>
+          <div className="pb-10">
+            <Footnotes />
+          </div>
+        </div>
       </div>
-      <div className="flex justify-center lg:col-span-4">
-        <PetAvatar traits={rec.profile} size={240} title={`${rec.pet.name}'s avatar`} />
-      </div>
-    </section>
+    </>
   );
 }
