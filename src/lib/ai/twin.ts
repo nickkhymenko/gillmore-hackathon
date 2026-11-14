@@ -24,6 +24,7 @@ Rules:
 - petVisible: false if there is no dog, cat, rabbit or horse clearly visible. Then give your best neutral defaults.
 - species: what you see. If the owner gave a species hint and the photo is ambiguous, trust the hint.
 - breedGuess: the most likely breed or cross in plain British English (for example "Labrador Retriever", "Domestic Shorthair", "Cockapoo", "Mixed breed"). breedConfidence is 0 to 1 and must be honest: mixed or unclear animals get a low number.
+- breedSuggestions: the 3 most likely breeds or crosses for the owner's chosen species, most likely first, each with an honest confidence 0 to 1 (they need not add up to 1). The first must equal breedGuess.
 - sizeClass for the adult size of that breed: toy, small, medium, large or giant. Cats and rabbits are usually "small"; horses "giant".
 - coatColours: 1 to 3 hex colours (#RRGGBB) of the ANIMAL'S COAT ONLY, most dominant first. Ignore background, collar, bedding and lighting tint.
 - coatPattern: solid, bicolour, tabby, spots or tuxedo. Pick the closest.
@@ -48,6 +49,10 @@ const schema: Schema = {
     bodyCondition: { type: Type.STRING, enum: [...BODY_CONDITIONS] },
     ageGuess: { type: Type.STRING, enum: [...AGE_GUESSES] },
     notes: { type: Type.STRING },
+    breedSuggestions: {
+      type: Type.ARRAY,
+      items: { type: Type.OBJECT, properties: { breed: { type: Type.STRING }, confidence: { type: Type.NUMBER } }, required: ["breed", "confidence"] },
+    },
   },
   required: [
     "petVisible", "species", "breedGuess", "breedConfidence", "sizeClass", "coatColours",
@@ -82,7 +87,11 @@ export async function geminiTwin(input: TwinInput): Promise<TwinResult> {
       .map((c) => (c.startsWith("#") ? c : `#${c}`))
       .filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
       .slice(0, 3),
-    notes: String(raw.notes ?? "").replace(/[–—]/g, ",").slice(0, 300),
+    notes: String(raw.notes ?? "").replace(/[\u2013\u2014]/g, ",").slice(0, 300),
+    breedSuggestions: (Array.isArray(raw.breedSuggestions) ? raw.breedSuggestions : [])
+      .map((b: { breed?: unknown; confidence?: unknown }) => ({ breed: String(b?.breed ?? "").slice(0, 60), confidence: Math.min(1, Math.max(0, Number(b?.confidence) || 0)) }))
+      .filter((b: { breed: string }) => b.breed)
+      .slice(0, 3),
   });
   const petVisible = raw.petVisible !== false;
   return { profile: petVisible ? profile : { ...profile, breedGuess: "", breedConfidence: 0, bodyCondition: "unknown" }, source: "gemini", petVisible };

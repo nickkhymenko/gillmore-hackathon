@@ -34,9 +34,9 @@ export function Primary({ children, ...props }: React.ButtonHTMLAttributes<HTMLB
 
 const big = "min-h-14 w-full border-b-2 border-ink/30 bg-transparent py-2 text-[clamp(2rem,6vw,3.5rem)] font-semibold tracking-[-0.03em] placeholder:text-ink/20 focus:border-ink focus:outline-none";
 
-// ---------- 1. Name ----------
+// ---------- 2. Name ----------
 
-export function NameStep({ initial, onSubmit }: { initial: string; onSubmit: (name: string) => void }) {
+export function NameStep({ initial, species, onSubmit }: { initial: string; species?: Species | null; onSubmit: (name: string) => void }) {
   const [name, setName] = useState(initial);
   const clean = name.trim();
   return (
@@ -47,7 +47,7 @@ export function NameStep({ initial, onSubmit }: { initial: string; onSubmit: (na
         if (clean) onSubmit(clean.slice(0, 40));
       }}
     >
-      <Question eyebrow="Let's start with the important one">What&apos;s your pet called?</Question>
+      <Question eyebrow="Let's start with the important one">What&apos;s your {species && species !== "other" ? SPECIES_THEME[species].label.toLowerCase() : "pet"} called?</Question>
       <label className="block max-w-xl">
         <span className="sr-only">Pet name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoFocus autoComplete="off" autoCapitalize="words" placeholder="Biscuit" className={big} />
@@ -59,45 +59,29 @@ export function NameStep({ initial, onSubmit }: { initial: string; onSubmit: (na
   );
 }
 
-// ---------- 3. Species ----------
+// ---------- 1. Species ----------
 
 const SPECIES_CARDS: Species[] = ["dog", "cat", "rabbit", "horse"];
 
-export function SpeciesStep({ rec, fresh, next }: StepProps) {
-  const chosen = rec.pet.species;
-  function pick(species: Species) {
-    updatePet(rec.id, (p) => {
-      const changed = p.profile.species !== species;
-      const profile = changed ? { ...p.profile, species, ...SPECIES_DEFAULT_SHAPE[species], coatColours: p.photo ? p.profile.coatColours : [] } : p.profile;
-      return {
-        pet: { ...p.pet, species, breed: changed ? "" : p.pet.breed },
-        profile,
-        theme: p.photo ? p.theme : SPECIES_THEME[species].theme,
-      };
-    });
-    setTimeout(next, 220);
-  }
-  const fromPhoto = rec.twinSource === "gemini";
+/** Who are we looking after? Four big cards. `known` marks the current value as chosen (not just a default). */
+export function SpeciesStep({ name, value, known, onPick }: { name?: string; value: Species | null; known: boolean; onPick: (s: Species) => void }) {
   return (
     <div className="space-y-10">
-      <Question eyebrow={fromPhoto ? "From the photo" : "Species"} sub={fromPhoto ? `The photo says ${SPECIES_THEME[chosen].label.toLowerCase()}. Tap to confirm or change.` : undefined}>
-        {rec.pet.name} is a&hellip;
-      </Question>
+      <Question eyebrow="Species">{name ? <>{name} is a&hellip;</> : "Who are we looking after?"}</Question>
       <div className="grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Species">
         {SPECIES_CARDS.map((s) => {
-          // On a first visit without a photo, nothing is chosen yet (the stored "dog" is only a placeholder).
-          const on = s === chosen && (fromPhoto || !fresh);
+          const on = known && s === value;
           return (
             <button
               key={s}
               type="button"
               role="radio"
               aria-checked={on}
-              autoFocus={s === chosen}
-              onClick={() => pick(s)}
+              autoFocus={s === (value ?? "dog")}
+              onClick={() => onPick(s)}
               className={`flex min-h-44 flex-col items-center justify-center gap-3 rounded-brand border-2 p-4 transition-colors duration-300 ${on ? ON_CARD : OFF_CARD}`}
             >
-              <PetAvatar traits={s === rec.profile.species ? rec.profile : { ...SPECIES_DEFAULT_SHAPE[s], species: s, coatColours: [], coatPattern: "solid" }} size={88} ring={false} animated={false} title="" />
+              <PetAvatar traits={{ ...SPECIES_DEFAULT_SHAPE[s], species: s, coatColours: [], coatPattern: "solid" }} size={88} ring={false} animated={false} title="" />
               <span className="text-xl font-semibold tracking-[-0.02em]">{SPECIES_THEME[s].label}</span>
             </button>
           );
@@ -142,6 +126,8 @@ export function BreedStep({ rec, next }: StepProps) {
   }
 
   const guessed = rec.twinSource === "gemini" && rec.profile.breedGuess;
+  const suggestions = rec.twinSource === "gemini" ? (rec.profile.breedSuggestions?.length ? rec.profile.breedSuggestions : rec.profile.breedGuess ? [{ breed: rec.profile.breedGuess, confidence: rec.profile.breedConfidence }] : []) : [];
+  const idFor = (name: string) => findBreed(name, species)?.id ?? `custom:${name}`;
   const option = (id: string, label: ReactNode, hint?: string) => (
     <li key={id}>
       <button
@@ -167,9 +153,37 @@ export function BreedStep({ rec, next }: StepProps) {
   return (
     <div className="grid gap-10 lg:grid-cols-12">
       <div className="space-y-8 lg:col-span-7">
-        <Question eyebrow={guessed ? "From the photo" : "Breed"} sub={guessed ? `The photo suggested ${rec.profile.breedGuess}. Pick it or choose another.` : undefined}>
+        <Question eyebrow={guessed ? "From the photo" : "Breed"} sub={guessed ? "Our best guesses from the photo. Tap one, or search below." : undefined}>
           What breed is {rec.pet.name}?
         </Question>
+        {suggestions.length > 0 && (
+          <div role="radiogroup" aria-label="Breed suggestions from the photo" className="flex max-w-xl flex-wrap gap-2">
+            {suggestions.map((b) => {
+              const id = idFor(b.breed);
+              return (
+                <button
+                  key={b.breed}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected === id}
+                  onClick={() => choose(id)}
+                  className={`min-h-12 rounded-brand border-2 px-4 text-left transition-colors ${selected === id ? ON_CARD : OFF_CARD}`}
+                >
+                  <span className="font-semibold">{b.breed}</span> <span className="tnum text-sm text-muted">{Math.round(b.confidence * 100)}%</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={selected === NOT_SURE}
+              onClick={() => choose(NOT_SURE)}
+              className={`min-h-12 rounded-brand border-2 px-4 font-semibold transition-colors ${selected === NOT_SURE ? ON_CARD : OFF_CARD}`}
+            >
+              Mixed or not sure
+            </button>
+          </div>
+        )}
         <label className="flex max-w-xl items-center gap-3 border-b-2 border-ink/30 focus-within:border-ink">
           <MagnifyingGlass size={22} aria-hidden className="text-muted" />
           <span className="sr-only">Search breeds</span>

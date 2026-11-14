@@ -132,6 +132,8 @@ export const TwinProfileSchema = z.object({
   bodyCondition: z.enum(BODY_CONDITIONS),
   ageGuess: z.enum(AGE_GUESSES),
   notes: z.string().max(300),
+  /** Up to three likely breeds or crosses from the photo, most likely first (additive, optional). */
+  breedSuggestions: z.array(z.object({ breed: z.string().max(60), confidence: z.number().min(0).max(1) })).max(3).optional(),
 });
 
 export type TwinInput = z.infer<typeof TwinInputSchema>;

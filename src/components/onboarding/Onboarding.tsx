@@ -8,11 +8,28 @@ import { PetAvatar } from "../PetAvatar";
 import { PhotoTwin } from "../PhotoTwin";
 import { ActivityStep, AgeStep, BreedStep, ConsentStep, NameStep, NeuteredStep, Primary, Question, SpeciesStep, WeightStep } from "./steps";
 import { addPet, getPet, updatePet, type PetRecord } from "@/lib/store";
+import { SPECIES_DEFAULT_SHAPE } from "@/lib/profile";
+import { SPECIES_THEME } from "@/lib/theme";
+import type { Species } from "@/lib/types";
+import { MarketingLanding } from "../landing/MarketingLanding";
+
 import { useHousehold } from "@/lib/usePets";
 
-const STEPS = ["Name", "Photo", "Species", "Breed", "Age", "Weight", "Neutered", "Activity", "Consent"] as const;
+/** Changing species after the pet exists: reset the avatar shape and, without a photo, the theme. */
+function applySpecies(id: string, species: Species) {
+  updatePet(id, (p) => {
+    const changed = p.profile.species !== species;
+    return {
+      pet: { ...p.pet, species, breed: changed ? "" : p.pet.breed },
+      profile: changed ? { ...p.profile, species, ...SPECIES_DEFAULT_SHAPE[species], coatColours: p.photo ? p.profile.coatColours : [], breedSuggestions: undefined } : p.profile,
+      theme: p.photo ? p.theme : SPECIES_THEME[species].theme,
+    };
+  });
+}
 
-type Flow = { petId: string | null; step: number; dir: 1 | -1; fresh: boolean };
+const STEPS = ["Species", "Name", "Photo", "Breed", "Age", "Weight", "Neutered", "Activity", "Consent"] as const;
+
+type Flow = { petId: string | null; step: number; dir: 1 | -1; fresh: boolean; species: Species | null };
 
 /** Paw prints that fill in as the owner moves through the questions. */
 function PawProgress({ step }: { step: number }) {
@@ -60,26 +77,27 @@ function WalkOff({ onDone }: { onDone: () => void }) {
 
 /**
  * First-run onboarding. One question per screen, slide transitions, paw progress.
- * Name, photo (Pet Twin), species, breed, age, weight, neutered, activity, consent; then the walk.
+ * Species (often chosen on the landing page), name, photo (Pet Twin), breed (top 3 from the photo),
+ * age, weight, neutered, activity, consent; then the walk.
  * `startNew` begins a new pet straight away (the "Add another pet" route).
  */
 export function Onboarding({ startNew = false }: { startNew?: boolean }) {
   const { household, ready } = useHousehold();
   const router = useRouter();
   const reduce = useReducedMotion();
-  const [flow, setFlow] = useState<Flow | null>(startNew ? { petId: null, step: 0, dir: 1, fresh: true } : null);
+  const [flow, setFlow] = useState<Flow | null>(startNew ? { petId: null, step: 0, dir: 1, fresh: true, species: null } : null);
   const [leaving, setLeaving] = useState(false);
 
   const active = household.pets.find((p) => p.id === household.activeId) ?? household.pets[0] ?? null;
   const rec: PetRecord | null = flow?.petId ? (household.pets.find((p) => p.id === flow.petId) ?? null) : null;
 
-  function go(step: number, petId = flow?.petId ?? null) {
+  function go(step: number, petId = flow?.petId ?? null, species = flow?.species ?? null) {
     const dir: 1 | -1 = step >= (flow?.step ?? 0) ? 1 : -1;
     const before = petId ? getPet(petId) : null;
     // A step is "fresh" until the owner has moved past it once: then we prefill guesses instead of old answers.
     const fresh = !before || before.setupStep === null ? !before : step >= before.setupStep;
     if (petId) updatePet(petId, (p) => ({ setupStep: p.setupStep === null ? null : Math.max(p.setupStep, step) }));
-    setFlow({ petId, step, dir, fresh });
+    setFlow({ petId, step, dir, fresh, species });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }
   const next = () => flow && go(flow.step + 1);
@@ -114,20 +132,7 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
       // Returning users go straight to their dashboard.
       return <GoTo href="/dashboard" />;
     }
-    return (
-      <Landing
-        eyebrow="Prevently / Pet health, early"
-        title={
-          <>
-            Catch the <span className="accent-word">question</span> before it becomes a claim.
-          </>
-        }
-        sub="Most pet insurance claims start as a question an owner had days or weeks earlier. Prevently answers it early, inside your insurer's app."
-        cta="Meet your Pet Twin"
-        onStart={() => go(0, null)}
-        note="About a minute. One question at a time."
-      />
-    );
+    return <MarketingLanding onStart={(species) => go(species ? 1 : 0, null, species ?? null)} />;
   }
 
   // ---------- the flow ----------
@@ -140,16 +145,32 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
 
   let content: React.ReactNode = null;
   if (flow.step === 0) {
+    const value = rec?.pet.species ?? flow.species;
+    content = (
+      <SpeciesStep
+        name={rec?.pet.name}
+        value={value}
+        known={Boolean(rec ? !flow.fresh || rec.twinSource === "gemini" : flow.species)}
+        onPick={(species) => {
+          if (rec) {
+            applySpecies(rec.id, species);
+            setTimeout(() => go(1, rec.id, species), 220);
+          } else setTimeout(() => go(1, null, species), 220);
+        }}
+      />
+    );
+  } else if (flow.step === 1) {
     content = (
       <NameStep
+        species={rec?.pet.species ?? flow.species}
         initial={rec?.pet.name ?? ""}
         onSubmit={(name) => {
           if (rec) {
             updatePet(rec.id, (p) => ({ pet: { ...p.pet, name } }));
-            go(1, rec.id);
+            go(2, rec.id);
           } else {
-            const created = addPet(name);
-            go(1, created.id);
+            const created = addPet(name, flow.species ?? "dog");
+            go(2, created.id);
           }
         }}
       />
@@ -157,7 +178,7 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
   } else if (rec) {
     const props = { rec, fresh: flow.fresh, next };
     content =
-      flow.step === 1 ? (
+      flow.step === 2 ? (
         <div className="space-y-8">
           <Question eyebrow="Pet Twin" sub="One photo and the whole app takes on their colours. Optional, and it never leaves this device except to be read once.">
             {rec.photo ? (
@@ -176,8 +197,6 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
             </button>
           </div>
         </div>
-      ) : flow.step === 2 ? (
-        <SpeciesStep {...props} />
       ) : flow.step === 3 ? (
         <BreedStep {...props} />
       ) : flow.step === 4 ? (
@@ -203,7 +222,7 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
     content = (
       <div className="space-y-6">
         <Question eyebrow="Start again">That pet is no longer here.</Question>
-        <Primary onClick={() => setFlow({ petId: null, step: 0, dir: -1, fresh: true })}>Start again</Primary>
+        <Primary onClick={() => setFlow({ petId: null, step: 0, dir: -1, fresh: true, species: null })}>Start again</Primary>
       </div>
     );
   }

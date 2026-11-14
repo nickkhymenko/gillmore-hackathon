@@ -7,6 +7,7 @@ import { useReducedMotion } from "motion/react";
 import { Line, LineChart, ReferenceArea, ResponsiveContainer, YAxis } from "recharts";
 import { ArrowUpRight, CalendarPlus, ChatCircleText } from "@phosphor-icons/react";
 import { PetAvatar } from "@/components/PetAvatar";
+import { EmptyPetState } from "@/components/EmptyPetState";
 import { PhotoControls } from "@/components/PhotoTwin";
 import { StatusPill } from "@/components/ResultCard";
 import { PilotSheet } from "@/components/Sheet";
@@ -130,13 +131,14 @@ export default function DashboardPage() {
   const [sheet, setSheet] = useState<string | null>(null);
 
   if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
-  if (!rec || rec.setupStep !== null)
+  if (!rec) return <EmptyPetState />;
+  if (rec.setupStep !== null)
     return (
       <section className="space-y-6 py-16">
         <p className="eyebrow">Dashboard</p>
-        <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">{rec ? `Let's finish ${rec.pet.name}'s twin first.` : "Meet your pet first."}</h1>
+        <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">Let&apos;s finish {rec.pet.name}&apos;s twin first.</h1>
         <Link href="/" className="btn btn-primary text-lg">
-          {rec ? "Carry on" : "Meet your Pet Twin"} <ArrowUpRight size={18} weight="bold" aria-hidden />
+          Carry on <ArrowUpRight size={18} weight="bold" aria-hidden />
         </Link>
       </section>
     );
