@@ -111,7 +111,7 @@ test("4 and 5: the walk: a short story ending on the poo; amber check-in shows n
   await page.getByTestId("insurance-teaser").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("insurance-teaser")).toHaveText("Now, about Biscuit's insurance…");
   await page.locator("#uh-oh").scrollIntoViewIfNeeded();
-  await expect(page.getByTestId("overpay")).toHaveText(/^You and owners like you could save up to £\d+ a year\.$/);
+  await expect(page.getByTestId("overpay")).toHaveText(/^Owners like you could save up to £\d+ a year\.$/);
   await expect(page.locator("#uh-oh img, #uh-oh [role=img]")).toHaveCount(0); // no avatar beside the poo
   await shot(page, "04-walk-cover-and-pay");
 
@@ -181,7 +181,7 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   // The moving paw is the only accent-filled circle in the walk path's own SVG.
   expect(await page.locator('svg.absolute.inset-0 circle[fill="var(--accent)"]').count()).toBe(0);
   await page.locator("#uh-oh").scrollIntoViewIfNeeded();
-  await expect(page.getByTestId("overpay")).toContainText("You and owners like you could save up to £");
+  await expect(page.getByTestId("overpay")).toContainText("Owners like you could save up to £");
   // Reduced motion: Pick it up goes straight to the insurance page.
   await page.getByRole("button", { name: "Pick it up" }).click();
   await page.waitForURL("**/savings");

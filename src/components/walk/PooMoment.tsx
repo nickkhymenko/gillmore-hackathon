@@ -165,7 +165,7 @@ export function PooMoment({ rec }: { rec: PetRecord }) {
         </svg>
 
         <motion.h3 {...reveal(0.05)} className="display max-w-4xl text-[clamp(2rem,5.2vw,4.25rem)]" data-testid="overpay">
-          You and owners like you could save up to <span className="accent-word">£{upTo} a year.</span>
+          Owners like you could save up to <span className="accent-word">£{upTo} a year.</span>
         </motion.h3>
         <motion.p {...reveal(0.1)} className="max-w-[40ch] text-lg text-muted">
           Your premium ignores the walks and care you already do.

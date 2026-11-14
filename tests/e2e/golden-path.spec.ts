@@ -85,15 +85,15 @@ test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Pet Scanner,
   const moment = page.locator("#uh-oh");
   const pickUp = moment.getByRole("button", { name: "Pick it up" });
   await expect(moment.getByTestId("poo")).toBeInViewport({ ratio: 1 });
-  await expect(moment.getByTestId("overpay")).toHaveText(/^You and owners like you could save up to £\d+ a year\.$/);
+  await expect(moment.getByTestId("overpay")).toHaveText(/^Owners like you could save up to £\d+ a year\.$/);
   await expect(moment.getByTestId("overpay")).toBeInViewport({ ratio: 1 });
   await expect(pickUp).toBeInViewport({ ratio: 1 });
   await noHorizontalScroll(page);
   await pickUp.click();
 
-  // 4. /savings: the example walk, Try it today, Join Petra Premium, and the Premium badge.
+  // 4. /savings: the example walk, Try it today, Join Petra Plus, and the Plus badge.
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Luna's insurance with every walk.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep Luna safe. Save on every walk.");
   await expect(page.getByRole("img", { name: /Petra Walk Companion/ })).toBeVisible();
   await noHorizontalScroll(page);
   await page.locator("#walk-mode").scrollIntoViewIfNeeded();
@@ -107,9 +107,9 @@ test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Pet Scanner,
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByRole("img", { name: "Luna's avatar" })).toBeVisible();
   await expect(sheet.getByTestId("join-summary")).toHaveText(/^Walk Companion · up to £\d+ a year off · cancel anytime$/);
-  await sheet.getByRole("button", { name: "Join Petra Premium" }).click();
+  await sheet.getByRole("button", { name: "Join Petra Plus" }).click();
   await expect(sheet.getByTestId("join-success")).toBeVisible();
-  await expect(sheet.getByRole("heading", { name: "Welcome to Petra Premium." })).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: "Welcome to Petra Plus." })).toBeVisible();
   await expect(page.getByTestId("premium-badge")).toBeVisible();
   await noHorizontalScroll(page);
   await sheet.getByRole("link", { name: "Go to your dashboard" }).click();
@@ -120,7 +120,7 @@ test("golden path: demo pet, photo re-theme, walk and poo, sign-up, Pet Scanner,
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Luna");
   await expect(page.getByTestId("savings-card")).toHaveAttribute("data-state", "building");
   await expect(page.getByTestId("savings-card")).not.toContainText(/saved £/i);
-  await expect(page.getByTestId("premium-status")).toContainText("Petra Premium member");
+  await expect(page.getByTestId("premium-status")).toContainText("Petra Plus member");
   await noHorizontalScroll(page);
   await page.getByRole("tab", { name: "Walks" }).click();
   await expect(page.getByRole("tab", { name: "Walks" })).toHaveAttribute("aria-selected", "true");

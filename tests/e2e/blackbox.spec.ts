@@ -11,7 +11,7 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   const { errors, requests } = watch(page);
   await seedPet(page);
   await page.goto("/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep Biscuit safe. Save on every walk.");
   await expect(page.locator("#compare")).toContainText("Your price today");
   await expect(page.locator("#your-price, #plans, #partners, #estimate")).toHaveCount(0); // the wearable only
 

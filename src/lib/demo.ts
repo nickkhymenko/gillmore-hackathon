@@ -123,7 +123,7 @@ export function seedDemoPet(which: DemoId, now = Date.now()): PetRecord {
   writeJson("prevently.checkins", [...readJson<StoredCheckin[]>("prevently.checkins", []).filter((c) => c.petId !== id), ...log]);
   writeJson("prevently.collar", [...readJson<CollarDay[]>("prevently.collar", []).filter((c) => c.petId !== id), ...collar]);
   writeJson("prevently.walks", [...readJson<WalkRecord[]>("prevently.walks", []).filter((w) => w.petId !== id), ...walks]);
-  // A fresh demo pet: no earlier scanner results, and not yet a Premium member (the demo joins on stage).
+  // A fresh demo pet: no earlier scanner results, and not yet a Petra Plus member (the demo joins on stage).
   writeJson("prevently.scans", readJson<{ petId: string }[]>("prevently.scans", []).filter((x) => x.petId !== id));
   if (readJson<{ petId?: string } | null>(PREMIUM_KEY, null)?.petId === id) {
     try {

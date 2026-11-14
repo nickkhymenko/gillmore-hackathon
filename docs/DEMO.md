@@ -19,9 +19,9 @@ This is the path the golden-path test walks (`tests/e2e/golden-path.spec.ts`, at
 | 0:08 | Photo step | Tap the photo box, choose the photo. The page takes on the dog's colours. Tap **Looks right, continue**. | "One photo and the whole app becomes theirs." |
 | 0:20 | Breed, age, weight | The breed from the photo is already picked: tap **Continue** three times. | |
 | 0:26 | Activity, consent | Tap **Moderate**. Turn on **Share engagement with my insurer**. Tap **Start the walk**. | "Sharing is off until you turn it on." |
-| 0:32 | `/walk` | Scroll down: hello, their walk, the check-in, the lifetime chart, the healthy dog. Keep scrolling to "Now, about {name}'s insurance…". The poo, the number and the button are on one screen. Tap **Pick it up**. | "You could save up to £X a year. Your premium ignores the care you already do." |
+| 0:32 | `/walk` | Scroll down: hello, their walk, the check-in, the lifetime chart, the healthy dog. Keep scrolling to "Now, about {name}'s insurance…". The poo, the number and the button are on one screen. Tap **Pick it up**. | "Owners like you could save up to £X a year. Your premium ignores the care you already do." |
 | 0:47 | `/savings` | The Walk Companion. Scroll to "Take {name} for a walk" and tap **Start a walk**. 35 minutes replay in about 15 seconds: the map draws the route, the minutes count up, the price ticks down. | "It shares walking minutes, never location. It can only lower the premium." |
-| 1:05 | `/savings` | Tap **Continue**, then **Try it today**, then **Join Petra Premium**. The tick lands, the **Premium** badge appears in the header. Tap **Go to your dashboard**. | "One step to join." |
+| 1:05 | `/savings` | Tap **Continue**, then **Try it today**, then **Join Petra Plus**. The tick lands, the **Plus** badge appears in the header. Tap **Go to your dashboard**. | "One step to join." |
 | 1:12 | Dashboard | Tap the **Walks** tab and scroll to **Pet Scanner**. Tap the clip **Healthy dog on a city walk**. The scan line sweeps, the 21 body points appear and join up, the counters and the head and hip traces run. Tap **Analyse**. | "A pose model finds 21 body points and compares every step. Signs worth a vet's look, never a diagnosis." |
 | 1:25 | Dashboard | Tap the **Savings** tab: the member offers. | "Example partners. The discount never depends on buying anything." |
 
@@ -36,7 +36,7 @@ The "wow" variant for the Pet Scanner: tap **All clips**, then the **Worth watch
 | `/?demo=biscuit` | Loads Biscuit, a Labrador with 12 weeks of history, and opens his dashboard. Every number agrees: health score 74, a 12-week streak, target met in 10 of 12 weeks, 12.5% off, about £15.76 saved. It also clears Biscuit's earlier scans and membership, so it is a clean start every time. Your own pets are untouched. |
 | `/walk?replay=1` | Jumps straight to a fresh poo moment on the walk. The poo also resets on every refresh. |
 | `/dashboard#pet-scanner` | Opens the dashboard on the Walks tab, scrolled to the Pet Scanner. |
-| **Reset demo** (footer, every page) | Clears everything Petra keeps in this browser: pets, photos, check-ins, walks, scans and the Premium membership. Goes back to the landing page. The toast offers Undo for a few seconds. |
+| **Reset demo** (footer, every page) | Clears everything Petra keeps in this browser: pets, photos, check-ins, walks, scans and the Petra Plus membership. Goes back to the landing page. The toast offers Undo for a few seconds. |
 | **Delete all my data** (footer) | The same clear-out, with a confirmation first. This is the owner-facing one. |
 
 ## If something goes wrong
@@ -68,5 +68,5 @@ Everything except the photo reader, the weekly check-in's AI wording, Ask Petra 
 ## What is real and what is illustrative
 
 - Real: the photo palette and re-theming, the Gemini photo reader and check-in, the safety rules, the pose-model keypoints on the two example clips (DeepLabCut SuperAnimal-Quadruped, run offline) and the gait numbers computed from them.
-- Illustrative, and labelled so on screen: premiums, discounts and savings, the example walk, the Walk Companion data, the partner offers and the Premium sign-up (nothing is charged, no details are taken).
+- Illustrative, and labelled so on screen: premiums, discounts and savings, the example walk, the Walk Companion data, the partner offers and the Petra Plus sign-up (nothing is charged, no details are taken).
 - Honest limit: the owner's own uploads show "Live analysis of your own videos is coming in the pilot."

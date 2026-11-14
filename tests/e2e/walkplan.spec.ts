@@ -72,7 +72,7 @@ test("'Make my insurance cheaper today' leads to the Black Box", async ({ page }
   await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(1); // the next-week stop that repeated it is gone
   await page.getByRole("link", { name: /Make my insurance cheaper today/ }).first().click();
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep Biscuit safe. Save on every walk.");
   await expect(page.locator("#compare")).toContainText("Your price today");
 });
 
@@ -83,10 +83,10 @@ test("the poo moment: scroll to it, Pick it up, land on Savings", async ({ page 
   await page.goto("/walk");
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment.getByTestId("overpay")).toContainText("You and owners like you could save up to £");
+  await expect(moment.getByTestId("overpay")).toContainText("Owners like you could save up to £");
   await moment.getByRole("button", { name: "Pick it up" }).click();
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep Biscuit safe. Save on every walk.");
   await expect(page.getByRole("button", { name: "Try it today" })).toBeVisible();
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
@@ -99,13 +99,13 @@ test("the poo moment resets on refresh: unpicked, then Pick it up lands on Savin
   await page.reload();
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment.getByTestId("overpay")).toHaveText(/^You and owners like you could save up to £\d+ a year\.$/);
+  await expect(moment.getByTestId("overpay")).toHaveText(/^Owners like you could save up to £\d+ a year\.$/);
   await expect(moment).toContainText("Your premium ignores the walks and care you already do.");
   await expect(moment.getByText("Picked up")).toHaveCount(0);
   await moment.getByRole("button", { name: "Pick it up" }).click();
   await expect(moment.getByRole("status")).toHaveText("Picked up");
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep Biscuit safe. Save on every walk.");
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
 });

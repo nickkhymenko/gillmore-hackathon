@@ -11,6 +11,13 @@ const PREMIUM_SOURCES = [
   "Pearson Ham. Premiums for pets over 6 rose about 26% in a year; a 13-year-old costs about 4 times a 1-year-old to insure.",
 ];
 
+const PARTNER_SOURCES = [
+  "Petra financial model (finance/petra-financial-model.xlsx), Base scenario: the For insurers business case, pricing and break-even.",
+  "ABI (2024). UK pet insurance: 4.6m policies, 1.8m claims, £1.23bn paid, average claim £685.",
+  "Co-op Insurance telematics: young drivers with a black box were 20% less likely to crash and their claims cost 30% less (Post Magazine, postonline.co.uk).",
+  "Hackathon reading guide: vet prices up about 75% in ten years; 69% of Millennials and Gen Z say their pet is family.",
+];
+
 /** Opens the sources sheet from anywhere, e.g. a footnote. */
 export const openSources = () => window.dispatchEvent(new Event("petra:sources"));
 
@@ -31,7 +38,7 @@ export function SourcesLink() {
         <p className="text-sm text-muted">Prices, savings and healthy years in Petra are illustrative, built from these public sources.</p>
         {open && (
           <ol className="max-h-[55vh] space-y-2 overflow-y-auto text-xs text-muted">
-            {[...Object.values(SOURCES), ...PREMIUM_SOURCES].map((s, i) => (
+            {[...Object.values(SOURCES), ...PREMIUM_SOURCES, ...PARTNER_SOURCES].map((s, i) => (
               <li key={i} className="flex gap-2">
                 <span className="tnum w-5 shrink-0 font-semibold text-ink">{i + 1}</span>
                 <span>{s}</span>

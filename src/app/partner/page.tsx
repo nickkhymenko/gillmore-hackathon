@@ -1,455 +1,408 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { STATUS_TONE } from "@/components/ResultCard";
-import { BB_CAP, BB_TIERS, CHECKIN_EXTRA } from "@/lib/blackbox";
-import { TIERS } from "@/lib/discount";
-import { CLAIM_COST_PER_POLICY, DEFAULT_BLACKBOX, DEFAULT_BUSINESS, PRICING, blackBoxCase, businessCase, insurerKpis, type BlackBoxInput, type BusinessInput, type PricingModel } from "@/lib/partnerModel";
-
-type Tab = "insurer" | "underwriter" | "blackbox";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "insurer", label: "Insurer" },
-  { id: "underwriter", label: "Underwriter" },
-  { id: "blackbox", label: "Petra Savings" },
-];
+import { useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { Check, EyeSlash, PawPrint, Scales, ShieldCheck, Stethoscope, X, type Icon } from "@phosphor-icons/react";
+import { TOP_TIER_PCT } from "@/data/premiums";
+import { CLAIM_COST_PER_POLICY, DEFAULT_BUSINESS, FIXED, PRICING, RECOMMENDED, businessCase, type BusinessInput, type PricingModel } from "@/lib/partnerModel";
 
 const pct = (v: number, dp = 0) => `${(v * 100).toFixed(dp)}%`;
-const k = (n: number) => (Math.abs(n) >= 1_000_000 ? `£${(n / 1_000_000).toFixed(2)}m` : `£${Math.round(n / 1000).toLocaleString("en-GB")}k`);
+const k = (n: number) => {
+  const a = Math.abs(n);
+  const s = a >= 1_000_000 ? `£${(a / 1_000_000).toFixed(2)}m` : `£${Math.round(a / 1000).toLocaleString("en-GB")}k`;
+  return n < 0 ? `−${s}` : s;
+};
+const SPRING = { type: "spring", stiffness: 180, damping: 24 } as const;
 
-// Illustrative live queue a vet group or insurer would see (synthetic records).
-const QUEUE = [
-  { pet: "Biscuit, Labrador, 8", signal: "Thirst up and stiffness; activity down 30% in 10 days", status: "amber", action: "Online consult booked" },
-  { pet: "Miso, British Shorthair, 4", signal: "Straining to urinate", status: "red", action: "Emergency vet directed" },
-  { pet: "Luna, Cockapoo, 3", signal: "Itchy skin three weeks running", status: "amber", action: "Nurse call offered" },
-  { pet: "Pip, rabbit, 2", signal: "Normal week", status: "green", action: "Check-in counted" },
-] as const;
+/** One idea per section, rising in as it is reached. */
+function Section({ id, eyebrow, title, intro, children }: { id: string; eyebrow: string; title: ReactNode; intro?: ReactNode; children: ReactNode }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="scroll-mt-24 space-y-8"
+      initial={reduce ? false : { opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+      transition={SPRING}
+    >
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id={`${id}-title`} className="display mt-3 text-[clamp(2rem,4.6vw,3.25rem)]">
+          {title}
+        </h2>
+        {intro && <p className="mx-auto mt-4 max-w-[56ch] text-lg text-muted">{intro}</p>}
+      </div>
+      {children}
+    </motion.section>
+  );
+}
 
-function Slider({ label, value, min, max, step, fmt, onChange, assumption = true }: { label: string; value: number; min: number; max: number; step: number; fmt: (v: number) => string; onChange: (v: number) => void; assumption?: boolean }) {
+// ---------- 1. Four parties ----------
+
+function parties(memberSaving: number, avoidedPerMember: number): [Icon, string, string, string][] {
+  return [
+    [PawPrint, "Pet parent", "Earlier care, and a premium that can only go down.", `Up to ${TOP_TIER_PCT}% off; about £${Math.round(memberSaving)} a year on average.`],
+    [Stethoscope, "Vet", "Cases arrive earlier, with a brief and the trend history.", "More booked consults, cheaper to treat, less admin."],
+    [ShieldCheck, "Insurer", "A weekly reason to open your app, and to renew.", `+${FIXED.retentionUplift * 100} points retention among engaged members.`],
+    [Scales, "Underwriter", "Fewer, smaller, better-documented claims.", `About £${Math.round(avoidedPerMember)} less claims cost per engaged member a year.`],
+  ];
+}
+
+// ---------- 2. Journey ----------
+
+const JOURNEY: [string, string][] = [
+  ["Onboard and consent", "One photo, one minute. Sharing stays off until the owner turns it on."],
+  ["Baseline scan", "A first walk sets the pet's own baseline, not a breed average."],
+  ["Weekly walks and check-ins", "A personal walk target and a 60-second check-in. The discount grows."],
+  ["Early flag", "A sustained change against their own baseline raises an amber flag."],
+  ["Online vet consult", "One tap. The vet gets a brief, the clip and the trend."],
+  ["Vet visit", "Booked earlier, while treatment is simpler and cheaper."],
+  ["Smaller claim", "Pre-documented and fast-tracked: smaller and less disputed."],
+  ["Renewal with the discount", "The engagement discount is applied. Health data is never used against them."],
+];
+
+function Journey() {
+  return (
+    <ol className="relative mx-auto grid max-w-5xl gap-0 lg:max-w-none lg:grid-cols-8 lg:gap-4" data-testid="journey">
+      {/* the line: down the left on a phone, across the top on a laptop */}
+      <span aria-hidden className="absolute bottom-6 left-[15px] top-6 w-px bg-line lg:bottom-auto lg:left-[4%] lg:right-[4%] lg:top-[15px] lg:h-px lg:w-auto" />
+      {JOURNEY.map(([t, d], i) => (
+        <li key={t} className="relative flex gap-4 pb-6 last:pb-0 lg:flex-col lg:gap-3 lg:pb-0">
+          <span className={`tnum relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${i === 3 ? "bg-accent text-ink" : "border border-line bg-surface"}`}>{i + 1}</span>
+          <div>
+            <p className="font-semibold leading-snug tracking-[-0.02em]">{t}</p>
+            <p className="mt-1 text-sm text-muted">{d}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// ---------- 3. Calculator ----------
+
+function Lever({ label, value, min, max, step, fmt, onChange }: { label: string; value: number; min: number; max: number; step: number; fmt: (v: number) => string; onChange: (v: number) => void }) {
   return (
     <label className="block">
-      <span className="flex justify-between gap-4 text-sm">
-        <span>
-          {label}
-          {assumption && <span className="ml-1 text-xs text-muted">(assumption)</span>}
-        </span>
-        <span className="tnum font-semibold">{fmt(value)}</span>
+      <span className="flex items-baseline justify-between gap-4">
+        <span className="text-sm">{label}</span>
+        <span className="tnum text-lg font-semibold tracking-[-0.02em]">{fmt(value)}</span>
       </span>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-2 w-full accent-[var(--ink)]" />
     </label>
   );
 }
 
-function Kpi({ label, value, dark: highlight = false, note }: { label: string; value: string; dark?: boolean; note?: string }) {
+function Stat({ label, value, note, strong = false, testId }: { label: string; value: string; note?: string; strong?: boolean; testId?: string }) {
   return (
-    <div className={highlight ? "bg-accent-soft p-5" : "bg-surface p-5"}>
+    <div className={`p-5 sm:p-6 ${strong ? "bg-accent-soft" : "bg-surface"}`}>
       <dt className="eyebrow">{label}</dt>
-      <dd className="mt-2 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">{value}</dd>
-      {note && <p className="mt-1 text-xs text-muted">{note}</p>}
+      <dd className="tnum mt-2 text-[clamp(1.6rem,3.4vw,2.25rem)] font-semibold leading-none tracking-[-0.045em]" data-testid={testId}>
+        {value}
+      </dd>
+      {note && <dd className="mt-2 text-xs text-muted">{note}</dd>}
     </div>
   );
 }
 
-function H({ n, children }: { n: string; children: ReactNode }) {
+function Calculator({ inp, set }: { inp: BusinessInput; set: (p: Partial<BusinessInput>) => void }) {
+  const b = businessCase(inp);
+  const sign = (n: number) => (n >= 0 ? `+${k(n)}` : k(n));
   return (
-    <h2 className="text-2xl font-semibold tracking-[-0.035em]" data-n={n}>
-      {children}
-    </h2>
+    <div className="grid gap-6 lg:grid-cols-12">
+      <div className="card space-y-6 p-6 sm:p-8 lg:col-span-4" role="group" aria-label="Business case inputs">
+        <Lever label="Policies" value={inp.policies} min={10_000} max={1_000_000} step={10_000} fmt={(v) => v.toLocaleString("en-GB")} onChange={(v) => set({ policies: v })} />
+        <Lever label="Engagement" value={inp.engagement} min={0.05} max={0.8} step={0.05} fmt={(v) => pct(v)} onChange={(v) => set({ engagement: v })} />
+        <Lever label="Claims reduction" value={inp.claimsReduction} min={0} max={0.3} step={0.01} fmt={(v) => pct(v)} onChange={(v) => set({ claimsReduction: v })} />
+        <Lever label="Average discount" value={inp.avgDiscount} min={0} max={0.15} step={0.005} fmt={(v) => pct(v, 1)} onChange={(v) => set({ avgDiscount: v })} />
+        <button type="button" className="link text-sm" onClick={() => set({ ...DEFAULT_BUSINESS, pricing: inp.pricing })}>
+          Back to the base case
+        </button>
+      </div>
+      <div className="space-y-4 lg:col-span-8">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-3" data-testid="business-case">
+          <Stat label="Claims avoided" value={k(b.claimsAvoided)} note={`${pct(inp.claimsReduction)} of ${k(b.engagedClaims)} on ${b.engaged.toLocaleString("en-GB")} members`} testId="claims-avoided" />
+          <Stat label="Retention value" value={k(b.retentionValue)} note="Kept margin and avoided acquisition cost" testId="retention-value" />
+          <Stat label="Petra fees" value={k(-b.fees)} note={`${PRICING[inp.pricing].label}${inp.pricing === RECOMMENDED ? " (recommended)" : ""}`} testId="petra-fees" />
+          <Stat label="Discounts to members" value={k(-b.discounts)} note={`${pct(inp.avgDiscount, 1)} of a £${FIXED.avgPremium} premium`} testId="discounts" />
+          <Stat label="Return on cost" value={`${b.returnOnCost.toFixed(2)}x`} note="Benefit ÷ cost" testId="return" />
+          <Stat label="Break-even" value={pct(b.breakEven, 1)} note="Claims reduction where net is zero" testId="break-even" />
+        </dl>
+        <div className={`flex flex-wrap items-baseline justify-between gap-3 rounded-card border-2 p-6 sm:p-7 ${b.net >= 0 ? "border-ink bg-surface" : "border-ink/30 bg-surface"}`}>
+          <p className="text-lg font-semibold tracking-[-0.02em]">Net benefit to insurer and underwriter, a year</p>
+          <p className="tnum text-[clamp(2.25rem,5vw,3.25rem)] font-semibold leading-none tracking-[-0.05em]" data-testid="net-benefit">
+            {sign(b.net)}
+          </p>
+        </div>
+        <p className="text-xs text-muted">
+          Base scenario of the Petra financial model. Fixed: claims cost £{Math.round(CLAIM_COST_PER_POLICY)} a policy (£685 average claim, 0.39 claims a policy), £{FIXED.avgPremium} average premium (ABI 2024), +{FIXED.retentionUplift * 100} points retention at a {pct(FIXED.margin)} margin plus £{FIXED.cac} acquisition cost. The four levers are assumptions the pilot measures against a control group.
+        </p>
+      </div>
+    </div>
   );
 }
 
-// ---------- Insurer ----------
+// ---------- 4. Pricing ----------
 
-const FEE_CALC: Record<PricingModel, (i: BusinessInput, engaged: number) => string> = {
-  perPolicy: (i) => `${i.policies.toLocaleString("en-GB")} × £0.40 × 12`,
-  perMember: (_, e) => `${e.toLocaleString("en-GB")} × £1.25 × 12`,
-  perClaimAvoided: () => "35% × claims avoided",
-  hybrid: (_, e) => `${e.toLocaleString("en-GB")} × £1.25 × 12 + 20% × claims avoided`,
-};
-
-function InsurerTab({ inp, set }: { inp: BusinessInput; set: (p: Partial<BusinessInput>) => void }) {
-  const b = businessCase(inp);
-  const kpi = insurerKpis(inp);
-  const rows: [ReactNode, string, number, boolean][] = [
-    ["Claims cost on engaged members", `${b.engaged.toLocaleString("en-GB")} × £${Math.round(CLAIM_COST_PER_POLICY)}`, b.engagedClaims, false],
-    [<strong key="a">Claims avoided or reduced (assume {pct(inp.claimsReduction)})</strong>, `${pct(inp.claimsReduction)} × ${k(b.engagedClaims)}`, b.claimsAvoided, true],
-    [<strong key="b">Retention uplift (assume +{(inp.retentionUplift * 100).toFixed(0)} points, £{inp.avgPremium} premium, {pct(inp.margin)} margin)</strong>, `${b.retained.toLocaleString("en-GB")} × £${inp.avgPremium} × ${pct(inp.margin)}`, b.retentionValue, true],
-    [`Platform fee (${PRICING[inp.pricing].label.toLowerCase()})`, FEE_CALC[inp.pricing](inp, b.engaged), -b.fee, false],
-    [<strong key="c">Engagement discounts (average {pct(inp.avgDiscount, 1)} of premium)</strong>, `${b.engaged.toLocaleString("en-GB")} × £${inp.avgPremium} × ${pct(inp.avgDiscount, 1)}`, -b.discounts, true],
-  ];
-  const chart = [
-    { name: "Not engaged", value: Math.round(b.perMemberBefore), fill: "#7E776D" },
-    { name: "Engaged", value: Math.round(b.perMemberAfter), fill: "var(--dark)" },
-  ];
+function Pricing({ inp, set }: { inp: BusinessInput; set: (p: Partial<BusinessInput>) => void }) {
+  const models = Object.keys(PRICING) as PricingModel[];
   return (
-    <div className="space-y-14">
-      <section className="space-y-5">
-        <H n="01">This week, illustrative insurer</H>
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft lg:grid-cols-4">
-          <Kpi label="Members" value={kpi.members.toLocaleString("en-GB")} />
-          <Kpi label="Weekly active" value={pct(kpi.weeklyActive)} />
-          <Kpi label="Average streak" value={`${kpi.avgStreak} weeks`} />
-          <Kpi label="Amber flags this week" value={kpi.amberThisWeek.toLocaleString("en-GB")} />
-          <Kpi label="Consults booked" value={kpi.consultsBooked.toLocaleString("en-GB")} />
-          <Kpi label="Retention vs non-members" value={`+${(kpi.retentionGap * 100).toFixed(0)} pts`} />
-          <Kpi label="Claims avoided a year" value={k(kpi.claimsAvoided)} dark />
-          <Kpi label="Discounts paid a year" value={k(kpi.discountsPaid)} dark />
-        </dl>
-        <p className="text-xs text-muted">Synthetic portfolio for demonstration, scaled from the assumptions below.</p>
-      </section>
-
-      <section className="space-y-6">
-        <H n="02">Pricing model</H>
-        <div role="radiogroup" aria-label="Pricing model" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {(Object.keys(PRICING) as PricingModel[]).map((m) => (
+    <div className="space-y-5">
+      <div role="radiogroup" aria-label="Pricing model" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {models.map((m) => {
+          const on = inp.pricing === m;
+          const rec = m === RECOMMENDED;
+          const fee = businessCase({ ...inp, pricing: m }).fees;
+          return (
             <button
               key={m}
               type="button"
               role="radio"
-              aria-checked={inp.pricing === m}
+              aria-checked={on}
               onClick={() => set({ pricing: m })}
-              className={`rounded-brand border-2 p-4 text-left transition-colors ${inp.pricing === m ? "border-ink bg-accent-soft" : "border-line bg-white/50 hover:border-ink/40"}`}
+              className={`relative flex flex-col rounded-card border-2 p-5 text-left transition-colors ${on ? "border-ink bg-surface shadow-soft" : rec ? "border-accent bg-accent-soft/60 hover:border-ink/40" : "border-line bg-surface/60 hover:border-ink/40"}`}
             >
-              <span className="block font-semibold">{PRICING[m].label}</span>
-              <span className="mt-1 block text-sm text-muted">{PRICING[m].detail}</span>
+              {rec && <span className="mb-3 w-fit rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink">Recommended</span>}
+              <span className="text-lg font-semibold tracking-[-0.02em]">{PRICING[m].label}</span>
+              <span className="mt-1 text-sm">{PRICING[m].price}</span>
+              <span className="tnum mt-4 text-sm text-muted">{k(fee)} a year at these inputs</span>
             </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-10 lg:grid-cols-12">
-        <div className="space-y-5 lg:col-span-4">
-          <H n="03">Assumptions</H>
-          <Slider label="Policies in book" value={inp.policies} min={10_000} max={1_000_000} step={10_000} fmt={(v) => v.toLocaleString("en-GB")} onChange={(v) => set({ policies: v })} assumption={false} />
-          <Slider label="Engaged members" value={inp.engagement} min={0.05} max={0.8} step={0.05} fmt={(v) => pct(v)} onChange={(v) => set({ engagement: v })} />
-          <Slider label="Claims reduction (engaged)" value={inp.claimsReduction} min={0} max={0.3} step={0.01} fmt={(v) => pct(v)} onChange={(v) => set({ claimsReduction: v })} />
-          <Slider label="Average premium a year" value={inp.avgPremium} min={150} max={600} step={10} fmt={(v) => `£${v}`} onChange={(v) => set({ avgPremium: v })} />
-          <Slider label="Average discount" value={inp.avgDiscount} min={0} max={0.15} step={0.005} fmt={(v) => pct(v, 1)} onChange={(v) => set({ avgDiscount: v })} />
-          <Slider label="Retention uplift" value={inp.retentionUplift} min={0} max={0.1} step={0.005} fmt={(v) => `+${(v * 100).toFixed(1)} pts`} onChange={(v) => set({ retentionUplift: v })} />
-        </div>
-        <div className="min-w-0 space-y-5 lg:col-span-8">
-          <H n="04">Business case, a year</H>
-          <div className="overflow-x-auto">
-            <table className="tnum w-full text-left text-sm sm:min-w-[34rem]">
-              <thead>
-                <tr className="border-b border-ink/30">
-                  <th className="py-2 pr-4 font-semibold">Line</th>
-                  <th className="hidden py-2 pr-4 font-semibold sm:table-cell">Calculation</th>
-                  <th className="py-2 text-right font-semibold">Annual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(([line, calc, v, a], i) => (
-                  <tr key={i} className="border-b border-line align-top">
-                    <td className="py-2 pr-4">{line}</td>
-                    <td className="hidden py-2 pr-4 text-muted sm:table-cell">{calc}</td>
-                    <td className={`whitespace-nowrap py-2 text-right ${a ? "font-semibold" : ""}`}>{i === 0 ? k(v) : `${v >= 0 ? "+" : "−"}${k(Math.abs(v))}`}</td>
-                  </tr>
-                ))}
-                <tr className="border-b-2 border-ink">
-                  <td className="py-3 pr-4 text-base font-semibold">Net benefit to insurer and underwriter</td>
-                  <td className="hidden sm:table-cell" />
-                  <td className="whitespace-nowrap py-3 text-right text-lg font-semibold">{`${b.net >= 0 ? "+" : "−"}${k(Math.abs(b.net))}`}</td>
-                </tr>
-                <tr className="border-b border-line">
-                  <td className="py-2 pr-4">Break-even claims reduction (ignoring retention)</td>
-                  <td className="hidden sm:table-cell" />
-                  <td className="py-2 text-right font-semibold">{pct(b.breakEven, 1)}</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-4">Break-even including retention</td>
-                  <td className="hidden sm:table-cell" />
-                  <td className="py-2 text-right font-semibold">{pct(b.breakEvenWithRetention, 1)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-muted">Base data: UK average claim £685, about 0.39 claims a policy a year (reading guide). Lines in bold are assumptions to test in a pilot against a control group.</p>
-
-          <figure className="pt-4">
-            <figcaption className="text-sm font-semibold">Claims cost per member a year, engaged vs not engaged (synthetic)</figcaption>
-            <div className="mt-2 h-[120px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chart} layout="vertical" margin={{ top: 0, right: 60, bottom: 0, left: 0 }} barCategoryGap={14}>
-                  <XAxis type="number" hide domain={[0, Math.round(b.perMemberBefore * 1.1)]} />
-                  <YAxis type="category" dataKey="name" width={96} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#141414" }} />
-                  <Bar dataKey="value" barSize={22} radius={4} isAnimationActive={false}>
-                    {chart.map((c) => (
-                      <Cell key={c.name} fill={c.fill} />
-                    ))}
-                    <LabelList dataKey="value" position="right" formatter={(v) => `£${v}`} style={{ fontSize: 12, fontWeight: 600, fill: "#141414" }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </figure>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <H n="05">This week&apos;s early-warning queue</H>
-        <ul className="divide-y divide-line border-y border-line">
-          {QUEUE.map((q) => {
-            const t = STATUS_TONE[q.status];
-            return (
-              <li key={q.pet} className="grid gap-2 py-3 text-sm sm:grid-cols-[auto_14rem_1fr_auto] sm:items-center sm:gap-4">
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ color: t.fg, background: t.bg }}>
-                  <t.Icon size={14} weight="fill" aria-hidden /> {t.label}
-                </span>
-                <span className="font-semibold">{q.pet}</span>
-                <span className="text-muted">{q.signal}</span>
-                <span className="text-xs text-muted">{q.action}</span>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="text-xs text-muted">Synthetic records. The insurer sees engagement and aggregates only; this queue is the vet partner&apos;s view. Also as JSON: GET /api/economics</p>
-      </section>
+          );
+        })}
+      </div>
+      <div className="card-quiet grid gap-3 p-5 text-sm sm:grid-cols-2 sm:p-6" aria-live="polite" data-testid="pricing-detail">
+        <p className="flex gap-2">
+          <Check size={18} weight="bold" className="mt-0.5 shrink-0" aria-hidden /> <span>{PRICING[inp.pricing].pro}</span>
+        </p>
+        <p className="flex gap-2 text-muted">
+          <X size={18} weight="bold" className="mt-0.5 shrink-0" aria-hidden /> <span>{PRICING[inp.pricing].con}</span>
+        </p>
+      </div>
+      <p className="mx-auto max-w-[62ch] text-center text-sm text-muted">
+        Why hybrid: the member fee covers running the service, and the outcome share means Petra earns more only when your claims actually fall, measured against a control group and reconciled each year.
+      </p>
     </div>
   );
 }
 
-// ---------- Underwriter ----------
+// ---------- 5. Telematics ----------
 
-const MATRIX: [string, string, string, boolean][] = [
-  ["Engagement (check-ins, walks, target met yes or no)", "Per policy, consented", "To apply the discount", false],
-  ["Health trend indices (mobility, breathing, weight, activity)", "Aggregated and anonymised by cohort (species, breed, age band)", "Portfolio risk insight, future pricing research", false],
-  ["Early-intervention events (amber, consult, outcome)", "Aggregated", "Prove claims avoided; outcome bonus", false],
-  ["Claims linkage", "Pseudonymised, for the control-cohort study", "Measure the business case honestly", false],
-  ["Raw video, audio, photos, home imagery", "Never shared", "Not needed; privacy risk", true],
-  ["Walk routes and locations", "Never shared: stay on the owner's phone", "Not needed; location is sensitive personal data", true],
+const TELEMATICS: [string, string][] = [
+  ["Pay how you drive: a driving score lowers the renewal price", "Pay how you care: the personal walk target and weekly check-ins earn the discount"],
+  ["Black box policies make young drivers affordable", "First-time and young owners get an entry price that keeps dropping"],
+  ["Careful drivers choose telematics, improving the pool", "Careful owners opt in: a better risk pool and better retention"],
+  ["Crash data speeds up claims and cuts fraud", "Early warnings and owner-shared history: faster, less disputed claims"],
+  ["Stolen vehicle tracking cuts theft claims", "GPS on the Walk Companion helps find a lost or stolen pet"],
+  ["Fitted box, then a phone app", "Phone first; the Walk Companion is optional and insurer-subsidised"],
 ];
 
-const RULES = [
-  ["Discount-only", "Data can lower a premium, never raise it or be used to refuse cover. No surcharges."],
-  ["No new exclusions", "Nothing the app spots is used to add an exclusion at renewal. Otherwise owners would hide problems."],
-  ["Reward behaviour, not health", "The discount is for check-ins and walks, so owners of older or ill pets earn it equally."],
-  ["Personal, fair targets", "Savings targets are normalised for breed, age and health: a senior Pug and a young Collie can both earn the full discount."],
-  ["Rest mode", "When a vet advises rest, targets pause and the discount is protected."],
-  ["Data minimisation", "Derived signals only. No location data and no raw video ever reach the insurer or underwriter."],
-  ["Granular, revocable consent", "UK GDPR: separate choices for vet sharing, insurer engagement data and anonymised research."],
-  ["Human vet in the loop", "AI does triage and monitoring, never diagnosis or prescribing (Veterinary Surgeons Act 1966; RCVS)."],
-  ["Consumer Duty", "FCA Consumer Duty: fair value and clear communications; the reward is never tied to buying products."],
-  ["Explainable, governed", "Discount rules are published and explainable; bias checks across breeds and species; audit log."],
-];
-
-function UnderwriterTab({ inp }: { inp: BusinessInput }) {
-  const b = businessCase(inp);
-  const [ck, setCk] = useState<{ checkins: number; pct: number }[]>(TIERS.map((t) => ({ ...t })));
-  const [bb, setBb] = useState<{ ratio: number; pct: number }[]>(BB_TIERS.map((t) => ({ ...t })));
+function Telematics() {
   return (
-    <div className="space-y-14">
-      <section className="space-y-5">
-        <H n="01">Loss ratio impact (whole book)</H>
-        <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-3">
-          <Kpi label="Baseline loss ratio" value={pct(b.lossBefore, 1)} note={`Claims £${Math.round(CLAIM_COST_PER_POLICY)} a policy on a £${inp.avgPremium} premium`} />
-          <Kpi label="With Petra" value={pct(b.lossAfter, 1)} note="Claims avoided, net of discounts" />
-          <Kpi label="Change" value={`${((b.lossAfter - b.lossBefore) * 100).toFixed(1)} pts`} dark note="Moves with the insurer tab assumptions" />
-        </dl>
-        <p className="text-xs text-muted">Illustrative: the average premium is an assumption to verify before the pitch.</p>
-      </section>
-
-      <section className="space-y-5">
-        <H n="02">Discount engine (editable, illustrative)</H>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-3">
-            <p className="font-semibold">Check-ins in the policy year</p>
-            {ck.map((t, i) => (
-              <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                <input aria-label={`Check-ins for tier ${i + 1}`} type="number" min={1} max={52} value={t.checkins} onChange={(e) => setCk(ck.map((x, j) => (j === i ? { ...x, checkins: Number(e.target.value) } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />
-                check-ins earn
-                <input aria-label={`Discount for tier ${i + 1}`} type="number" min={0} max={20} step={0.5} value={t.pct} onChange={(e) => setCk(ck.map((x, j) => (j === i ? { ...x, pct: Number(e.target.value) } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />% off
-              </div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <p className="font-semibold">Petra Savings: weeks with the personal target met</p>
-            {bb.map((t, i) => (
-              <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                <input aria-label={`Share of weeks for savings tier ${i + 1}`} type="number" min={10} max={100} value={Math.round(t.ratio * 100)} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, ratio: Number(e.target.value) / 100 } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />
-                % of weeks earn
-                <input aria-label={`Discount for savings tier ${i + 1}`} type="number" min={0} max={20} step={0.5} value={t.pct} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, pct: Number(e.target.value) } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />% off
-              </div>
-            ))}
-            <p className="text-sm text-muted">Plus up to {CHECKIN_EXTRA.at(-1)!.pct}% for weekly check-ins; capped at {BB_CAP}%.</p>
-          </div>
-        </div>
-        <p className="text-sm">
-          At these assumptions the book pays <strong>{k(b.discounts)}</strong> in discounts a year against <strong>{k(b.claimsAvoided)}</strong> of claims avoided: {b.claimsAvoided > b.discounts ? "the discount is funded by the claims it prevents." : "discounts exceed claims avoided; lower the tiers or raise engagement."}
-        </p>
-        <p className="text-xs text-muted">Editing here changes this model only. Production tiers would be agreed with the underwriter and published to owners.</p>
-      </section>
-
-      <section className="space-y-5">
-        <H n="03">Data-use matrix</H>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead>
-              <tr className="border-b border-ink/30">
-                <th className="py-2 pr-4 font-semibold">Data</th>
-                <th className="py-2 pr-4 font-semibold">Shared with the underwriter as</th>
-                <th className="py-2 font-semibold">Why</th>
+    <div className="grid gap-6 lg:grid-cols-12">
+      <div className="card overflow-hidden lg:col-span-8">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-line">
+              <th scope="col" className="w-1/2 px-5 py-4 font-semibold sm:px-6">
+                Car insurance
+              </th>
+              <th scope="col" className="w-1/2 bg-accent-soft/60 px-5 py-4 font-semibold sm:px-6">
+                Petra, for pets
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {TELEMATICS.map(([car, pet]) => (
+              <tr key={car} className="border-b border-line align-top last:border-0">
+                <td className="px-5 py-3.5 text-muted sm:px-6">{car}</td>
+                <td className="bg-accent-soft/30 px-5 py-3.5 sm:px-6">{pet}</td>
               </tr>
-            </thead>
-            <tbody>
-              {MATRIX.map(([d, form, why, never]) => (
-                <tr key={d} className="border-b border-line align-top">
-                  <td className={`py-2 pr-4 ${never ? "font-semibold" : ""}`}>{d}</td>
-                  <td className={`py-2 pr-4 ${never ? "font-semibold" : ""}`}>{form}</td>
-                  <td className="py-2 text-muted">{why}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-5">
-        <H n="04">Fairness rules and regulation</H>
-        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2">
-          {RULES.map(([t, d], i) => (
-            <li key={t} className="bg-surface p-5">
-              <p className="eyebrow">
-                <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span>
-              </p>
-              <p className="mt-2 font-semibold">{t}</p>
-              <p className="mt-1 text-sm text-muted">{d}</p>
-            </li>
-          ))}
-        </ol>
-        <p className="text-sm">
-          Activity data is a <strong>discount-only pricing input</strong>. UK GDPR applies to location and owner data, which is why routes never leave the phone; FCA Consumer Duty requires fair value and explainable rules, which is why tiers are published.
-        </p>
-      </section>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <figure className="card flex flex-col justify-center p-7 sm:p-8 lg:col-span-4" data-testid="coop-figure">
+        <p className="tnum text-[clamp(3.5rem,8vw,5rem)] font-semibold leading-none tracking-[-0.06em]">30%</p>
+        <p className="mt-3 text-lg font-semibold leading-snug tracking-[-0.02em]">cheaper claims for young drivers with a black box, and 20% fewer crashes.</p>
+        <figcaption className="mt-4 text-xs text-muted">Co-op Insurance telematics data, reported by Post Magazine. Insurer data: careful drivers self-select.</figcaption>
+        <p className="mt-5 border-t border-line pt-4 text-sm text-muted">What we kept from cars: rewards. What we left behind: surcharges, curfews and tracking where you go.</p>
+      </figure>
     </div>
   );
 }
 
-// ---------- Black Box ----------
+// ---------- 6. Underwriter data ----------
 
-function BlackBoxTab() {
-  const [inp, setInp] = useState<BlackBoxInput>(DEFAULT_BLACKBOX);
-  const set = (p: Partial<BlackBoxInput>) => setInp((x) => ({ ...x, ...p }));
-  const b = blackBoxCase(inp);
+const SHARED = ["Engagement and discount tier, per policy, with consent", "Anonymised group trends by species, breed and age band"];
+const NEVER = ["Walk routes and locations", "Raw video, photos or audio", "Individual health answers, for pricing"];
+const FAIRNESS: [string, string][] = [
+  ["Discount only", "Data can lower a premium. Never raise it, never refuse cover."],
+  ["No new exclusions", "Nothing the app spots becomes an exclusion at renewal, so owners never hide a problem."],
+  ["Personal targets", "Set for breed, age and health: a senior Pug can earn what a young Collie earns."],
+  ["Rest mode", "When a vet advises rest, targets pause and the discount is protected."],
+];
+const REGULATION: [string, string][] = [
+  ["Veterinary Surgeons Act 1966", "Petra flags signs worth a vet's look. It never diagnoses or prescribes; vets do, through regulated consults."],
+  ["FCA Consumer Duty", "Fair value and plain-English rules. The reward is never tied to buying a product."],
+  ["UK GDPR", "Granular, revocable consent and data minimisation. Location stays on the phone; delete-all in one tap."],
+];
+
+function DataLimits() {
   return (
-    <div className="space-y-14">
-      <section className="grid gap-10 lg:grid-cols-12">
-        <div className="space-y-5 lg:col-span-4">
-          <H n="01">Assumptions</H>
-          <Slider label="Adoption (share of policies)" value={inp.adoption} min={0.02} max={0.5} step={0.01} fmt={(v) => pct(v)} onChange={(v) => set({ adoption: v })} />
-          <Slider label="Members hitting targets" value={inp.hitRate} min={0.2} max={0.95} step={0.05} fmt={(v) => pct(v)} onChange={(v) => set({ hitRate: v })} />
-          <Slider label="Extra claims reduction" value={inp.extraReduction} min={0} max={0.3} step={0.01} fmt={(v) => pct(v)} onChange={(v) => set({ extraReduction: v })} />
-          <Slider label="Average discount when hitting targets" value={inp.discount} min={0} max={0.15} step={0.005} fmt={(v) => pct(v, 1)} onChange={(v) => set({ discount: v })} />
-          <Slider label="Retention uplift (members)" value={inp.retentionUplift} min={0} max={0.15} step={0.01} fmt={(v) => `+${(v * 100).toFixed(0)} pts`} onChange={(v) => set({ retentionUplift: v })} />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="card p-6 sm:p-7" data-testid="data-shared">
+          <p className="eyebrow">Shared with the underwriter</p>
+          <ul className="mt-4 space-y-3">
+            {SHARED.map((s) => (
+              <li key={s} className="flex gap-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft" aria-hidden>
+                  <Check size={14} weight="bold" />
+                </span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="space-y-5 lg:col-span-8">
-          <H n="02">A year with Petra Savings</H>
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft lg:grid-cols-4">
-            <Kpi label="Petra Savings members" value={b.members.toLocaleString("en-GB")} />
-            <Kpi label="Hitting targets" value={b.hitting.toLocaleString("en-GB")} />
-            <Kpi label="Early-warning flags" value={b.flags.toLocaleString("en-GB")} note="Sustained activity changes" />
-            <Kpi label="Consults triggered" value={b.consults.toLocaleString("en-GB")} />
-            <Kpi label="Claims avoided" value={k(b.claimsAvoided)} />
-            <Kpi label="Discounts paid" value={k(b.discounts)} />
-            <Kpi label="Retention value" value={k(b.retentionValue)} />
-            <Kpi label="Net benefit" value={`${b.net >= 0 ? "+" : "−"}${k(Math.abs(b.net))}`} dark />
-          </dl>
-          <p className="text-xs text-muted">Illustrative. The early-warning rate (8% of members a year) and the extra claims reduction are assumptions to measure in the pilot.</p>
+        <div className="card p-6 sm:p-7" data-testid="data-never">
+          <p className="eyebrow">Never shared</p>
+          <ul className="mt-4 space-y-3">
+            {NEVER.map((s) => (
+              <li key={s} className="flex gap-3 font-semibold">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink text-paper" aria-hidden>
+                  <EyeSlash size={14} weight="bold" />
+                </span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      </section>
-
-      <section className="space-y-5">
-        <H n="03">Hardware economics</H>
-        <div className="grid gap-10 lg:grid-cols-12">
-          <div className="space-y-5 lg:col-span-4">
-            <Slider label="Walk Companion cost to make" value={inp.collarCost} min={40} max={60} step={1} fmt={(v) => `£${v}`} onChange={(v) => set({ collarCost: v })} />
-            <div role="radiogroup" aria-label="Walk Companion offer" className="grid gap-2">
-              {(
-                [
-                  ["free2yr", "Free with a 2-year policy", "The insurer pays; cost spread over two years."],
-                  ["bundled", "£5 a month, bundled", "The owner pays with the premium; pays back in months."],
-                ] as const
-              ).map(([id, t, d]) => (
-                <button key={id} type="button" role="radio" aria-checked={inp.offer === id} onClick={() => set({ offer: id })} className={`rounded-brand border-2 p-4 text-left transition-colors ${inp.offer === id ? "border-ink bg-accent-soft" : "border-line bg-white/50 hover:border-ink/40"}`}>
-                  <span className="block font-semibold">{t}</span>
-                  <span className="mt-1 block text-sm text-muted">{d}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <dl className="grid grid-cols-1 gap-px self-start overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-3 lg:col-span-8">
-            <Kpi label={inp.offer === "free2yr" ? "Hardware cost a year" : "Bundle income after cost"} value={inp.offer === "free2yr" ? k(b.hardwareYear) : k(b.bundleIncome)} />
-            <Kpi label="Payback per Walk Companion" value={Number.isFinite(b.paybackMonths) ? `${b.paybackMonths} months` : "Not at these inputs"} />
-            <Kpi label="Net benefit a year" value={`${b.net >= 0 ? "+" : "−"}${k(Math.abs(b.net))}`} dark />
-          </dl>
-        </div>
-        <p className="text-xs text-muted">Walk Companion build cost of £40 to £60 is illustrative. Until one arrives, the owner&apos;s phone does the job for walks.</p>
-      </section>
-
-      <section className="space-y-5">
-        <H n="04">Why younger owners</H>
-        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["The telematics playbook", "Black boxes made car insurance affordable for young drivers by rewarding good driving. The same deal works for pet care."],
-            ["Pets are family", "69% of Millennials and Gen Z say their pet is family (reading guide). They want to do the right thing, and to see it count."],
-            ["Price sensitive", "Vet prices up about 75% in ten years; younger owners feel premiums most. A visible way to pay less is a reason to choose you."],
-            ["An acquisition channel", "A Walk Companion and a cheaper premium is a story people share. Every walk is a weekly touchpoint with your brand."],
-          ].map(([t, d]) => (
-            <li key={t} className="bg-surface p-5">
-              <p className="font-semibold">{t}</p>
-              <p className="mt-2 text-sm text-muted">{d}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      </div>
+      <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2 lg:grid-cols-4" aria-label="Fairness rules">
+        {FAIRNESS.map(([t, d]) => (
+          <li key={t} className="bg-surface p-5 sm:p-6">
+            <p className="font-semibold tracking-[-0.02em]">{t}</p>
+            <p className="mt-1.5 text-sm text-muted">{d}</p>
+          </li>
+        ))}
+      </ol>
+      <ul className="grid gap-4 md:grid-cols-3" aria-label="Regulation">
+        {REGULATION.map(([t, d]) => (
+          <li key={t} className="card-quiet p-5 sm:p-6">
+            <p className="font-semibold tracking-[-0.02em]">{t}</p>
+            <p className="mt-1.5 text-sm text-muted">{d}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-/** Partner view: insurer, underwriter and Petra Savings (code name: Black Box). A 100,000-policy illustrative insurer by default. */
+// ---------- 7. Pilot ----------
+
+const PILOT: [string, string][] = [
+  ["12", "weeks"],
+  ["1", "insurer"],
+  ["2,000", "pets"],
+  ["1", "control group"],
+];
+const KPIS = [
+  "Weekly active members, and 4-week retention (target 50%)",
+  "Check-ins and walk targets met each week",
+  "Amber flags that become online consults",
+  "Claims frequency and cost against the control group",
+  "Discounts paid against claims avoided",
+  "Renewal intent and owner satisfaction",
+];
+
+function Pilot() {
+  return (
+    <div className="card mx-auto max-w-5xl p-7 sm:p-10">
+      <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4" data-testid="pilot">
+        {PILOT.map(([n, l]) => (
+          <div key={l} className="flex flex-col-reverse text-center">
+            <dt className="mt-2 text-sm text-muted">{l}</dt>
+            <dd className="tnum text-[clamp(2.75rem,6vw,4rem)] font-semibold leading-none tracking-[-0.055em]">{n}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-8 border-t border-line pt-7">
+        <p className="eyebrow">What we measure</p>
+        <ul className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+          {KPIS.map((t) => (
+            <li key={t} className="flex gap-3">
+              <Check size={18} weight="bold" className="mt-0.5 shrink-0" aria-hidden />
+              <span>{t}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <p className="mt-8 text-center text-lg font-semibold tracking-[-0.02em]">If engaged members&apos; claims fall by more than about 9%, the insurer is better off. The pilot tells us within 12 weeks.</p>
+    </div>
+  );
+}
+
+/** For insurers: the business case for Problem Statement 1, in seven sections. Figures from finance/petra-financial-model.xlsx. */
 export default function PartnerPage() {
-  const [tab, setTab] = useState<Tab>("insurer");
+  const reduce = useReducedMotion();
   const [inp, setInp] = useState<BusinessInput>(DEFAULT_BUSINESS);
   const set = (p: Partial<BusinessInput>) => setInp((x) => ({ ...x, ...p }));
-
-  useEffect(() => {
-    const h = window.location.hash.slice(1);
-    if (h === "underwriter" || h === "blackbox") setTab(h); // eslint-disable-line react-hooks/set-state-in-effect -- deep link after mount
-  }, []);
+  const base = businessCase(DEFAULT_BUSINESS);
 
   return (
-    <div className="space-y-10 py-4 sm:py-8">
-      <header className="max-w-3xl">
-        <p className="eyebrow">Petra / For insurers</p>
-        <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5.5rem)]">
-          Prevention that <span className="accent-word">pays.</span>
-        </h1>
-        <p className="mt-4 text-lg text-muted">For the insurer that owns the app, the underwriter that carries the risk, and Petra Savings, which rewards good care.</p>
-      </header>
+    <div className="space-y-24 pb-12 sm:space-y-32">
+      <section aria-labelledby="parties-title" className="space-y-10 pt-6 sm:pt-12">
+        <motion.div className="mx-auto max-w-4xl text-center" initial={reduce ? false : { opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={SPRING}>
+          <p className="eyebrow">Petra / For insurers</p>
+          <h1 id="parties-title" className="display mt-4 text-[clamp(2.5rem,6.5vw,5rem)]">
+            Prevention that pays, <span className="accent-word">for all four parties.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-[52ch] text-lg text-muted sm:text-xl">Most claims start as a question an owner had weeks earlier. Petra catches it, inside your app, and the discount is paid for by the claims it prevents.</p>
+        </motion.div>
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="parties">
+          {parties(base.memberSaving, base.claimsAvoided / base.engaged).map(([I, who, line, figure], i) => (
+            <motion.li key={who} className="card flex flex-col p-6 sm:p-7" initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.08 + i * 0.06 }}>
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-soft" aria-hidden>
+                <I size={24} weight="duotone" />
+              </span>
+              <h2 className="mt-5 text-xl font-semibold tracking-[-0.03em]">{who}</h2>
+              <p className="mt-2">{line}</p>
+              <p className="mt-auto pt-4 text-sm text-muted">{figure}</p>
+            </motion.li>
+          ))}
+        </ul>
+        <p className="text-center text-sm text-muted">Nobody gains at another&apos;s expense: discounts come out of claims that never happen.</p>
+      </section>
 
-      <div role="tablist" aria-label="Partner views" className="flex gap-1 border-b border-line">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            id={`tab-${t.id}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            aria-controls={`panel-${t.id}`}
-            onClick={() => {
-              setTab(t.id);
-              history.replaceState(null, "", `#${t.id}`);
-            }}
-            className={`-mb-px min-h-12 border-b-2 px-4 font-semibold transition-colors ${tab === t.id ? "border-ink" : "border-transparent text-muted hover:text-ink"}`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Section id="journey" eyebrow="The member journey" title={<>From first scan to vet visit.</>}>
+        <Journey />
+      </Section>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === "insurer" ? <InsurerTab inp={inp} set={set} /> : tab === "underwriter" ? <UnderwriterTab inp={inp} /> : <BlackBoxTab />}
-      </div>
+      <Section id="business-case" eyebrow="The business case" title={<>Run your own numbers.</>} intro={<>An insurer with 100,000 policies: about {k(base.claimsAvoided)} of claims avoided and {k(base.net)} net a year, a {base.returnOnCost.toFixed(2)}x return.</>}>
+        <Calculator inp={inp} set={set} />
+      </Section>
+
+      <Section id="pricing" eyebrow="The pricing model" title={<>Pay for use. Reward results.</>}>
+        <Pricing inp={inp} set={set} />
+      </Section>
+
+      <Section id="telematics" eyebrow="Telematics, proven in car insurance" title={<>Black boxes changed car insurance. Petra does it for pets.</>}>
+        <Telematics />
+      </Section>
+
+      <Section id="data" eyebrow="Underwriter data and its limits" title={<>What the underwriter sees, and what it never will.</>}>
+        <DataLimits />
+      </Section>
+
+      <Section id="pilot" eyebrow="The pilot ask" title={<>Twelve weeks to prove it.</>}>
+        <Pilot />
+      </Section>
+
+      <p className="text-center text-xs text-muted">
+        Figures: Petra financial model, Base scenario; market data from the ABI and the hackathon reading guide; telematics from Co-op. Every reference is under Sources in the footer.
+      </p>
     </div>
   );
 }

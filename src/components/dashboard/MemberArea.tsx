@@ -4,12 +4,12 @@ import Link from "next/link";
 import { ArrowUpRight, Bone, FirstAid, ShieldCheck, Sparkle, Tag, type Icon } from "@phosphor-icons/react";
 import { NUTRITION_BRAND, OFFER_GROUPS } from "@/data/partners";
 import { avgSaving } from "@/data/premiums";
-import { usePremium } from "@/lib/premium";
+import { PLAN_NAME, usePremium } from "@/lib/premium";
 import type { PetRecord } from "@/lib/store";
 
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
 
-/** Overview card: Petra Premium status, or the way in. */
+/** Overview card: Petra Plus status, or the way in. */
 export function PremiumStatus({ rec }: { rec: PetRecord }) {
   const member = usePremium();
   return (
@@ -19,14 +19,14 @@ export function PremiumStatus({ rec }: { rec: PetRecord }) {
           <Sparkle size={20} weight="fill" aria-hidden />
         </span>
         <div>
-          <p className="font-semibold">{member ? "Petra Premium member" : "Not a Premium member yet"}</p>
+          <p className="font-semibold">{member ? `${PLAN_NAME} member` : `Not on ${PLAN_NAME} yet`}</p>
           <p className="text-sm text-muted">
             {member ? `Since ${new Date(member.since).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}. ${member.petName} is covered for every walk.` : `Members save about ${gbp(avgSaving(rec.pet))} a year on average. Illustrative.`}
           </p>
         </div>
       </div>
       <Link href={member ? "/dashboard#savings" : "/savings"} className="btn btn-ghost">
-        {member ? "Member offers" : "Try Petra Premium"} <ArrowUpRight size={16} aria-hidden />
+        {member ? "Member offers" : `Try ${PLAN_NAME}`} <ArrowUpRight size={16} aria-hidden />
       </Link>
     </div>
   );
@@ -34,13 +34,13 @@ export function PremiumStatus({ rec }: { rec: PetRecord }) {
 
 const GROUP_ICON: Record<string, Icon> = { nutrition: Bone, vets: FirstAid, insurers: ShieldCheck, accessories: Tag };
 
-/** The Savings tab: a light, premium member area. Example partners only, never tied to the discount. */
+/** The Savings tab: a light member area. Example partners only, never tied to the discount. */
 export function MemberArea({ rec }: { rec: PetRecord }) {
   const member = usePremium();
   return (
     <div className="space-y-12 sm:space-y-16">
       <div className="mx-auto max-w-3xl space-y-4 pt-4 text-center sm:pt-8">
-        <p className="eyebrow">{member ? "Petra Premium member" : "Petra Premium"}</p>
+        <p className="eyebrow">{member ? `${PLAN_NAME} member` : PLAN_NAME}</p>
         <h2 className="display text-[clamp(2.5rem,6vw,4.5rem)]">
           Your pet deserves <span className="accent-word">the best life.</span>
         </h2>

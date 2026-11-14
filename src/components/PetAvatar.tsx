@@ -44,7 +44,8 @@ export function PetAvatar({
   className = "",
   collar = false,
 }: {
-  collar?: boolean;
+  /** true: a plain collar; "companion": the collar with the Walk Companion tag on it. */
+  collar?: boolean | "companion";
   traits?: AvatarTraits;
   size?: number;
   title?: string;
@@ -116,12 +117,34 @@ export function PetAvatar({
           {collar && (
             <g aria-hidden>
               <path d={`M${60 - p.chest.rx * 0.62} ${COLLAR_Y[traits.species]} Q60 ${COLLAR_Y[traits.species] + 9} ${60 + p.chest.rx * 0.62} ${COLLAR_Y[traits.species]}`} fill="none" stroke="var(--dark)" strokeWidth="6" strokeLinecap="round" />
-              <rect x="55" y={COLLAR_Y[traits.species] + 3} width="10" height="8" rx="2" fill="var(--accent)" stroke="var(--dark)" strokeWidth="1.5" />
+              {collar === "companion" ? (
+                <CompanionOnCollar y={COLLAR_Y[traits.species] + 3} />
+              ) : (
+                <rect x="55" y={COLLAR_Y[traits.species] + 3} width="10" height="8" rx="2" fill="var(--accent)" stroke="var(--dark)" strokeWidth="1.5" />
+              )}
             </g>
           )}
         </g>
       </g>
     </svg>
+  );
+}
+
+/** The Walk Companion tag hanging from the collar: a small white tag with a paw mark and the status light. */
+function CompanionOnCollar({ y }: { y: number }) {
+  return (
+    <g data-testid="avatar-companion">
+      <rect x="56.5" y={y - 2} width="7" height="5" rx="1.6" fill="#D9D4C9" stroke="var(--dark)" strokeWidth="0.8" />
+      <rect x="52" y={y + 2} width="16" height="15" rx="5" fill="#FFFFFF" stroke="var(--dark)" strokeOpacity="0.35" strokeWidth="1" />
+      <g transform={`translate(60 ${y + 9}) scale(0.42)`} fill="#141414">
+        <path d="M0 0 C-5 0 -7.5 4 -6.5 6.5 C-5.5 9 -2 8 0 8 C2 8 5.5 9 6.5 6.5 C7.5 4 5 0 0 0 Z" />
+        <ellipse cx="-6.8" cy="-3" rx="2" ry="2.8" transform="rotate(-20 -6.8 -3)" />
+        <ellipse cx="-2.4" cy="-6.6" rx="2" ry="2.9" />
+        <ellipse cx="2.4" cy="-6.6" rx="2" ry="2.9" />
+        <ellipse cx="6.8" cy="-3" rx="2" ry="2.8" transform="rotate(20 6.8 -3)" />
+      </g>
+      <circle cx="60" cy={y + 14.2} r="1.2" fill="var(--accent)" stroke="#141414" strokeOpacity="0.3" strokeWidth="0.4" />
+    </g>
   );
 }
 
