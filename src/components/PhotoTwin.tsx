@@ -162,7 +162,7 @@ export function PhotoTwin({ petId, mode = "settings" }: { petId: string; mode?: 
       const res = await fetch("/api/twin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, species: settings ? rec?.pet.species : undefined, photo: prepared.photo }),
+        body: JSON.stringify({ name, species: rec?.pet.species, photo: prepared.photo }),
       });
       const data = (await res.json()) as TwinResult & { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Request failed");
@@ -177,10 +177,12 @@ export function PhotoTwin({ petId, mode = "settings" }: { petId: string; mode?: 
         return;
       }
       // 3. Refine: the model's coat colours (the animal only) replace the raw photo palette.
+      // The owner chose the species, so it stays; say so if the photo disagrees.
+      const chosen = rec?.pet.species ?? data.profile.species;
+      if (data.profile.species !== chosen) setNotice(`This photo looks like a ${data.profile.species}, but you chose ${chosen}. Go back to change the species, or try another photo.`);
       const refined = deriveTheme(prepared.swatches, data.profile.coatColours);
       updatePet(petId, (p) => ({
-        profile: { ...data.profile, coatColours: data.profile.coatColours.length ? data.profile.coatColours : p.profile.coatColours },
-        pet: { ...p.pet, species: data.profile.species },
+        profile: { ...data.profile, species: chosen, coatColours: data.profile.coatColours.length ? data.profile.coatColours : p.profile.coatColours },
         photoTheme: refined,
         theme: refined,
         twinSource: "gemini",

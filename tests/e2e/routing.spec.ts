@@ -5,8 +5,8 @@ test("/ opens onboarding for a new user", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Catch the");
-  await expect(page.getByRole("button", { name: /Meet your Pet Twin/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills");
+  await expect(page.getByRole("button", { name: /^Dog/ })).toBeVisible();
 });
 
 test("/ sends a returning user to the dashboard", async ({ page }) => {

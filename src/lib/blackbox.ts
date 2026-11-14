@@ -189,7 +189,7 @@ export function diagnostics(days: CollarDay[]): { signals: Signal[]; amber: bool
 const rnd = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 /** Six weeks of plausible collar history around this pet's own normal. `dip` adds a mild 10-day decline. */
-export function simulateCollarHistory(rec: PetRecord, target: number, now: number, dip = false): CollarDay[] {
+export function simulateCollarHistory(rec: PetRecord, target: number, now: number, dip = false, dipFactor = 0.66): CollarDay[] {
   const r = rnd(rec.id.length * 7919 + 17);
   const big = rec.pet.sizeClass === "large" || rec.pet.sizeClass === "giant";
   const hr = rec.pet.species === "cat" ? 140 : big ? 72 : 88;
@@ -197,7 +197,7 @@ export function simulateCollarHistory(rec: PetRecord, target: number, now: numbe
   const out: CollarDay[] = [];
   for (let i = 41; i >= 0; i--) {
     const late = dip && i < 10;
-    const f = late ? 0.66 : 1;
+    const f = late ? dipFactor : 1;
     const active = Math.max(5, Math.round(target * (0.9 + r() * 0.35) * f));
     out.push({
       petId: rec.id,

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { DeleteAllData } from "@/components/DeleteAllData";
+import { DemoLoader } from "@/components/DemoLoader";
 import { PetSwitcher } from "@/components/PetSwitcher";
 import { ThemeSync } from "@/components/ThemeSync";
 import { Toaster } from "@/components/Toaster";
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </footer>
         <ThemeSync />
+        <DemoLoader />
         <Toaster />
       </body>
     </html>
