@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { CarePlanStop } from "@/components/walk/CarePlanStop";
@@ -13,17 +13,33 @@ import { NextWeekStop } from "@/components/walk/NextWeekStop";
 import { Footnotes, Stop } from "@/components/walk/Stop";
 import { TrendsStop } from "@/components/walk/TrendsStop";
 import { WalkBackdrop, WalkPath, WalkProgress } from "@/components/walk/WalkPath";
+import { YourWalkStop } from "@/components/walk/YourWalkStop";
+import type { PetRecord, StoredCheckin } from "@/lib/store";
 import { useActivePet, useCheckins } from "@/lib/usePets";
+import { lifeStageOf } from "@/lib/walkplan";
 
-const STOPS = [
-  { id: "hello", label: "Hello" },
-  { id: "check-in", label: "This week" },
-  { id: "trends", label: "Your trends" },
-  { id: "healthspan", label: "Healthspan" },
-  { id: "care-plan", label: "Care plan" },
-  { id: "cover", label: "Your cover" },
-  { id: "next-week", label: "Next week" },
-];
+type StopId = "hello" | "your-walk" | "check-in" | "trends" | "healthspan" | "care-plan" | "cover" | "next-week";
+
+const LABEL: Record<StopId, [string, string]> = {
+  hello: ["Hello", "Hello"],
+  "your-walk": ["Your walk", "Your walk"],
+  "check-in": ["This week's check-in", "This week"],
+  trends: ["Your trends", "Your trends"],
+  healthspan: ["Healthspan", "Healthspan"],
+  "care-plan": ["Care plan", "Care plan"],
+  cover: ["Your cover", "Your cover"],
+  "next-week": ["Same time next week", "Next week"],
+};
+
+/** What matters most for this pet comes first: care before charts for seniors and flagged pets. */
+function stopOrder(rec: PetRecord, log: StoredCheckin[]): StopId[] {
+  const stage = lifeStageOf(rec.pet);
+  const latest = log.at(-1);
+  const priority = stage === "senior" || rec.profile.bodyCondition === "over" || (latest && latest.status !== "green") || (latest?.answers && latest.answers.mobility !== "normal");
+  if (priority) return ["hello", "your-walk", "check-in", "care-plan", "trends", "healthspan", "cover", "next-week"];
+  if (stage === "young") return ["hello", "your-walk", "check-in", "healthspan", "care-plan", "trends", "cover", "next-week"];
+  return ["hello", "your-walk", "check-in", "trends", "healthspan", "care-plan", "cover", "next-week"];
+}
 
 /**
  * The Health Walk: one scroll-driven page per pet. The paw follows the scroll along a winding path and each
@@ -48,34 +64,30 @@ export default function WalkPage() {
     );
 
   const traits = rec.profile;
+  const order = stopOrder(rec, log);
+  const body: Record<StopId, ReactNode> = {
+    hello: <HelloStop rec={rec} />,
+    "your-walk": <YourWalkStop rec={rec} log={log} />,
+    "check-in": <CheckinStop rec={rec} log={log} />,
+    trends: <TrendsStop rec={rec} log={log} reduce={reduce} />,
+    healthspan: <HealthspanStop rec={rec} reduce={reduce} />,
+    "care-plan": <CarePlanStop rec={rec} log={log} />,
+    cover: <CoverStop rec={rec} log={log} />,
+    "next-week": <NextWeekStop rec={rec} log={log} />,
+  };
+
   return (
     <>
       <WalkBackdrop reduce={reduce} />
-      <WalkProgress stops={STOPS} species={rec.pet.species} />
-      <div ref={container} key={rec.id} className="relative pl-12 lg:pl-[220px]">
+      <WalkProgress stops={order.map((id) => ({ id, label: LABEL[id][1] }))} species={rec.pet.species} />
+      <div ref={container} key={`${rec.id}-${order.join()}`} className="relative pl-12 lg:pl-[220px]">
         <WalkPath containerRef={container} species={rec.pet.species} reduce={reduce} />
         <div className="relative" data-walk-content>
-          <Stop id="hello" n={1} label="Hello" traits={traits}>
-            <HelloStop rec={rec} />
-          </Stop>
-          <Stop id="check-in" n={2} label="This week's check-in" traits={traits}>
-            <CheckinStop rec={rec} log={log} />
-          </Stop>
-          <Stop id="trends" n={3} label="Your trends" traits={traits}>
-            <TrendsStop rec={rec} log={log} reduce={reduce} />
-          </Stop>
-          <Stop id="healthspan" n={4} label="Healthspan" traits={traits}>
-            <HealthspanStop rec={rec} reduce={reduce} />
-          </Stop>
-          <Stop id="care-plan" n={5} label="Care plan" traits={traits}>
-            <CarePlanStop rec={rec} log={log} />
-          </Stop>
-          <Stop id="cover" n={6} label="Your cover" traits={traits}>
-            <CoverStop rec={rec} log={log} />
-          </Stop>
-          <Stop id="next-week" n={7} label="Same time next week" traits={traits}>
-            <NextWeekStop rec={rec} log={log} />
-          </Stop>
+          {order.map((id, i) => (
+            <Stop key={id} id={id} n={i + 1} label={LABEL[id][0]} traits={traits}>
+              {body[id]}
+            </Stop>
+          ))}
           <div className="pb-10">
             <Footnotes />
           </div>

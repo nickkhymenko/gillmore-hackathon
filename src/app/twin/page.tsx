@@ -62,6 +62,14 @@ function Details({ rec }: { rec: PetRecord }) {
         </select>
       </label>
       <label className="space-y-1">
+        <span className="eyebrow">Refer to {rec.pet.name} as</span>
+        <select className={field} value={rec.pet.pronoun ?? "they"} onChange={(e) => set({ pronoun: e.target.value as "he" | "she" | "they" })}>
+          <option value="he">He / him</option>
+          <option value="she">She / her</option>
+          <option value="they">They / them</option>
+        </select>
+      </label>
+      <label className="space-y-1">
         <span className="eyebrow">Activity</span>
         <select className={field} value={rec.pet.activity ?? ""} onChange={(e) => set({ activity: (e.target.value || undefined) as PetRecord["pet"]["activity"] })}>
           <option value="">Not set</option>

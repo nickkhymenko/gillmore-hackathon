@@ -20,6 +20,8 @@ export const PetSchema = z.object({
   sizeClass: z.enum(SIZE_CLASSES).optional(),
   neutered: z.boolean().optional(),
   activity: z.enum(ACTIVITY_LEVELS).optional(),
+  /** How copy refers to the pet. Unset means they/them. */
+  pronoun: z.enum(["he", "she", "they"]).optional(),
 });
 
 export const AnswersSchema = z.object({

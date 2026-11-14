@@ -4,6 +4,7 @@ import { PetAvatar } from "../PetAvatar";
 import { Cite } from "./Stop";
 import { findBreed } from "@/data/breeds";
 import { humanYears } from "@/lib/humanAge";
+import { lifeStageOf, pronouns } from "@/lib/walkplan";
 import type { PetRecord } from "@/lib/store";
 
 const fmtAge = (a: number) => (a < 1 ? `${Math.round(a * 12)} months` : `${a % 1 ? a.toFixed(1) : a} ${a === 1 ? "year" : "years"}`);
@@ -12,12 +13,23 @@ export function HelloStop({ rec }: { rec: PetRecord }) {
   const { pet, profile } = rec;
   const human = humanYears(pet.species, pet.ageYears);
   const breed = findBreed(pet.breed, pet.species);
+  const p = pronouns(pet);
+  const stage = lifeStageOf(pet);
+  const they = p.subject.charAt(0).toUpperCase() + p.subject.slice(1);
+  const verb = p.subject === "they" ? "are" : "is";
+  const tone =
+    stage === "young"
+      ? `Growing fast. This is the best time to build good habits, and ${p.possessive} first weeks set ${p.possessive} baseline.`
+      : stage === "senior"
+        ? `${they} ${verb} a senior now. Small changes matter more, so we watch ${p.object} closely against ${p.possessive} own usual.`
+        : `In ${p.possessive} prime. We learn ${p.possessive} normal now, so any change later stands out.`;
   return (
     <div className="grid items-center gap-10 lg:grid-cols-12">
       <div className="lg:col-span-8">
         <h1 className="display text-[clamp(3rem,8vw,7.5rem)]">
           Hello, <span className="accent-word">{pet.name}.</span>
         </h1>
+        <p className="mt-6 max-w-[52ch] text-lg text-muted">{tone}</p>
         <dl className="mt-8 grid max-w-xl grid-cols-2 gap-x-8 gap-y-5 border-t border-line pt-5 sm:grid-cols-3">
           <div>
             <dt className="eyebrow">Breed</dt>
