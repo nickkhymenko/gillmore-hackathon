@@ -34,6 +34,7 @@ export function WalkMode({
   collar,
   liveHr,
   discountPct = 0,
+  finishCta = { href: "#your-price", label: "See my new price" },
   onFinished,
 }: {
   rec: PetRecord;
@@ -43,6 +44,8 @@ export function WalkMode({
   liveHr: number | null;
   /** The discount the pet is on now, so the finish card can tick down from today's price. */
   discountPct?: number;
+  /** Where the finish card's button goes. */
+  finishCta?: { href: string; label: string };
   onFinished: (w: WalkRecord) => void;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -172,7 +175,7 @@ export function WalkMode({
   const hr = liveHr ?? (collar ? simulatedHr : null);
 
   if (phase === "done" && last)
-    return <FinishCard rec={rec} walk={last} target={target} todayBefore={todayBefore} discountPct={pctAtStart} onAgain={() => setPhase("idle")} />;
+    return <FinishCard rec={rec} walk={last} target={target} todayBefore={todayBefore} discountPct={pctAtStart} cta={finishCta} onAgain={() => setPhase("idle")} />;
 
   return (
     <div className="space-y-5">
@@ -290,7 +293,7 @@ function TickingPrice({ from, to }: { from: number; to: number }) {
   return <span ref={ref}>{gbp2(from)}</span>;
 }
 
-function FinishCard({ rec, walk, target, todayBefore, discountPct, onAgain }: { rec: PetRecord; walk: WalkRecord; target: number; todayBefore: number; discountPct: number; onAgain: () => void }) {
+function FinishCard({ rec, walk, target, todayBefore, discountPct, cta, onAgain }: { rec: PetRecord; walk: WalkRecord; target: number; todayBefore: number; discountPct: number; cta: { href: string; label: string }; onAgain: () => void }) {
   const today = todayBefore + walk.minutes;
   const pct = target ? Math.min(100, (today / target) * 100) : 100;
   const monthly = basePremium(rec.pet) / 12;
@@ -340,8 +343,8 @@ function FinishCard({ rec, walk, target, todayBefore, discountPct, onAgain }: { 
       </div>
       <p className="text-sm text-muted">Only &ldquo;target met this week: yes or no&rdquo; ever reaches your insurer.</p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <a href="#your-price" className="btn btn-primary">
-          See my new price <ArrowUpRight size={18} weight="bold" aria-hidden />
+        <a href={cta.href} className="btn btn-primary">
+          {cta.label} <ArrowUpRight size={18} weight="bold" aria-hidden />
         </a>
         <button type="button" onClick={onAgain} className="link min-h-11">
           Start another walk

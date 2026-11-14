@@ -8,18 +8,20 @@ import type { PetRecord } from "@/lib/store";
 
 const INK = "#141414";
 const TYPICAL = "#8A8378"; // the typical owner, a quieter line; 3:1 on the cream surface
+const AVERAGE = "#B3AA9C"; // the average member, lighter still
 const MUTED = "#5E5E5E";
 const GRID = "rgba(20,20,20,0.08)";
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
 
 function Tip({ active, payload, label }: TooltipContentProps<number, string>) {
   if (!active || !payload?.length) return null;
-  const row = payload[0].payload as { typical: number; petra: number };
+  const row = payload[0].payload as { typical: number; average: number; petra: number };
   return (
     <div className="rounded-[4px] border border-line bg-paper px-3 py-2 text-xs shadow-sm">
       <p className="font-semibold">Age {label}</p>
       <p className="tnum text-muted">Typical owner {gbp(row.typical)}</p>
-      <p className="tnum font-semibold">With Petra {gbp(row.petra)}</p>
+      <p className="tnum text-muted">Average member {gbp(row.average)}</p>
+      <p className="tnum font-semibold">Petra top tier {gbp(row.petra)}</p>
     </div>
   );
 }
@@ -31,7 +33,7 @@ function Tip({ active, payload, label }: TooltipContentProps<number, string>) {
 export function LifetimeCostStop({ rec, reduce }: { rec: PetRecord; reduce: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const seen = useInView(ref, { once: true, margin: "0px 0px -38% 0px" });
-  const { rows, saved, lifespan, healthyFrom } = lifetimeCost(rec.pet);
+  const { rows, saved, savedAvg, lifespan, healthyFrom } = lifetimeCost(rec.pet);
   const name = rec.pet.name;
   const last = rows.at(-1)!;
   const draw = reduce || seen;
@@ -39,17 +41,20 @@ export function LifetimeCostStop({ rec, reduce }: { rec: PetRecord; reduce: bool
   return (
     <div className="space-y-6">
       <div>
-        <p className="eyebrow">Illustrative</p>
+        <p className="eyebrow">Illustrative, at the top tier</p>
         <h3 className="display mt-2 text-[clamp(2.75rem,8vw,5.5rem)]" data-testid="lifetime-saved">
-          <span className="accent-word">{gbp(saved)}</span> saved by age {lifespan}.
+          Up to <span className="accent-word">{gbp(saved)}</span> by age {lifespan}.
         </h3>
       </div>
       <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm" aria-hidden>
         <li className="inline-flex items-center gap-2">
           <span className="inline-block h-0.5 w-6" style={{ background: TYPICAL }} /> Typical owner
         </li>
+        <li className="inline-flex items-center gap-2">
+          <span className="inline-block h-0.5 w-6" style={{ background: AVERAGE }} /> Average member
+        </li>
         <li className="inline-flex items-center gap-2 font-semibold">
-          <span className="inline-block h-1 w-6 rounded-full bg-ink" /> With Petra
+          <span className="inline-block h-1 w-6 rounded-full bg-ink" /> With Petra, top tier
         </li>
         <li className="inline-flex items-center gap-2 text-muted">
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-ink bg-accent" /> Healthier years
@@ -70,6 +75,7 @@ export function LifetimeCostStop({ rec, reduce }: { rec: PetRecord; reduce: bool
               <Tooltip content={(p) => <Tip {...(p as TooltipContentProps<number, string>)} />} cursor={{ stroke: INK, strokeWidth: 1 }} isAnimationActive={false} />
               <Area type="monotone" dataKey="gap" stroke="none" fill="var(--accent)" fillOpacity={0.55} isAnimationActive={!reduce} animationDuration={1200} />
               <Line type="monotone" dataKey="typical" stroke={TYPICAL} strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={!reduce} animationDuration={1200} />
+              <Line type="monotone" dataKey="average" stroke={AVERAGE} strokeWidth={2} dot={false} isAnimationActive={!reduce} animationDuration={1200} />
               <Line type="monotone" dataKey="petra" stroke={INK} strokeWidth={3} strokeLinecap="round" dot={false} isAnimationActive={!reduce} animationDuration={1200} />
               {rows
                 .filter((r) => r.healthier !== null)
@@ -81,7 +87,7 @@ export function LifetimeCostStop({ rec, reduce }: { rec: PetRecord; reduce: bool
         )}
       </div>
       <p className="text-sm text-muted">
-        Illustrative: {name}&apos;s example premium, rising with age and vet prices, against the top 15% tier. Markers from age {healthyFrom}: the years good care keeps healthier.
+        Illustrative: {name}&apos;s example premium rises about 12% a year with age. Top tier 15% off; the average member saves 4% (about {gbp(savedAvg)} over the same years). Markers from age {healthyFrom}: healthier years.
       </p>
     </div>
   );

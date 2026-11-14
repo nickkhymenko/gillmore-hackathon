@@ -208,7 +208,7 @@ export const themeEdited = (p: PetRecord) => Boolean(p.photoTheme && !sameTheme(
 
 // ---------- erase everything ----------
 
-const ALL_KEYS = [HOUSEHOLD_KEY, LOG_KEY, QUESTIONS_KEY, THEME_KEY, LEGACY_PET_KEY, LEGACY_TWIN_KEY, "prevently.walks", "prevently.collar", "prevently.scans"];
+const ALL_KEYS = [HOUSEHOLD_KEY, LOG_KEY, QUESTIONS_KEY, THEME_KEY, LEGACY_PET_KEY, LEGACY_TWIN_KEY, "prevently.walks", "prevently.collar", "prevently.scans", "prevently.premium"];
 
 /** UK GDPR right to erasure: removes every Petra key from this browser. Returns an undo function. */
 export function deleteAllData(): () => void {

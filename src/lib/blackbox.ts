@@ -246,10 +246,7 @@ export function haversine(a: [number, number], b: [number, number]) {
 
 // ---------- what members save (the model's headline figures) ----------
 
-/** ABI 2024: UK owners paid an average of £389 per pet for insurance. */
-export const UK_AVG_PREMIUM = 389;
-/** The model's average member discount: about 4%, or around £16 a year on a £389 premium. The 15% cap is the "up to". */
-export const AVG_MEMBER_PCT = 4;
+export { ABI_AVG_PREMIUM_2024 as UK_AVG_PREMIUM, AVG_MEMBER_PCT } from "@/data/premiums";
 
 /**
  * Illustrative tier for a walking habit: weekly minutes against five days of the pet's target, read on the same

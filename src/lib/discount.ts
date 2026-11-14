@@ -1,5 +1,6 @@
 import type { StoredCheckin } from "./store";
 import type { Pet } from "./types";
+import { annualPremium } from "@/data/premiums";
 
 /**
  * Engagement discount: rewards doing the check-ins, never the health result, never buying products.
@@ -52,10 +53,7 @@ export function streak(log: StoredCheckin[], now = Date.now()) {
   return weeks;
 }
 
-/** Illustrative annual premium for a pet, by species, age and size (synthetic, for the demo only). */
+/** Illustrative annual premium for a pet: breed- and age-aware, from src/data/premiums.ts. */
 export function basePremium(pet: Pet) {
-  const species = { dog: 330, cat: 210, rabbit: 140, horse: 720, other: 160 }[pet.species];
-  const size = pet.species === "dog" ? { toy: 0.85, small: 0.9, medium: 1, large: 1.15, giant: 1.35 }[pet.sizeClass ?? "medium"] : 1;
-  const age = 1 + Math.max(0, pet.ageYears - 4) * 0.07;
-  return species * size * age;
+  return annualPremium(pet);
 }

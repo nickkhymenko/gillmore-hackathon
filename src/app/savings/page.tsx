@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowUpRight, ShieldCheck } from "@phosphor-icons/react";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowUpRight, CheckCircle } from "@phosphor-icons/react";
 import { EmptyPetState } from "@/components/EmptyPetState";
-import { PilotSheet, Sheet } from "@/components/Sheet";
 import { CompanionTag } from "@/components/blackbox/CompanionTag";
 import { WalkMode } from "@/components/blackbox/WalkMode";
-import { Connect, DataRules, Diagnostics, PriceCard, Today } from "@/components/blackbox/sections";
-import { CoverStop } from "@/components/walk/CoverStop";
-import { AVG_MEMBER_PCT, BB_CAP, UK_AVG_PREMIUM, blackBoxDiscount, dailyTarget, diagnostics, estimateDiscount, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
-import { basePremium } from "@/lib/discount";
-import { useScans } from "@/lib/video/scans";
-import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
+import { AVG_MEMBER_PCT, TOP_TIER_PCT, annualPremium, avgSaving } from "@/data/premiums";
+import { blackBoxDiscount, dailyTarget, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
+import { joinPremium, usePremium } from "@/lib/premium";
 import type { PetRecord } from "@/lib/store";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
@@ -34,11 +30,10 @@ function Section({ id, eyebrow, title, children }: { id?: string; eyebrow: strin
   );
 }
 
-/** Your price today against the most Petra can take off: two big numbers and the monthly saving. Illustrative. */
-function Compare({ yearly }: { yearly: number }) {
-  const monthly = yearly / 12;
-  const best = monthly * (1 - BB_CAP / 100);
-  const avgSaving = Math.round((UK_AVG_PREMIUM * AVG_MEMBER_PCT) / 100);
+/** Your price today against the most Petra can take off: two big numbers, the monthly saving, the average small. */
+function Compare({ rec }: { rec: PetRecord }) {
+  const monthly = annualPremium(rec.pet) / 12;
+  const best = monthly * (1 - TOP_TIER_PCT / 100);
   return (
     <div className="space-y-5">
       <dl className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2">
@@ -63,78 +58,28 @@ function Compare({ yearly }: { yearly: number }) {
           Save up to {gbp2(monthly - best)} a month
         </span>
         <span className="text-sm text-muted">
-          Members save about {AVG_MEMBER_PCT}% on average (around £{avgSaving} a year on a £{UK_AVG_PREMIUM} premium). Up to {BB_CAP}% at the top tier. Illustrative.
+          Members save about {AVG_MEMBER_PCT}% on average, around {gbp(avgSaving(rec.pet))} a year for {rec.pet.name}. Illustrative.
         </span>
       </p>
     </div>
   );
 }
 
-/** "If you walked like this more often": walks a week and minutes a walk to an estimated tier and annual saving. */
-function Estimator({ rec, target, yearly }: { rec: PetRecord; target: number; yearly: number }) {
-  const [walks, setWalks] = useState(7);
-  const [minutes, setMinutes] = useState(Math.min(90, Math.max(10, Math.round((target || 30) / 5) * 5)));
-  const est = estimateDiscount(walks, minutes, target);
-  const who = rec.pet.breed ? `${rec.pet.ageYears}-year-old ${rec.pet.breed}` : `${rec.pet.ageYears}-year-old ${rec.pet.species}`;
-  const slider = (label: string, value: number, set: (n: number) => void, min: number, max: number, step: number, unit: string) => (
-    <label className="block">
-      <span className="flex items-baseline justify-between gap-4">
-        <span className="font-semibold">{label}</span>
-        <span className="tnum text-2xl font-semibold tracking-[-0.02em]">
-          {value}
-          <span className="text-sm font-medium text-muted"> {unit}</span>
-        </span>
-      </span>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} aria-valuetext={`${value} ${unit}`} className="mt-2 w-full accent-[var(--ink)]" />
-    </label>
-  );
-  return (
-    <div className="grid gap-8 rounded-brand border border-line bg-white/60 p-6 sm:p-8 lg:grid-cols-12">
-      <div className="space-y-6 lg:col-span-7">
-        {slider("Walks a week", walks, setWalks, 0, 14, 1, walks === 1 ? "walk" : "walks")}
-        {slider("Minutes a walk", minutes, setMinutes, 5, 120, 5, "min")}
-        <p className="text-sm text-muted">
-          Target for a {who}: {target ? `${target} minutes a day` : "paused for rest"}. A week counts at five days of it.
-        </p>
-      </div>
-      <div className="lg:col-span-5" aria-live="polite">
-        <p className="eyebrow">Estimated saving, illustrative</p>
-        <p className="tnum mt-2 text-[clamp(3rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em]" data-testid="estimate-saving">
-          {gbp((yearly * est.total) / 100)}
-          <span className="text-base font-medium tracking-normal text-muted"> a year</span>
-        </p>
-        <p className="mt-3 text-lg">
-          <strong className="rounded-[4px] bg-accent px-1.5">{est.total}% tier</strong>{" "}
-          <span className="text-muted">
-            ({est.walking}% walking + {est.extra}% weekly check-ins)
-          </span>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const PARTNERS: [string, string, string][] = [
-  ["Pet retailer", "Pawsmith & Co.", "10% off every order"],
-  ["Food", "Barkley Kitchen", "First bag half price"],
-  ["Vets", "Greenpaw Vets", "Free nurse health check"],
-  ["Insurer", "Harbourline", "An extra month free at renewal"],
-  ["Accessories", "Tagalong Supply", "15% off leads and harnesses"],
-  ["Grooming", "Suds & Tails", "£10 off your first groom"],
+const STEPS: [string, string][] = [
+  ["Clip it on", "The Walk Companion clips to any collar."],
+  ["Walk as usual", "It counts walking minutes. Never your location."],
+  ["Pay less", "Hit the target most weeks and your premium drops."],
 ];
 
-/** Petra Savings: the Walk Companion product page. Telematics for pet insurance, sharing minutes, never location. */
+/** Petra Savings: the Walk Companion, and nothing else. Hero, how it works, price, an example walk, one CTA. */
 export default function SavingsPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
   const walks = useWalks(rec?.id);
   const collar = useCollarDays(rec?.id);
-  const scans = useScans(rec?.id);
-  const mobility = rec ? mobilitySummary(scans, log, rec.pet.name) : null;
+  const member = usePremium();
   const now = useNow();
-  const [hr, setHr] = useState<{ name: string; bpm: number | null } | null>(null);
-  const [rules, setRules] = useState(false);
-  const [pilot, setPilot] = useState(false);
+  const reduce = Boolean(useReducedMotion());
 
   if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
   if (!rec)
@@ -166,15 +111,14 @@ export default function SavingsPage() {
   const name = rec.pet.name;
   const target = dailyTarget(rec, log, now);
   const today = todayMinutes(walks, collar, now);
-  const wk = weeks(rec, target, walks, collar, now);
-  const discount = blackBoxDiscount(wk, log, now);
-  const diag = diagnostics(collar);
-  const premium = basePremium(rec.pet);
-  const isCollar = rec.blackBox?.device === "collar";
+  const discount = blackBoxDiscount(weeks(rec, target, walks, collar, now), log, now);
+  const joined = member?.petId === rec.id;
+  // Arriving from the walk, the hero slides up as the page comes in.
+  const enter = reduce ? {} : { initial: { opacity: 0, y: 48 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } };
 
   return (
-    <div className="space-y-20 pb-28 sm:space-y-24 lg:pb-10">
-      <header className="relative -mx-4 overflow-hidden bg-[#161616] px-6 py-12 text-white sm:mx-0 sm:rounded-brand sm:px-10 sm:py-16">
+    <div className="space-y-20 pb-16 sm:space-y-24">
+      <motion.header {...enter} className="relative -mx-4 overflow-hidden bg-[#161616] px-6 py-12 text-white sm:mx-0 sm:rounded-brand sm:px-10 sm:py-16">
         <div className="grid items-center gap-10 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: YELLOW }}>
@@ -186,107 +130,61 @@ export default function SavingsPage() {
             <p className="mt-6 max-w-[44ch] text-lg text-white/75 sm:text-xl">
               The Petra Walk Companion shares walking minutes, never your location. Hit {name}&apos;s target, pay less.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <button type="button" onClick={() => setPilot(true)} className="btn min-h-14 px-7 text-lg font-semibold text-[#141414]" style={{ background: YELLOW }}>
-                Get the Walk Companion <ArrowUpRight size={20} weight="bold" aria-hidden />
-              </button>
-              <a href="#walk-mode" className="min-h-11 content-center text-sm font-semibold text-white/80 underline-offset-4 hover:underline">
-                Try an example walk
-              </a>
-            </div>
           </div>
           <div className="flex justify-center lg:col-span-5">
             <CompanionTag className="h-auto w-64 sm:w-80" />
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="grid gap-12 lg:grid-cols-12">
-        <div className="min-w-0 space-y-20 sm:space-y-24 lg:col-span-8">
-          <Section id="compare" eyebrow="Your price" title={<>Your price today, and with Petra.</>}>
-            <Compare yearly={premium} />
-          </Section>
+      <Section id="how" eyebrow="How it works" title="Three steps.">
+        <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3">
+          {STEPS.map(([t, d], i) => (
+            <li key={t} className="bg-paper p-6">
+              <span className="tnum grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-semibold">{i + 1}</span>
+              <p className="mt-4 text-2xl font-semibold tracking-[-0.03em]">{t}</p>
+              <p className="mt-1 text-muted">{d}</p>
+            </li>
+          ))}
+        </ol>
+      </Section>
 
-          <Section id="walk-mode" eyebrow="Example walk" title={<>Take {name} for a walk.</>}>
-            <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} discountPct={discount.total} onFinished={() => undefined} />
-            <Today rec={rec} target={target} today={today} weeksMet={discount.weeksMet} weeksCounted={discount.weeksCounted} />
-            <PriceCard rec={rec} discount={discount} />
-          </Section>
+      <Section id="compare" eyebrow="Your price" title="Your price today, and with Petra.">
+        <Compare rec={rec} />
+      </Section>
 
-          <Section id="estimate" eyebrow="Illustrative" title="If you walked like this more often">
-            <Estimator rec={rec} target={target} yearly={premium} />
-          </Section>
+      <Section id="walk-mode" eyebrow="Example walk" title={<>Take {name} for a walk.</>}>
+        <WalkMode rec={rec} target={target} todayBefore={today} collar={rec.blackBox?.device === "collar"} liveHr={null} discountPct={discount.total} finishCta={{ href: "#join", label: "Continue" }} onFinished={() => undefined} />
+      </Section>
 
-          <Section id="partners" eyebrow="Member offers" title="Members save more with partners">
-            <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-              {PARTNERS.map(([kind, brand, offer]) => (
-                <li key={brand} className="bg-paper p-5">
-                  <p className="eyebrow">{kind}</p>
-                  <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">{offer}</p>
-                  <p className="mt-1 text-sm text-muted">{brand}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="text-xs text-muted">Example partners. Not real offers.</p>
-          </Section>
-
-          <Section id="plans" eyebrow="Cover" title="Pick your cover">
-            <CoverStop rec={rec} log={log} />
-          </Section>
-
-          <section aria-labelledby="first-time-title" className="rounded-brand border-2 border-ink bg-accent-soft p-6">
-            <p className="eyebrow">Illustrative offer</p>
-            <h2 id="first-time-title" className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
-              First-time owner? Start lower.
-            </h2>
-            <p className="mt-2 max-w-[52ch] text-muted">For example, 10% off your first year and a free Walk Companion with a 2-year policy.</p>
-          </section>
-
-          <Section id="companion" eyebrow="Your Walk Companion" title={<>Pair it, and {name}&apos;s health rides along.</>}>
-            <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
-            <Diagnostics rec={rec} days={collar} result={diag} now={now} />
-            {mobility && (
-              <p className="text-sm" data-testid="savings-health">
-                Latest movement check ({new Date(mobility.scan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                {isDemoScan(mobility.scan) ? ", demo walk" : ""}): {mobility.text}
-                {mobility.scan.flags.length ? `. ${mobility.scan.flags.map((f) => f.label).join("; ")}` : ""}.{" "}
-                <Link href="/dashboard#movement" className="link">
-                  Movement check
-                </Link>
-              </p>
-            )}
-          </Section>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link href="/dashboard" className="btn btn-ghost">
-              {name}&apos;s dashboard <ArrowUpRight size={16} aria-hidden />
+      <section id="join" className="scroll-mt-32 rounded-brand bg-[#161616] px-6 py-12 text-center text-white sm:px-10 sm:py-16" aria-live="polite">
+        {joined ? (
+          <motion.div initial={reduce ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="mx-auto max-w-2xl space-y-6" role="status">
+            <CheckCircle size={56} weight="fill" className="mx-auto" style={{ color: YELLOW }} aria-hidden />
+            <p className="display text-[clamp(2rem,5vw,3.5rem)]">
+              Welcome to Petra Premium. <span style={{ color: YELLOW }}>{name} is covered for every walk.</span>
+            </p>
+            <Link href="/dashboard" className="btn min-h-14 px-8 text-lg font-semibold text-[#141414]" style={{ background: YELLOW }}>
+              Go to your dashboard <ArrowUpRight size={20} weight="bold" aria-hidden />
             </Link>
-            <Link href="/walk" className="link min-h-11 content-center">
-              Back to the walk
-            </Link>
+          </motion.div>
+        ) : (
+          <div className="mx-auto max-w-2xl space-y-6">
+            <p className="display text-[clamp(2rem,5vw,3.5rem)]">Ready when {name} is.</p>
+            <button
+              type="button"
+              onClick={() => joinPremium({ petId: rec.id, petName: name })}
+              className="btn min-h-16 rounded-full px-10 text-xl font-semibold text-[#141414] shadow-[0_10px_40px_-10px_rgba(255,212,59,0.6)]"
+              style={{ background: YELLOW }}
+            >
+              Try it today <ArrowUpRight size={22} weight="bold" aria-hidden />
+            </button>
           </div>
-        </div>
-
-        <div className="hidden lg:col-span-4 lg:block">
-          <div className="sticky top-24">
-            <DataRules />
-          </div>
-        </div>
-      </div>
-
-      {/* Phones: the rules stay one tap away at all times. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 py-2 backdrop-blur-sm lg:hidden">
-        <button type="button" onClick={() => setRules(true)} className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm font-semibold">
-          <span className="inline-flex items-center gap-2">
-            <ShieldCheck size={18} aria-hidden /> Your data, your rules
-          </span>
-          <span className="text-muted">Only lowers your premium</span>
-        </button>
-      </div>
-      <Sheet open={rules} onClose={() => setRules(false)} title="Your data, your rules">
-        <DataRules compact />
-      </Sheet>
-      <PilotSheet open={pilot} onClose={() => setPilot(false)} what="The Petra Walk Companion" />
+        )}
+        <p className="mx-auto mt-8 max-w-[52ch] text-sm text-white/70" data-testid="data-promise">
+          Your data can only lower your premium. Never raise it, never add exclusions. Routes and locations stay on your device.
+        </p>
+      </section>
     </div>
   );
 }
