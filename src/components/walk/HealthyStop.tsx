@@ -28,16 +28,15 @@ export function HealthyPet({ rec, reduce }: { rec: PetRecord; reduce: boolean })
   const rabbit = species === "rabbit";
   const legLen = horse ? 96 : rabbit ? 44 : cat ? 62 : 72;
   const bodyY = 200 - legLen - 22;
-  const swing = (deg: number, delay = 0) =>
-    reduce ? { rotate: deg } : { rotate: [deg, -deg, deg], transition: { duration: 0.7, repeat: Infinity, ease: "easeInOut" as const, delay } };
+  const swing = (deg: number) => (reduce ? { rotate: deg } : { rotate: [deg, -deg, deg], transition: { duration: 0.7, repeat: Infinity, ease: "easeInOut" as const } });
   const leg = (x: number, fill: string, deg: number) => (
-    <motion.g style={{ originX: `${x + 10}px`, originY: `${bodyY + 8}px` }} initial={{ rotate: deg }} animate={swing(deg)}>
+    <motion.g style={{ originX: 0.5, originY: 0 }} initial={{ rotate: deg }} animate={swing(deg)}>
       <rect x={x} y={bodyY} width={horse ? 16 : 20} height={legLen + 14} rx={horse ? 7 : 10} fill={fill} />
       {horse && <rect x={x - 1} y={bodyY + legLen + 6} width="18" height="10" rx="3" fill={INK} />}
     </motion.g>
   );
   return (
-    <svg viewBox="0 0 360 240" className="h-auto w-full max-w-[560px] overflow-visible" role="img" aria-label={`${rec.pet.name}, healthy and happy, mid-stride`}>
+    <svg viewBox="0 0 360 240" className="h-auto w-full max-w-[480px] overflow-visible" role="img" aria-label={`${rec.pet.name}, healthy and happy, mid-stride`}>
       <defs>
         <radialGradient id="healthy-glow" cx="50%" cy="55%" r="50%">
           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.75" />
@@ -45,7 +44,7 @@ export function HealthyPet({ rec, reduce }: { rec: PetRecord; reduce: boolean })
           <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <motion.circle cx="180" cy="130" r="150" fill="url(#healthy-glow)" animate={reduce ? undefined : { scale: [1, 1.06, 1] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} style={{ originX: "180px", originY: "130px" }} />
+      <motion.circle cx="180" cy="130" r="150" fill="url(#healthy-glow)" animate={reduce ? undefined : { scale: [1, 1.06, 1] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
       {/* sparkles */}
       {[
         [62, 54, 0],
@@ -53,7 +52,7 @@ export function HealthyPet({ rec, reduce }: { rec: PetRecord; reduce: boolean })
         [318, 150, 1.2],
         [40, 160, 1.8],
       ].map(([x, y, d]) => (
-        <motion.path key={`${x}`} d={`M${x} ${y - 9} L${x + 3} ${y - 3} L${x + 9} ${y} L${x + 3} ${y + 3} L${x} ${y + 9} L${x - 3} ${y + 3} L${x - 9} ${y} L${x - 3} ${y - 3} Z`} fill="#fff" animate={reduce ? undefined : { opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} transition={{ duration: 1.8, repeat: Infinity, delay: d }} style={{ originX: `${x}px`, originY: `${y}px` }} />
+        <motion.path key={`${x}`} d={`M${x} ${y - 9} L${x + 3} ${y - 3} L${x + 9} ${y} L${x + 3} ${y + 3} L${x} ${y + 9} L${x - 3} ${y + 3} L${x - 9} ${y} L${x - 3} ${y - 3} Z`} fill="#fff" animate={reduce ? undefined : { opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} transition={{ duration: 1.8, repeat: Infinity, delay: d }} />
       ))}
       <ellipse cx="180" cy="222" rx="120" ry="8" fill={INK} opacity="0.1" />
       <motion.g animate={reduce ? undefined : { y: [0, -6, 0] }} transition={{ duration: 0.35, repeat: Infinity, ease: "easeInOut" }}>
@@ -65,7 +64,7 @@ export function HealthyPet({ rec, reduce }: { rec: PetRecord; reduce: boolean })
         ) : horse ? (
           <path d={`M90 ${bodyY - 10} Q60 ${bodyY + 10} 66 ${bodyY + 60}`} fill="none" stroke={shade} strokeWidth="14" strokeLinecap="round" />
         ) : (
-          <motion.path d={`M92 ${bodyY - 4} Q58 ${bodyY - 10} 52 ${bodyY - 52}`} fill="none" stroke={coat} strokeWidth="13" strokeLinecap="round" animate={reduce ? undefined : { rotate: [-8, 10, -8] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ originX: "92px", originY: `${bodyY - 4}px` }} />
+          <motion.path d={`M92 ${bodyY - 4} Q58 ${bodyY - 10} 52 ${bodyY - 52}`} fill="none" stroke={coat} strokeWidth="13" strokeLinecap="round" animate={reduce ? undefined : { rotate: [-8, 10, -8] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ originX: 1, originY: 1 }} />
         )}
         {/* far legs, then body, then near legs */}
         {leg(118, shade, -22)}

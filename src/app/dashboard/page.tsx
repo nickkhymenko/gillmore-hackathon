@@ -236,7 +236,7 @@ export default function DashboardPage() {
         </dl>
       </header>
 
-      <div role="tablist" aria-label="Dashboard" className="-mx-4 flex gap-1 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0">
+      <div role="tablist" aria-label="Dashboard" className="-mx-4 flex overflow-x-auto border-b border-line px-2 sm:mx-0 sm:gap-1 sm:px-0">
         {TABS.map(([id, label]) => (
           <button
             key={id}
@@ -246,7 +246,7 @@ export default function DashboardPage() {
             aria-selected={tab === id}
             aria-controls={`panel-${id}`}
             onClick={() => pick(id)}
-            className={`-mb-px min-h-12 whitespace-nowrap border-b-2 px-4 text-sm font-semibold transition-colors ${tab === id ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
+            className={`-mb-px min-h-12 flex-1 whitespace-nowrap border-b-2 px-1.5 text-[13px] font-semibold sm:flex-none sm:px-4 sm:text-sm transition-colors ${tab === id ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
             {label}
           </button>
