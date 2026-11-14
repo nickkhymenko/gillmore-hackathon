@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowUpRight, PauseCircle, ShieldCheck, Stethoscope, TrendDown, Warning, WarningOctagon } from "@phosphor-icons/react";
+import { ArrowUpRight, PaperPlaneTilt, PauseCircle, ShieldCheck, Stethoscope, TrendDown, Warning, WarningOctagon } from "@phosphor-icons/react";
 import { WARN } from "./Analysis";
+import { worstAsym } from "./scan";
 import type { GaitClip } from "./types";
 
 const gbp = (n: number) =>
@@ -12,10 +13,18 @@ const gbp = (n: number) =>
 /** Illustrative premium figures (same idea as the Black Box price card: discount only, never a surcharge). */
 const MONTHLY = 38;
 
-export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string }) {
+/**
+ * The movement check result card: verdict, symmetry gauge, mobility against the pet's own usual,
+ * which leg (when the model could tell), and "Send to my vet", which only sends on tap.
+ */
+export function GaitResult({ clip, petName, mobility = null, usual = null, onSendVet }: { clip: GaitClip; petName: string; mobility?: number | null; usual?: string | null; onSendVet: () => void }) {
   const r = clip.result;
   const healthy = r.healthy;
   const pet = petName || (clip.species === "cat" ? "your cat" : "your dog");
+  const worst = worstAsym(clip);
+  // amber = worth watching (re-check in a few days); red = a limp worth a vet's look soon. Both from the model.
+  const watch = r.model_light === "amber";
+  const finding = r.finding.trim().replace(/\.?$/, ".");
 
   return (
     <motion.div
@@ -40,25 +49,27 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
             </span>
-            <span className="font-semibold tracking-[-0.01em]">Limp warning</span>
-            <span className="text-white/85">Signs worth a vet&apos;s look in the next 48 hours</span>
+            <span className="font-semibold tracking-[-0.01em]">{watch ? "Worth watching" : "Limp warning"}</span>
+            <span className="text-white/85">{watch ? "Film again in a few days" : "Signs worth a vet's look in the next 48 hours"}</span>
           </div>
           <div className="grid gap-8 bg-dark p-6 text-paper sm:p-8 lg:grid-cols-12">
             <div className="space-y-4 lg:col-span-8">
               <p className="eyebrow text-paper/60">Movement check result</p>
               <h3 className="display text-[clamp(2rem,5vw,3.25rem)]">
-                A change worth <span className="accent-word text-accent">a vet&apos;s look.</span>
+                A change worth <span className="accent-word text-accent">{watch ? "watching." : "a vet's look."}</span>
               </h3>
               <p className="max-w-[52ch] text-lg text-paper/80">
-                {r.finding}. {pet} is not putting equal weight on every leg. This pattern often shows up before a limp is obvious at home.
+                {finding} {watch ? "" : `${pet} is not putting equal weight on every leg. This pattern often shows up before a limp is obvious at home.`}
               </p>
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-2 rounded-brand px-3 py-1.5 text-sm font-semibold text-white" style={{ background: WARN }}>
-                  <Warning size={16} weight="bold" aria-hidden /> Possible limp: {r.area}
+                  <Warning size={16} weight="bold" aria-hidden /> {watch ? "Leg to watch" : "Possible limp"}: {r.area ?? "not clear"}
                 </span>
-                <span className="inline-flex items-center rounded-brand bg-accent px-3 py-1.5 text-sm font-semibold text-ink">
-                  {Math.round((r.key === "head" ? r.head_asym : r.pelvis_asym) ?? 0)}% uneven steps
-                </span>
+                {r.key && (
+                  <span className="inline-flex items-center rounded-brand bg-accent px-3 py-1.5 text-sm font-semibold text-ink">
+                    {Math.round((r.key === "head" ? r.head_asym : r.pelvis_asym) ?? 0)}% uneven steps
+                  </span>
+                )}
               </div>
             </div>
             <div className="lg:col-span-4">
@@ -67,6 +78,21 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
           </div>
         </div>
       )}
+
+      {/* symmetry gauge and mobility against the pet's own usual */}
+      <section className="grid items-center gap-8 sm:grid-cols-2">
+        <SymmetryGauge value={worst} />
+        <div className="space-y-2">
+          {mobility !== null && (
+            <p className="text-3xl font-semibold tracking-[-0.03em]" data-testid="mobility-summary">
+              {usual ?? `Mobility ${mobility}`}.
+            </p>
+          )}
+          <p className="text-muted">
+            {r.area ? `Leg to watch: ${r.area}.` : healthy ? "No leg stands out." : "The model could not tell which leg."} Signs worth a vet&apos;s look, never a diagnosis.
+          </p>
+        </div>
+      </section>
 
       {/* what we measured */}
       <section className="space-y-4">
@@ -89,11 +115,18 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
           <h4 className="eyebrow border-t border-line pt-3">What to do now</h4>
           <div className="grid gap-6 lg:grid-cols-12">
             <ol className="space-y-4 lg:col-span-7">
-              {[
-                ["Book a vet check in the next 48 hours", "The free online consult is ready below, with this video attached."],
-                [`Keep ${pet} rested`, "Short lead walks for toilet breaks only. No running, jumping or stairs until a vet has looked."],
-                ["Film again in 3 days", "If the steps look worse, or the same, the vet sees the change straight away."],
-              ].map(([title, body], i) => (
+              {(watch
+                ? [
+                    ["Film again in a few days", "Side on, walking past you. If the change is still there, the next check shows it."],
+                    ["Mention it to your vet if it persists", "Tap Send to my vet below to share this check with them."],
+                    [`Keep ${pet}'s days gentle`, "Normal routine, but no big jumps or long runs until the next check."],
+                  ]
+                : [
+                    ["Book a vet check in the next 48 hours", "Tap Send to my vet below to share this check with them."],
+                    [`Keep ${pet} rested`, "Short lead walks for toilet breaks only. No running, jumping or stairs until a vet has looked."],
+                    ["Film again in 3 days", "If the steps look worse, or the same, the vet sees the change straight away."],
+                  ]
+              ).map(([title, body], i) => (
                 <li key={title} className="flex gap-4">
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-sm font-semibold text-paper tnum">{i + 1}</span>
                   <div>
@@ -138,8 +171,8 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
             <Tile icon={<Stethoscope size={22} weight="bold" />} title="Free online vet check">
               We attach this video and the gait summary, so the vet starts with the full picture.
             </Tile>
-            <Tile icon={<PauseCircle size={22} weight="bold" />} title="Rest mode is on">
-              Walk targets pause while {pet} recovers. Your discount is protected.
+            <Tile icon={<PauseCircle size={22} weight="bold" />} title="Rest mode, if needed">
+              If a vet asks for rest, walk targets pause while {pet} recovers and your discount is protected.
             </Tile>
             <Tile icon={<ShieldCheck size={22} weight="bold" />} title="Your price cannot go up">
               Catching it early is cheaper for everyone. It can only lower your premium.
@@ -147,11 +180,9 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
           </div>
         )}
         <div className="flex flex-wrap gap-3 pt-2">
-          {!healthy && (
-            <button type="button" className="btn btn-primary text-lg">
-              Book the free vet check <ArrowUpRight size={18} weight="bold" aria-hidden />
-            </button>
-          )}
+          <button type="button" onClick={onSendVet} className={`btn ${healthy ? "btn-ghost" : "btn-primary"} text-lg`}>
+            <PaperPlaneTilt size={18} weight="bold" aria-hidden /> Send to my vet
+          </button>
           <Link href="/savings" className={`btn ${healthy ? "btn-primary" : "btn-ghost"} text-lg`}>
             See my savings <ArrowUpRight size={18} weight="bold" aria-hidden />
           </Link>
@@ -159,10 +190,49 @@ export function GaitResult({ clip, petName }: { clip: GaitClip; petName: string 
       </section>
 
       <p className="text-xs text-muted">
-        Screening support only, not a diagnosis. Figures are illustrative. Video analysed with DeepLabCut SuperAnimal; routes
-        and videos stay with you, your insurer only sees whether this week&apos;s check was done.
+        Signs worth a vet&apos;s look, never a diagnosis. Nothing is sent to your vet until you tap Send. Cover figures are illustrative.
+        Keypoints from DeepLabCut SuperAnimal-Quadruped; your insurer only sees whether this week&apos;s check was done.
       </p>
     </motion.div>
+  );
+}
+
+/** Half-dial of step unevenness: even up to 15%, worth watching to 30%, uneven above (the model's own thresholds). */
+function SymmetryGauge({ value }: { value: number | null }) {
+  const MAX = 45;
+  const R = 80;
+  const at = (v: number) => {
+    const a = Math.PI * (1 - Math.min(MAX, Math.max(0, v)) / MAX);
+    return [100 + R * Math.cos(a), 100 - R * Math.sin(a)];
+  };
+  const arc = (from: number, to: number) => {
+    const [x1, y1] = at(from);
+    const [x2, y2] = at(to);
+    return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  };
+  const [nx, ny] = at(value ?? 0);
+  const label = value === null ? "Not readable" : value <= 15 ? "Even" : value <= 30 ? "Worth watching" : "Uneven";
+  return (
+    <figure className="mx-auto w-full max-w-[280px]">
+      <svg viewBox="0 0 200 120" className="w-full" role="img" aria-label={`Symmetry: ${label}${value === null ? "" : `, ${Math.round(value)}% uneven`}`}>
+        <path d={arc(0, 15)} fill="none" stroke="var(--accent)" strokeWidth="16" />
+        <path d={arc(15, 30)} fill="none" stroke="#E8A33D" strokeWidth="16" />
+        <path d={arc(30, MAX)} fill="none" stroke={WARN} strokeWidth="16" />
+        {value !== null && (
+          <>
+            <line x1="100" y1="100" x2={nx} y2={ny} stroke="var(--ink)" strokeWidth="3.5" strokeLinecap="round" />
+            <circle cx="100" cy="100" r="6" fill="var(--ink)" />
+          </>
+        )}
+      </svg>
+      <figcaption className="-mt-2 text-center">
+        <span className="eyebrow block">Symmetry</span>
+        <span className="text-lg font-semibold">
+          {label}
+          {value !== null && <span className="tnum font-normal text-muted"> · {Math.round(value)}% uneven</span>}
+        </span>
+      </figcaption>
+    </figure>
   );
 }
 

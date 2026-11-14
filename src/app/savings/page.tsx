@@ -13,6 +13,7 @@ import { PrintShape } from "@/components/walk/WalkPath";
 import { BB_CAP, blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
 import { useScans } from "@/lib/video/scans";
+import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
 const gbp2 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -82,7 +83,8 @@ export default function BlackBoxPage() {
   const log = useCheckins(rec?.id, rec?.pet.name);
   const walks = useWalks(rec?.id);
   const collar = useCollarDays(rec?.id);
-  const latestScan = useScans(rec?.id).at(-1);
+  const scans = useScans(rec?.id);
+  const mobility = rec ? mobilitySummary(scans, log, rec.pet.name) : null;
   const now = useNow();
   const [hr, setHr] = useState<{ name: string; bpm: number | null } | null>(null);
   const [rules, setRules] = useState(false);
@@ -177,14 +179,13 @@ export default function BlackBoxPage() {
           <Block n="04" title="Your Walk Companion">
             <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
             <Diagnostics rec={rec} days={collar} result={diag} now={now} />
-            {latestScan && (
-              <p className="text-sm">
-                Latest video scan ({new Date(latestScan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                {latestScan.source === "mock" ? ", demo" : ""}):{" "}
-                {[latestScan.metrics.mobilityScore !== null && `mobility ${Math.round(latestScan.metrics.mobilityScore)}/100`, latestScan.metrics.breathingRatePerMin !== null && `breathing ${Math.round(latestScan.metrics.breathingRatePerMin)} a minute`].filter(Boolean).join(", ") || "no metrics"}
-                {latestScan.flags.length ? `. ${latestScan.flags.map((f) => f.label).join("; ")}.` : "."}{" "}
-                <Link href="/dashboard#video" className="link">
-                  Video scans
+            {mobility && (
+              <p className="text-sm" data-testid="savings-health">
+                Latest movement check ({new Date(mobility.scan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                {isDemoScan(mobility.scan) ? ", demo walk" : ""}): {mobility.text}
+                {mobility.scan.flags.length ? `. ${mobility.scan.flags.map((f) => f.label).join("; ")}` : ""}.{" "}
+                <Link href="/dashboard#movement" className="link">
+                  Movement check
                 </Link>
               </p>
             )}

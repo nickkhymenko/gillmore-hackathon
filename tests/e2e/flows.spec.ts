@@ -96,7 +96,7 @@ test("4 and 5: the walk: stops, Doctapet line, charts, cover only when reached, 
   await page.goto("/walk");
   await expect(page.getByText("Powered by Doctapet.")).toBeVisible();
   await expect(page.getByText("Here with you.")).toBeVisible();
-  expect(await page.locator("section[id] [data-stop]").count()).toBe(8);
+  expect(await page.locator("section[id] [data-stop]").count()).toBe(9);
   await expect(page.locator("#trends .recharts-line").first()).toBeAttached();
   expect(await page.locator("#trends .recharts-line").count()).toBeGreaterThanOrEqual(4);
 
