@@ -2,7 +2,7 @@
 import { sameTheme, type ThemeTokens } from "./palette";
 import { defaultProfile } from "./profile";
 import { SPECIES_THEME, THEME_KEY } from "./theme";
-import { NO_CONSENT, type CheckinResult, type Consent, type Pet, type TwinProfile, type TwinResult } from "./types";
+import { NO_CONSENT, type Answers, type CheckinResult, type Consent, type Pet, type TwinProfile, type TwinResult } from "./types";
 
 /**
  * Demo persistence in the browser (localStorage). Swap for Supabase/Postgres later
@@ -11,7 +11,15 @@ import { NO_CONSENT, type CheckinResult, type Consent, type Pet, type TwinProfil
  * A household holds several pets. Each pet has its own profile answers, Pet Twin (photo, palette,
  * avatar traits), consent and check-ins. One pet is active at a time and themes the whole app.
  */
-export type StoredCheckin = CheckinResult & { petName: string; petId?: string };
+export type StoredCheckin = CheckinResult & {
+  petName: string;
+  petId?: string;
+  /** The tap answers behind this result, so trends can be charted per question. */
+  answers?: Answers;
+  notes?: string;
+  /** Weight entered with this check-in, if any. */
+  weightKg?: number;
+};
 
 export type PetRecord = {
   id: string;
@@ -79,7 +87,7 @@ export function readRaw(key: string): string | null {
     return null;
   }
 }
-export { HOUSEHOLD_KEY };
+export { HOUSEHOLD_KEY, LOG_KEY };
 
 const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `pet-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
@@ -250,18 +258,23 @@ export const clearAll = () => {
   deleteAllData();
 };
 
-/** Seed 6 weeks of plausible history so the trend chart and baseline logic show on stage. */
+/** Seed 6 weeks of plausible history so the trend charts and baseline logic show on stage. */
 export function seedDemo(pet: Pet) {
   const active = activePet();
-  const petId = active && active.pet.name === pet.name ? active.id : undefined;
   if (!active) savePet(pet);
-  const id = petId ?? activePet()?.id;
+  const id = active && active.pet.name === pet.name ? active.id : activePet()?.id;
   const scores = [92, 94, 90, 93, 91, 88];
+  const normal: Answers = { appetite: "normal", energy: "normal", water: "normal", stool: "normal", vomiting: "none", mobility: "normal", skin: "normal", breathing: "normal", urination: "normal" };
+  const variation: Partial<Answers>[] = [{}, {}, { energy: "lower" }, {}, {}, {}];
+  const kg = pet.weightKg;
+  const wobble = [0, 0.4, -0.2, 0.3, 0.1, 0.5];
   const now = Date.now();
   const week = 7 * 24 * 3600 * 1000;
   const seeded: StoredCheckin[] = scores.map((s, i) => ({
     petName: pet.name,
     petId: id,
+    answers: { ...normal, ...variation[i] },
+    weightKg: kg ? Math.round((kg + (kg * wobble[i]) / 30) * 10) / 10 : undefined,
     status: "green",
     healthScore: s,
     headline: `${pet.name} looks on track this week`,
@@ -278,8 +291,12 @@ export function seedDemo(pet: Pet) {
     disclaimer: "",
     createdAt: new Date(now - (scores.length - i) * week).toISOString(),
   }));
-  const others = read<StoredCheckin[]>(LOG_KEY, []).filter((c) => (id ? c.petId !== id : c.petName !== pet.name));
-  write(LOG_KEY, [...others, ...seeded]);
+  // Keep real check-ins from the last six days (for example one just done on the walk); replace older history.
+  const recent = now - 6 * 24 * 3600 * 1000;
+  const mine = (c: StoredCheckin) => (id ? c.petId === id : c.petName === pet.name);
+  const all = read<StoredCheckin[]>(LOG_KEY, []);
+  const keep = all.filter((c) => !mine(c) || new Date(c.createdAt).getTime() >= recent);
+  write(LOG_KEY, [...keep, ...seeded].sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
 }
 
 export function streakWeeks(list: StoredCheckin[]) {

@@ -1,6 +1,6 @@
 "use client";
-import { useMemo, useSyncExternalStore } from "react";
-import { HOUSEHOLD_KEY, readRaw, subscribe, type Household, type PetRecord } from "./store";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { HOUSEHOLD_KEY, LOG_KEY, readRaw, subscribe, type Household, type PetRecord, type StoredCheckin } from "./store";
 
 const EMPTY: Household = { activeId: null, pets: [] };
 
@@ -22,8 +22,28 @@ export function useHousehold(): { household: Household; ready: boolean } {
   }, [raw]);
 }
 
+/** Check-ins for one pet, live, oldest first. */
+export function useCheckins(petId: string | null | undefined, petName?: string): StoredCheckin[] {
+  const raw = useSyncExternalStore(subscribe, () => readRaw(LOG_KEY) ?? "", () => "");
+  return useMemo(() => {
+    if (!raw || !petId) return [];
+    try {
+      const all = JSON.parse(raw) as StoredCheckin[];
+      return all.filter((c) => (c.petId ? c.petId === petId : c.petName === petName)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    } catch {
+      return [];
+    }
+  }, [raw, petId, petName]);
+}
+
 export function useActivePet(): { pet: PetRecord | null; ready: boolean } {
   const { household, ready } = useHousehold();
   const pet = household.pets.find((p) => p.id === household.activeId) ?? household.pets[0] ?? null;
   return { pet, ready };
+}
+
+/** The time when the component first rendered on the client. Stable across re-renders (pure render). */
+export function useNow() {
+  const [now] = useState(() => Date.now());
+  return now;
 }
