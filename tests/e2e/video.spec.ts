@@ -38,60 +38,125 @@ test.describe("contract", () => {
   });
 });
 
-test("dashboard video scan: live view, record 15 s, analyse; nothing uploaded in mock mode", async ({ page }) => {
+const PILOT = "Live analysis of your own videos is coming in the pilot. Try a demo walk.";
+
+test("/walk: the demo walk analyses in one tap; the result feeds the stop, the dashboard and Savings; Send to my vet needs a tap", async ({ page }) => {
   const { errors, requests } = watch(page);
-  await seedPet(page);
-  await page.goto("/dashboard#video");
-  const panel = page.locator("#video");
-  await panel.getByRole("button", { name: "Open camera" }).click();
-  await expect(panel.getByLabel("Camera preview")).toBeVisible();
-  await panel.getByRole("button", { name: "Live view" }).click();
-  await expect(panel.getByRole("button", { name: "Stop live view" })).toBeVisible();
-  await panel.getByRole("button", { name: /Record 15 seconds/ }).click();
-  await expect(panel.getByRole("timer")).toBeVisible();
-  await expect(panel.getByLabel("Your recording")).toBeVisible({ timeout: 25_000 });
-  const before = requests.length;
-  await panel.getByRole("button", { name: "Analyse" }).click();
-  await expect(panel.getByText("Using demo analysis")).toBeVisible({ timeout: 10_000 });
-  await expect(panel.getByText("Mobility", { exact: true })).toBeVisible();
-  await expect(page.getByText(/\(demo\)/).first()).toBeVisible();
-  // Mock mode analyses on the device: no request carries the video anywhere.
-  expect(requests.slice(before).filter((r) => r.method === "POST")).toEqual([]);
-  expect(requests.filter((r) => r.method === "POST" && r.url.includes("/api/scan"))).toEqual([]);
-  // Sharing is the owner's choice and nothing is sent.
-  await panel.getByRole("button", { name: "Send to my vet" }).click();
+  await seedPet(page, { checkins: 6 });
+  await page.goto("/walk#movement");
+  const stop = page.locator("#movement");
+  await expect(stop.getByRole("heading", { name: /Check Biscuit's walk/ })).toBeVisible();
+  await expect(stop.getByRole("tab", { name: "Walk" })).toHaveAttribute("aria-selected", "true");
+  await expect(stop.getByRole("radio", { name: "Demo walk" })).toHaveAttribute("aria-checked", "true");
+  await expect(stop.getByRole("tab", { name: /Face|General/ })).toHaveCount(0);
+  // the demo is one tap: Analyse
+  await stop.getByRole("button", { name: "Analyse" }).click();
+  await expect(stop.getByText("Moving")).toBeVisible({ timeout: 15_000 });
+  await expect(stop.getByRole("img", { name: /^Symmetry: Even/ })).toBeVisible();
+  await expect(stop.getByTestId("mobility-summary")).toHaveText("Mobility 89, in line with Biscuit's usual.");
+  await expect(stop.getByText("Signs worth a vet's look, never a diagnosis.").first()).toBeVisible();
+  await expect(stop.getByTestId("movement-stop-summary")).toContainText("Mobility 89, in line with Biscuit's usual");
+  // nothing is sent until the owner taps Send to my vet
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(requests.filter((r) => r.method === "POST")).toEqual([]);
+  await stop.getByRole("button", { name: "Send to my vet" }).click();
   await expect(page.getByRole("dialog")).toContainText("Coming in the pilot");
+  await page.keyboard.press("Escape");
+
+  await page.goto("/dashboard#movement");
+  await expect(page.getByTestId("dashboard-mobility")).toHaveText("Mobility 89, in line with Biscuit's usual.");
+  await expect(page.getByText("mobility 89 (demo walk)")).toBeVisible();
+  await page.goto("/savings");
+  await expect(page.getByTestId("savings-health")).toContainText("demo walk): Mobility 89, in line with Biscuit's usual");
   expect(errors).toEqual([]);
 });
 
-test("camera denied: the file upload path works", async ({ page }) => {
-  await page.addInitScript(() => {
-    navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("Permission denied", "NotAllowedError"));
-  });
-  await seedPet(page);
-  await page.goto("/dashboard#video");
-  const panel = page.locator("#video");
-  await panel.getByRole("button", { name: "Open camera" }).click();
-  await expect(panel.getByText("Camera not available.")).toBeVisible();
-  await panel.getByLabel("Upload a video of your pet").setInputFiles(fakeClip());
-  await panel.getByRole("button", { name: "Analyse" }).click();
-  await expect(panel.getByText("Using demo analysis")).toBeVisible({ timeout: 10_000 });
+test("/dashboard: the same Movement check; a cat demo walk gives the model's own amber result", async ({ page }) => {
+  const { errors } = watch(page);
+  await seedPet(page, { species: "cat", checkins: 3 });
+  await page.goto("/dashboard#movement");
+  const box = page.locator("#movement");
+  await expect(box.getByRole("heading", { name: "Movement check" })).toBeVisible();
+  await expect(box.getByRole("button", { name: /Black cat walking on grass/ })).toHaveAttribute("aria-pressed", "true");
+  await box.getByRole("button", { name: "Analyse" }).click();
+  await expect(box.getByText("Worth watching").first()).toBeVisible({ timeout: 15_000 });
+  await expect(box.getByText("Leg to watch: hind left").first()).toBeVisible();
+  await expect(box.getByTestId("mobility-summary")).toHaveText("Mobility 93, a change from Miso's usual.");
+  await expect(page.getByTestId("dashboard-mobility")).toHaveText("Mobility 93, a change from Miso's usual.");
+  await expect(box.getByText(/Credits: .*CC BY-SA 3\.0.*CC0/)).toBeVisible();
+  await expect(box.getByText(/Reddit/)).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
-test("server mode with a dead model: falls back within 20 s; the video goes only to /api/scan and only after Analyse", async ({ page }) => {
+test("pet names are shown capitalised", async ({ page }) => {
+  await seedPet(page, { name: "biscuit" });
+  await page.goto("/walk#movement");
+  await expect(page.locator("#movement").getByRole("heading", { name: /Check Biscuit's walk/ })).toBeVisible();
+  await expect(page.getByText(/\bbiscuit\b/)).toHaveCount(0);
+});
+
+test("an uploaded video in mock mode: no made-up result, the pilot message and a way to the demo", async ({ page }) => {
+  test.skip(Boolean(process.env.QA_VIDEO_SERVER), "mock-mode build only");
+  const { requests } = watch(page);
+  await seedPet(page);
+  await page.goto("/dashboard#movement");
+  const box = page.locator("#movement");
+  await box.getByRole("radio", { name: "Upload" }).click();
+  await box.getByLabel("Upload a video of Biscuit").setInputFiles(fakeClip());
+  await expect(box.getByText(PILOT)).toBeVisible();
+  await expect(box.getByText(/Mobility \d/)).toHaveCount(0);
+  await expect(box.getByRole("button", { name: "Analyse" })).toHaveCount(0);
+  expect(requests.filter((r) => r.method === "POST")).toEqual([]);
+  await box.getByRole("button", { name: "Try a demo walk" }).click();
+  await expect(box.getByRole("radio", { name: "Demo walk" })).toHaveAttribute("aria-checked", "true");
+  // sleeping breathing: own videos only, same honesty
+  await box.getByRole("tab", { name: "Sleeping breathing" }).click();
+  await expect(box.getByRole("radio", { name: "Demo walk" })).toHaveCount(0);
+  await box.getByLabel("Upload a video of Biscuit").setInputFiles(fakeClip());
+  await expect(box.getByText(PILOT)).toBeVisible();
+});
+
+test("camera: record, then the pilot message; camera denied falls back to upload", async ({ page }) => {
+  test.skip(Boolean(process.env.QA_VIDEO_SERVER), "mock-mode build only");
+  await seedPet(page);
+  await page.goto("/dashboard#movement");
+  const box = page.locator("#movement");
+  await box.getByRole("radio", { name: "Camera" }).click();
+  await box.getByRole("button", { name: "Open camera" }).click();
+  await expect(box.getByLabel("Camera preview")).toBeVisible();
+  await box.getByRole("button", { name: /Record 15 seconds/ }).click();
+  await expect(box.getByRole("timer")).toBeVisible();
+  await box.getByRole("button", { name: "Stop early" }).click();
+  await expect(box.getByText(PILOT)).toBeVisible({ timeout: 10_000 });
+
+  await page.evaluate(() => {
+    navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("Permission denied", "NotAllowedError"));
+  });
+  await box.getByRole("button", { name: "Another video" }).click();
+  await box.getByRole("button", { name: "Open camera" }).click();
+  await expect(box.getByText("Camera not available.")).toBeVisible();
+});
+
+test("server mode with a dead model: /api/scan falls back to the mock within 20 s and the owner sees the pilot message, not mock numbers", async ({ page, request }) => {
   test.skip(!process.env.QA_VIDEO_SERVER, "needs a build with NEXT_PUBLIC_VIDEO_MODE=server and a dead ML_API_URL");
+  const api = await request.post("/api/scan", { multipart: { video: fakeClip(), petId: "p1", species: "dog", scanType: "walk" } });
+  const body = await api.json();
+  expect(body.source).toBe("mock");
+  expect(body.fallbackReason).toMatch(/Model (unavailable|timed out)/);
+
   const { requests, errors } = watch(page);
   await seedPet(page);
-  await page.goto("/dashboard#video");
-  const panel = page.locator("#video");
-  await panel.getByRole("button", { name: "Upload a video" }).first().click({ trial: true });
-  await panel.getByLabel("Upload a video of your pet").setInputFiles(fakeClip());
-  await expect(panel.getByText("sends this clip to the Petra scan service")).toBeVisible();
+  await page.goto("/dashboard#movement");
+  const box = page.locator("#movement");
+  await box.getByRole("radio", { name: "Upload" }).click();
+  await box.getByLabel("Upload a video of Biscuit").setInputFiles(fakeClip());
+  await expect(box.getByText("sends this clip to the Petra scan service")).toBeVisible();
   expect(requests.filter((r) => r.method === "POST")).toEqual([]);
   const t0 = Date.now();
-  await panel.getByRole("button", { name: "Analyse" }).click();
-  await expect(panel.getByText("Using demo analysis")).toBeVisible({ timeout: 25_000 });
+  await box.getByRole("button", { name: "Analyse" }).click();
+  await expect(box.getByText(PILOT)).toBeVisible({ timeout: 25_000 });
   expect(Date.now() - t0).toBeLessThan(20_000);
+  await expect(box.getByText(/Mobility \d/)).toHaveCount(0);
   const posts = requests.filter((r) => r.method === "POST").map((r) => new URL(r.url));
   expect(posts.map((u) => u.origin + u.pathname)).toEqual([new URL(page.url()).origin + "/api/scan"]);
   expect(errors).toEqual([]);

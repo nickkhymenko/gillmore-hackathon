@@ -99,7 +99,7 @@ export function CheckinStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[]
           <button type="button" onClick={() => setMode("details")} className="btn btn-ghost text-lg">
             Something&apos;s different
           </button>
-          <Link href="/dashboard#video" className="link min-h-11 content-center text-sm">
+          <Link href="#movement" className="link min-h-11 content-center text-sm">
             Add a video (optional)
           </Link>
         </div>

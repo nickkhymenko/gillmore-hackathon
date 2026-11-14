@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { readRaw, subscribe } from "../store";
 import type { ScanResponse } from "./contract";
 
-/** Video scan results, per pet, kept on this device. The video itself is never stored. */
+/** Movement check results, per pet, kept on this device. The video itself is never stored. */
 export const SCANS_KEY = "prevently.scans";
 
 export function addScan(r: ScanResponse) {
@@ -22,7 +22,9 @@ export function useScans(petId?: string): ScanResponse[] {
   return useMemo(() => {
     if (!raw || !petId) return [];
     try {
-      return (JSON.parse(raw) as ScanResponse[]).filter((s) => s.petId === petId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      // Only real model results count (live model or a demo clip's offline model run). Results from the demo
+      // analysis stored by older builds are never shown as a pet's own results.
+      return (JSON.parse(raw) as ScanResponse[]).filter((s) => s.petId === petId && s.source === "ml").sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     } catch {
       return [];
     }

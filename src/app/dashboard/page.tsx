@@ -16,8 +16,8 @@ import { AskPetra } from "@/components/dashboard/AskPetra";
 import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
 import { blackBoxDiscount, dailyTarget, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
-import { VideoScanPanel } from "@/components/video/VideoScanPanel";
 import { MovementCheck } from "@/components/gait/MovementCheck";
+import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
 import { useScans } from "@/lib/video/scans";
 import { TrendChart } from "@/components/walk/TrendsStop";
 import type { CareRec } from "@/data/careRules";
@@ -132,7 +132,7 @@ export default function DashboardPage() {
   const reduce = Boolean(useReducedMotion());
   const [sheet, setSheet] = useState<string | null>(null);
 
-  // The page renders after the pet loads, so the browser cannot jump to #movement or #video on its own.
+  // The page renders after the pet loads, so the browser cannot jump to #movement on its own.
   const shown = Boolean(ready && rec && rec.setupStep === null);
   useEffect(() => {
     const hash = window.location.hash.slice(1);
@@ -324,19 +324,21 @@ export default function DashboardPage() {
               )}
             </div>
           )}
-          <MovementCheck />
+          <div id="video" className="scroll-mt-32">
+            <MovementCheck rec={rec} log={log} />
+          </div>
           <div className="space-y-5">
-            <h3 className="text-2xl font-semibold tracking-[-0.03em]">Walk or breathing scan <span className="text-sm font-normal tracking-normal text-muted">Optional</span></h3>
             <div className="grid gap-10 lg:grid-cols-12">
-              <div className="min-w-0 lg:col-span-7">
-                <VideoScanPanel rec={rec} />
-              </div>
-              <div className="min-w-0 space-y-4 lg:col-span-5">
-                <p className="eyebrow">From video scans</p>
+              <div className="min-w-0 space-y-4 lg:col-span-7">
+                <p className="eyebrow">From movement checks</p>
                 {scans.length === 0 ? (
-                  <p className="text-sm text-muted">No scans yet. A 15-second walk or sleeping-breathing clip adds mobility and breathing to {pet.name}&apos;s trends.</p>
+                  <p className="text-sm text-muted">No checks yet. A movement check adds mobility to {pet.name}&apos;s trends.</p>
                 ) : (
                   <>
+                    {(() => {
+                      const sum = mobilitySummary(scans, log, pet.name);
+                      return sum && <p className="text-lg font-semibold" data-testid="dashboard-mobility">{sum.text}.</p>;
+                    })()}
                     {(() => {
                       const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
                       const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
@@ -344,7 +346,7 @@ export default function DashboardPage() {
                       const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
                       return (
                         <figure>
-                          <figcaption className="text-sm font-medium">Mobility from walk scans</figcaption>
+                          <figcaption className="text-sm font-medium">Mobility from movement checks</figcaption>
                           <TrendChart s={series} reduce={reduce} />
                         </figure>
                       );
@@ -360,7 +362,7 @@ export default function DashboardPage() {
                             </span>
                             <span className="text-muted">
                               {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
-                              {s.source === "mock" ? " (demo)" : ""}
+                              {isDemoScan(s) ? " (demo walk)" : ""}
                             </span>
                           </li>
                         ))}

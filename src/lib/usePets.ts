@@ -4,6 +4,11 @@ import { HOUSEHOLD_KEY, LOG_KEY, readRaw, subscribe, type Household, type PetRec
 
 const EMPTY: Household = { activeId: null, pets: [] };
 
+/** Pet names are shown capitalised everywhere ("Biscuit", never "biscuit"); the rest is kept as typed. */
+export function displayName(name: string) {
+  return (name ?? "").trim().replace(/(^|[\s-])(\p{Ll})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
 /**
  * The household, live. Empty on the server and on the first client render (so hydration matches),
  * then the stored value. `ready` tells the two apart so pages can avoid flashing an empty state.
@@ -15,7 +20,8 @@ export function useHousehold(): { household: Household; ready: boolean } {
     if (!raw) return { household: EMPTY, ready: true };
     try {
       const h = JSON.parse(raw) as Household;
-      return { household: Array.isArray(h.pets) ? h : EMPTY, ready: true };
+      if (!Array.isArray(h.pets)) return { household: EMPTY, ready: true };
+      return { household: { ...h, pets: h.pets.map((p) => ({ ...p, pet: { ...p.pet, name: displayName(p.pet.name) } })) }, ready: true };
     } catch {
       return { household: EMPTY, ready: true };
     }
@@ -29,7 +35,7 @@ export function useCheckins(petId: string | null | undefined, petName?: string):
     if (!raw || !petId) return [];
     try {
       const all = JSON.parse(raw) as StoredCheckin[];
-      return all.filter((c) => (c.petId ? c.petId === petId : c.petName === petName)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      return all.filter((c) => (c.petId ? c.petId === petId : c.petName?.toLowerCase() === petName?.toLowerCase())).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     } catch {
       return [];
     }

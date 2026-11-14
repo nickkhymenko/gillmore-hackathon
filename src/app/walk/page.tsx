@@ -8,6 +8,7 @@ import { CarePlanStop } from "@/components/walk/CarePlanStop";
 import { CheckinStop } from "@/components/walk/CheckinStop";
 import { HealthspanStop } from "@/components/walk/HealthspanStop";
 import { HelloStop } from "@/components/walk/HelloStop";
+import { MovementStop } from "@/components/walk/MovementStop";
 import { NextWeekStop } from "@/components/walk/NextWeekStop";
 import { PooMoment } from "@/components/walk/PooMoment";
 import { Footnotes, Stop } from "@/components/walk/Stop";
@@ -18,11 +19,12 @@ import type { PetRecord, StoredCheckin } from "@/lib/store";
 import { useActivePet, useCheckins } from "@/lib/usePets";
 import { lifeStageOf } from "@/lib/walkplan";
 
-type StopId = "hello" | "your-walk" | "check-in" | "trends" | "healthspan" | "care-plan" | "cover" | "next-week";
+type StopId = "hello" | "your-walk" | "movement" | "check-in" | "trends" | "healthspan" | "care-plan" | "cover" | "next-week";
 
 const LABEL: Record<StopId, [string, string]> = {
   hello: ["Hello", "Hello"],
   "your-walk": ["Your walk", "Your walk"],
+  movement: ["Check your pet's walk", "Movement"],
   "check-in": ["This week's check-in", "This week"],
   trends: ["Your trends", "Your trends"],
   healthspan: ["Healthspan", "Healthspan"],
@@ -36,9 +38,9 @@ function stopOrder(rec: PetRecord, log: StoredCheckin[]): StopId[] {
   const stage = lifeStageOf(rec.pet);
   const latest = log.at(-1);
   const priority = stage === "senior" || rec.profile.bodyCondition === "over" || (latest && latest.status !== "green") || (latest?.answers && latest.answers.mobility !== "normal");
-  if (priority) return ["hello", "your-walk", "check-in", "care-plan", "trends", "healthspan", "cover", "next-week"];
-  if (stage === "young") return ["hello", "your-walk", "check-in", "healthspan", "care-plan", "trends", "cover", "next-week"];
-  return ["hello", "your-walk", "check-in", "trends", "healthspan", "care-plan", "cover", "next-week"];
+  if (priority) return ["hello", "your-walk", "movement", "check-in", "care-plan", "trends", "healthspan", "cover", "next-week"];
+  if (stage === "young") return ["hello", "your-walk", "movement", "check-in", "healthspan", "care-plan", "trends", "cover", "next-week"];
+  return ["hello", "your-walk", "movement", "check-in", "trends", "healthspan", "care-plan", "cover", "next-week"];
 }
 
 /**
@@ -68,6 +70,7 @@ export default function WalkPage() {
   const body: Record<StopId, ReactNode> = {
     hello: <HelloStop rec={rec} />,
     "your-walk": <YourWalkStop rec={rec} log={log} />,
+    movement: <MovementStop rec={rec} log={log} />,
     "check-in": <CheckinStop rec={rec} log={log} />,
     trends: <TrendsStop rec={rec} log={log} reduce={reduce} />,
     healthspan: <HealthspanStop rec={rec} reduce={reduce} />,
@@ -85,7 +88,7 @@ export default function WalkPage() {
         <WalkPath containerRef={container} species={rec.pet.species} reduce={reduce} />
         <div className="relative" data-walk-content>
           {order.map((id, i) => (
-            <Stop key={id} id={id} n={i + 1} label={LABEL[id][0]} traits={traits}>
+            <Stop key={id} id={id} n={i + 1} label={id === "movement" ? `Check ${rec.pet.name}'s walk` : LABEL[id][0]} traits={traits}>
               {body[id]}
             </Stop>
           ))}
