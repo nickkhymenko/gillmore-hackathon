@@ -5,7 +5,7 @@ import { METRIC_LABEL, buildSeries, metricsFor, sentenceFor, type Series } from 
 import { seedDemo, type PetRecord, type StoredCheckin } from "@/lib/store";
 
 const INK = "#141414";
-const MUTED = "#6B6B6B";
+const MUTED = "#5E5E5E";
 const GRID = "rgba(20,20,20,0.08)";
 
 function Tip({ active, payload, label, unit }: TooltipContentProps<number, string> & { unit: string }) {

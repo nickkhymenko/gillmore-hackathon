@@ -77,3 +77,22 @@ test("camera denied: the file upload path works", async ({ page }) => {
   await panel.getByRole("button", { name: "Analyse" }).click();
   await expect(panel.getByText("Using demo analysis")).toBeVisible({ timeout: 10_000 });
 });
+
+test("server mode with a dead model: falls back within 20 s; the video goes only to /api/scan and only after Analyse", async ({ page }) => {
+  test.skip(!process.env.QA_VIDEO_SERVER, "needs a build with NEXT_PUBLIC_VIDEO_MODE=server and a dead ML_API_URL");
+  const { requests, errors } = watch(page);
+  await seedPet(page);
+  await page.goto("/dashboard#video");
+  const panel = page.locator("#video");
+  await panel.getByRole("button", { name: "Upload a video" }).first().click({ trial: true });
+  await panel.getByLabel("Upload a video of your pet").setInputFiles(fakeClip());
+  await expect(panel.getByText("sends this clip to the Prevently scan service")).toBeVisible();
+  expect(requests.filter((r) => r.method === "POST")).toEqual([]);
+  const t0 = Date.now();
+  await panel.getByRole("button", { name: "Analyse" }).click();
+  await expect(panel.getByText("Using demo analysis")).toBeVisible({ timeout: 25_000 });
+  expect(Date.now() - t0).toBeLessThan(20_000);
+  const posts = requests.filter((r) => r.method === "POST").map((r) => new URL(r.url));
+  expect(posts.map((u) => u.origin + u.pathname)).toEqual([new URL(page.url()).origin + "/api/scan"]);
+  expect(errors).toEqual([]);
+});

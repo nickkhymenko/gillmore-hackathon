@@ -31,7 +31,7 @@
   --accent-soft: #fff3c4;
   --dark: #121212;
   --ink: #141414;
-  --muted: #6b6b6b;
+  --muted: #5e5e5e; /* AA on every tinted pet page, not just the default cream */
   --line: rgb(20 20 20 / 0.14);
   --radius: 6px;
   transition:
@@ -204,6 +204,11 @@ input[type="number"] {
 @media (prefers-reduced-motion: reduce) {
   :root {
     transition: none;
+  }
+  /* Scroll reveals are server-rendered hidden; with reduced motion they are simply shown. */
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
   }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

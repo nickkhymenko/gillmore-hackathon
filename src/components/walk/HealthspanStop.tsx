@@ -66,7 +66,7 @@ export function HealthspanStop({ rec, reduce }: { rec: PetRecord; reduce: boolea
         <div className="h-[110px] w-full" role="img" aria-label={`Typical lifespan ${life.range[0]} to ${life.range[1]} years, approximate. Healthy years ${fmt(healthy)}, illustrative.`}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 0, left: 0 }} barCategoryGap={18}>
-              <XAxis type="number" domain={[0, max]} tickLine={false} axisLine={{ stroke: "rgba(20,20,20,0.12)" }} tick={{ fontSize: 11, fill: "#6B6B6B" }} unit=" y" />
+              <XAxis type="number" domain={[0, max]} tickLine={false} axisLine={{ stroke: "rgba(20,20,20,0.12)" }} tick={{ fontSize: 11, fill: "#5E5E5E" }} unit=" y" />
               <YAxis type="category" dataKey="name" hide />
               <Bar dataKey="value" barSize={22} radius={4} isAnimationActive={!reduce} animationDuration={500}>
                 {data.map((d) => (
@@ -87,11 +87,12 @@ export function HealthspanStop({ rec, reduce }: { rec: PetRecord; reduce: boolea
         <p className="eyebrow">Turn on what {pet.name} already gets</p>
         <ul className="mt-3 divide-y divide-line border-y border-line">
           {levers.map((l) => (
-            <li key={l.id}>
-              <button type="button" role="switch" aria-checked={Boolean(on[l.id])} onClick={() => setOn((o) => ({ ...o, [l.id]: !o[l.id] }))} className="flex min-h-16 w-full items-start gap-4 py-3 text-left">
+            <li key={l.id} className="flex min-h-16 w-full items-start gap-4 py-3">
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-semibold">{l.label}</span>
+                    <span id={`lever-${l.id}`} className="font-semibold">
+                      {l.label}
+                    </span>
                     <span className="tnum text-sm text-muted">+{l.effect.toFixed(1)} y</span>
                     <span className="rounded-[3px] border border-line px-1.5 text-[11px] font-semibold uppercase tracking-wider">{l.evidence === "Untested" ? "Untested idea" : `Evidence: ${l.evidence}`}</span>
                   </span>
@@ -100,10 +101,16 @@ export function HealthspanStop({ rec, reduce }: { rec: PetRecord; reduce: boolea
                     <Cite ids={l.sources} />
                   </span>
                 </span>
-                <span aria-hidden className={`relative mt-1 h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-300 ${on[l.id] ? "border-ink bg-accent" : "border-ink/30 bg-white/60"}`}>
-                  <span className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink transition-[left] duration-300 ${on[l.id] ? "left-6" : "left-1"}`} />
-                </span>
-              </button>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={Boolean(on[l.id])}
+                  aria-labelledby={`lever-${l.id}`}
+                  onClick={() => setOn((o) => ({ ...o, [l.id]: !o[l.id] }))}
+                  className={`relative mt-1 h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-300 ${on[l.id] ? "border-ink bg-accent" : "border-ink/30 bg-white/60"}`}
+                >
+                  <span aria-hidden className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink transition-[left] duration-300 ${on[l.id] ? "left-6" : "left-1"}`} />
+                </button>
             </li>
           ))}
         </ul>

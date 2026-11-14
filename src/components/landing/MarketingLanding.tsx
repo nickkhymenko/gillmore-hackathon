@@ -25,6 +25,7 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
   const reduce = useReducedMotion();
   return (
     <motion.div
+      data-reveal
       className={className}
       initial={reduce ? false : { opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}

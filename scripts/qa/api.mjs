@@ -6,6 +6,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AssessmentSchema, TwinProfileSchema } from "../../src/lib/types.ts";
+import { ScanResponseSchema } from "../../src/lib/video/contract.ts";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3111";
 const MODE = process.argv[2] ?? "all";
@@ -103,10 +104,29 @@ if (MODE !== "ai-only-checkin") {
   }
 }
 
+// ---------- video scan (docs/13) ----------
+async function scan(fields, file) {
+  const form = new FormData();
+  if (file) form.append("video", new Blob([file], { type: "video/webm" }), "clip.webm");
+  for (const [k, v] of Object.entries(fields)) form.append(k, v);
+  const t0 = performance.now();
+  const res = await fetch(BASE + "/api/scan", { method: "POST", body: form, signal: AbortSignal.timeout(30_000) }).catch((e) => ({ status: 0, json: async () => ({ error: String(e) }) }));
+  return { status: res.status, json: await res.json().catch(() => null), ms: Math.round(performance.now() - t0) };
+}
+{
+  const r = await scan({ petId: "p1", species: "dog", scanType: "walk" }, Buffer.alloc(60_000, 1));
+  const ok = r.status === 200 && ScanResponseSchema.safeParse(r.json).success;
+  const expectSource = MODE === "dead-ml" ? r.json?.source === "mock" && Boolean(r.json?.fallbackReason) && r.ms < 20_000 : true;
+  record("2", `scan: contract-shaped response${MODE === "dead-ml" ? ", dead ML falls back within 20 s" : ""}`, ok && expectSource, `${r.status} source=${r.json?.source} reason="${r.json?.fallbackReason ?? ""}" ${r.ms}ms`);
+  const missing = await scan({ petId: "p1" });
+  record("2", "scan: missing video is 422", missing.status === 422, `${missing.status}`);
+  const big = await scan({ petId: "p1" }, Buffer.alloc(4_100_000, 1));
+  record("2", "scan: oversized video is 413", big.status === 413, `${big.status}`);
+}
+
 // ---------- routes from later parts ----------
 for (const [method, path] of [
   ["POST", "/api/ask"],
-  ["POST", "/api/scan"],
   ["POST", "/api/careplan"],
 ]) {
   const r = await call(method, path, {});
