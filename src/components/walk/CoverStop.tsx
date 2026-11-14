@@ -70,7 +70,7 @@ export function CoverStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[] }
             Cover that <span className="accent-word">rewards</span> check-ins.
           </h3>
           <p className="mt-3 text-muted">
-            At this pace {name} is on track for <strong className="text-ink">{discountPct}% off</strong> at renewal. The discount is for doing check-ins, never for {name}&apos;s health results.
+            {name} is on track for <strong className="text-ink">{discountPct}% off</strong> at renewal. For doing check-ins, never for health results.
           </p>
         </div>
 

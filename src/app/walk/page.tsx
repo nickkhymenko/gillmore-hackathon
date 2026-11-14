@@ -4,43 +4,38 @@ import Link from "next/link";
 import { useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { ArrowUpRight } from "@phosphor-icons/react";
-import { CarePlanStop } from "@/components/walk/CarePlanStop";
 import { CheckinStop } from "@/components/walk/CheckinStop";
 import { HealthspanStop } from "@/components/walk/HealthspanStop";
 import { HelloStop } from "@/components/walk/HelloStop";
 import { MovementStop } from "@/components/walk/MovementStop";
-import { NextWeekStop } from "@/components/walk/NextWeekStop";
 import { PooMoment } from "@/components/walk/PooMoment";
 import { Footnotes, Stop } from "@/components/walk/Stop";
-import { TrendsStop } from "@/components/walk/TrendsStop";
+import { LifetimeCostStop } from "@/components/walk/LifetimeCostStop";
 import { WalkBackdrop, WalkPath, WalkProgress } from "@/components/walk/WalkPath";
 import { YourWalkStop } from "@/components/walk/YourWalkStop";
 import type { PetRecord, StoredCheckin } from "@/lib/store";
 import { useActivePet, useCheckins } from "@/lib/usePets";
 import { lifeStageOf } from "@/lib/walkplan";
 
-type StopId = "hello" | "your-walk" | "movement" | "check-in" | "trends" | "healthspan" | "care-plan" | "cover" | "next-week";
+type StopId = "hello" | "your-walk" | "movement" | "check-in" | "lifetime" | "healthspan" | "cover";
 
 const LABEL: Record<StopId, [string, string]> = {
   hello: ["Hello", "Hello"],
   "your-walk": ["Your walk", "Your walk"],
   movement: ["Check your pet's walk", "Movement"],
   "check-in": ["This week's check-in", "This week"],
-  trends: ["Your trends", "Your trends"],
+  lifetime: ["A lifetime of cover", "Lifetime"],
   healthspan: ["Healthspan", "Healthspan"],
-  "care-plan": ["Care plan", "Care plan"],
   cover: ["Your cover", "Your cover"],
-  "next-week": ["Same time next week", "Next week"],
 };
 
-/** What matters most for this pet comes first: care before charts for seniors and flagged pets. */
+/** What matters most for this pet comes first: healthspan before money for seniors and flagged pets. */
 function stopOrder(rec: PetRecord, log: StoredCheckin[]): StopId[] {
   const stage = lifeStageOf(rec.pet);
   const latest = log.at(-1);
   const priority = stage === "senior" || rec.profile.bodyCondition === "over" || (latest && latest.status !== "green") || (latest?.answers && latest.answers.mobility !== "normal");
-  if (priority) return ["hello", "your-walk", "movement", "check-in", "care-plan", "trends", "healthspan", "cover", "next-week"];
-  if (stage === "young") return ["hello", "your-walk", "movement", "check-in", "healthspan", "care-plan", "trends", "cover", "next-week"];
-  return ["hello", "your-walk", "movement", "check-in", "trends", "healthspan", "care-plan", "cover", "next-week"];
+  if (priority) return ["hello", "your-walk", "movement", "check-in", "healthspan", "lifetime", "cover"];
+  return ["hello", "your-walk", "movement", "check-in", "lifetime", "healthspan", "cover"];
 }
 
 /**
@@ -72,12 +67,10 @@ export default function WalkPage() {
     "your-walk": <YourWalkStop rec={rec} log={log} />,
     movement: <MovementStop rec={rec} log={log} />,
     "check-in": <CheckinStop rec={rec} log={log} />,
-    trends: <TrendsStop rec={rec} log={log} reduce={reduce} />,
+    lifetime: <LifetimeCostStop rec={rec} reduce={reduce} />,
     healthspan: <HealthspanStop rec={rec} reduce={reduce} />,
-    "care-plan": <CarePlanStop rec={rec} log={log} />,
     // The insurance stop is a problem statement; the plans themselves live on /savings.
     cover: <PooMoment rec={rec} />,
-    "next-week": <NextWeekStop rec={rec} log={log} />,
   };
 
   return (

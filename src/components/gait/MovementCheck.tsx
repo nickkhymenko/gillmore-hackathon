@@ -82,12 +82,13 @@ export function MovementCheck({ rec, log, intro = true }: { rec: PetRecord; log:
     fetch("/gait/clips/index.json")
       .then((r) => r.json())
       .then((rows: ClipIndexRow[]) => {
-        const demos = rows.filter((r) => r.sample);
+        // The clean dog walk first and by default; the flagged clip second, as the "worth watching" example.
+        const demos = rows.filter((r) => r.sample).sort((a, b) => Number(b.healthy) - Number(a.healthy));
         setIndex(demos);
-        setDemoId((id) => id ?? (demos.find((r) => r.species === rec.pet.species) ?? demos.find((r) => r.species === "dog") ?? demos[0])?.id ?? null);
+        setDemoId((id) => id ?? (demos.find((r) => r.species === "dog" && r.healthy) ?? demos[0])?.id ?? null);
       })
       .catch(() => setIndex([]));
-  }, [rec.pet.species]);
+  }, []);
 
   // The demo starts playing when it scrolls into view, so it is never over before anyone sees it.
   useEffect(() => {
@@ -196,7 +197,7 @@ export function MovementCheck({ rec, log, intro = true }: { rec: PetRecord; log:
                       </span>
                     )}
                     <span>
-                      <span className="block font-semibold capitalize">{r.species}</span>
+                      <span className="block font-semibold">{r.healthy ? "Clean result" : "Worth watching example"}</span>
                       <span className="block text-xs text-muted">{r.title}</span>
                     </span>
                   </button>

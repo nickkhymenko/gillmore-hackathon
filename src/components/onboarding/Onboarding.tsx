@@ -6,14 +6,14 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowUpRight, PawPrint } from "@phosphor-icons/react";
 import { PetAvatar } from "../PetAvatar";
 import { PhotoTwin } from "../PhotoTwin";
-import { ActivityStep, AgeStep, BreedStep, ConsentStep, NameStep, NeuteredStep, Primary, Question, SpeciesStep, WeightStep } from "./steps";
+import { ActivityStep, AgeStep, BreedStep, ConsentStep, NameStep, Primary, Question, SpeciesStep, WeightStep } from "./steps";
 import { addPet, getPet, updatePet, type PetRecord } from "@/lib/store";
 import { SPECIES_DEFAULT_SHAPE } from "@/lib/profile";
 import { SPECIES_THEME } from "@/lib/theme";
 import type { Species } from "@/lib/types";
 import { MarketingLanding } from "../landing/MarketingLanding";
 
-import { useHousehold } from "@/lib/usePets";
+import { displayName, useHousehold } from "@/lib/usePets";
 
 /** Changing species after the pet exists: reset the avatar shape and, without a photo, the theme. */
 function applySpecies(id: string, species: Species) {
@@ -27,7 +27,7 @@ function applySpecies(id: string, species: Species) {
   });
 }
 
-const STEPS = ["Species", "Name", "Photo", "Breed", "Age", "Weight", "Neutered", "Activity", "Consent"] as const;
+const STEPS = ["Species", "Name", "Photo", "Breed", "Age", "Weight", "Activity", "Consent"] as const;
 
 type Flow = { petId: string | null; step: number; dir: 1 | -1; fresh: boolean; species: Species | null };
 
@@ -78,7 +78,7 @@ function WalkOff({ onDone }: { onDone: () => void }) {
 /**
  * First-run onboarding. One question per screen, slide transitions, paw progress.
  * Species (often chosen on the landing page), name, photo (Pet Twin), breed (top 3 from the photo),
- * age, weight, neutered, activity, consent; then the walk.
+ * age, weight, activity, consent; then the walk.
  * `startNew` begins a new pet straight away (the "Add another pet" route).
  */
 export function Onboarding({ startNew = false }: { startNew?: boolean }) {
@@ -164,7 +164,8 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
       <NameStep
         species={rec?.pet.species ?? flow.species}
         initial={rec?.pet.name ?? ""}
-        onSubmit={(name) => {
+        onSubmit={(raw) => {
+          const name = displayName(raw);
           if (rec) {
             updatePet(rec.id, (p) => ({ pet: { ...p.pet, name } }));
             go(2, rec.id);
@@ -204,8 +205,6 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
       ) : flow.step === 5 ? (
         <WeightStep {...props} />
       ) : flow.step === 6 ? (
-        <NeuteredStep {...props} />
-      ) : flow.step === 7 ? (
         <ActivityStep {...props} />
       ) : (
         <ConsentStep

@@ -7,13 +7,19 @@ import { SOURCES, type SourceId } from "@/data/evidence";
 
 const ORDER = Object.keys(SOURCES) as SourceId[];
 
+/** Opens the collapsed sources list at the foot of the walk, so a footnote link can land on its entry. */
+function openSources() {
+  const d = document.getElementById("sources");
+  if (d instanceof HTMLDetailsElement) d.open = true;
+}
+
 /** Superscript footnote link to the sources list at the end of the walk. */
 export function Cite({ ids }: { ids: SourceId[] }) {
   if (!ids.length) return null;
   return (
     <sup className="ml-0.5 text-[0.65em] font-semibold">
       {ids.map((id, i) => (
-        <a key={id} href={`#src-${id}`} className="link px-px" aria-label={`Source ${ORDER.indexOf(id) + 1}`}>
+        <a key={id} href={`#src-${id}`} onClick={openSources} className="link px-px" aria-label={`Source ${ORDER.indexOf(id) + 1}`}>
           {ORDER.indexOf(id) + 1}
           {i < ids.length - 1 ? "," : ""}
         </a>
@@ -22,11 +28,12 @@ export function Cite({ ids }: { ids: SourceId[] }) {
   );
 }
 
+/** One small "Sources" link in the walk's footer; the list opens in place. */
 export function Footnotes() {
   return (
-    <section id="sources" className="scroll-mt-32 border-t border-line pt-6">
-      <h2 className="eyebrow">Sources</h2>
-      <ol className="mt-3 space-y-2 text-xs text-muted">
+    <details id="sources" className="scroll-mt-32 border-t border-line pt-4 text-xs text-muted">
+      <summary className="link inline-flex min-h-11 cursor-pointer items-center">Sources</summary>
+      <ol className="mt-2 space-y-2">
         {ORDER.map((id, i) => (
           <li key={id} id={`src-${id}`} className="flex gap-2 scroll-mt-32">
             <span className="tnum w-5 shrink-0 font-semibold text-ink">{i + 1}</span>
@@ -34,7 +41,7 @@ export function Footnotes() {
           </li>
         ))}
       </ol>
-    </section>
+    </details>
   );
 }
 

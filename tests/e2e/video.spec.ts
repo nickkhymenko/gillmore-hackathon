@@ -77,7 +77,10 @@ test("/dashboard: the same Movement check; a cat demo walk gives the model's own
   await page.goto("/dashboard#movement");
   const box = page.locator("#movement");
   await expect(box.getByRole("heading", { name: "Movement check" })).toBeVisible();
-  await expect(box.getByRole("button", { name: /Black cat walking on grass/ })).toHaveAttribute("aria-pressed", "true");
+  // The clean dog walk is the default; the cat clip is the second option.
+  await expect(box.getByRole("button", { name: /Clean result/ })).toHaveAttribute("aria-pressed", "true");
+  await box.getByRole("button", { name: /Worth watching example.*Black cat walking on grass/ }).click();
+  await expect(box.getByRole("button", { name: /Worth watching example/ })).toHaveAttribute("aria-pressed", "true");
   await box.getByRole("button", { name: "Analyse" }).click();
   await expect(box.getByText("Worth watching").first()).toBeVisible({ timeout: 15_000 });
   await expect(box.getByText("Leg to watch: hind left").first()).toBeVisible();

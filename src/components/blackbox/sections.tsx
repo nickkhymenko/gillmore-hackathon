@@ -249,7 +249,7 @@ export function PriceCard({ rec, discount }: { rec: PetRecord; discount: { metRa
         </div>
       </div>
       <p className="mt-6 border-t border-white/15 pt-4 text-xs text-white/60">
-        Illustrative tiers: {BB_TIERS.map((t) => `${Math.round(t.ratio * 100)}% of weeks = ${t.pct}%`).join(", ")}; check-ins add {CHECKIN_EXTRA.map((t) => `${t.pct}%`).join(", ")} at the same ratios. Example premium of {gbp(yearly)} a year. It can only lower your premium.
+        Illustrative tiers: {BB_TIERS.map((t) => `${Math.round(t.ratio * 100)}% of weeks = ${t.pct}%`).join(", ")}; check-ins add up to {CHECKIN_EXTRA.at(-1)!.pct}%. Example premium {gbp(yearly)} a year.
       </p>
     </section>
   );
@@ -262,15 +262,12 @@ export function DataRules({ compact = false }: { compact?: boolean }) {
     <aside aria-label="Your data, your rules" className={`rounded-brand border border-line bg-paper ${compact ? "p-5" : "p-6"}`}>
       <p className="eyebrow">Your data, your rules</p>
       <ul className="mt-3 space-y-2 text-sm">
-        <li>Routes and locations stay on your device. Never shared.</li>
-        <li>Your insurer sees only &ldquo;target met this week: yes or no&rdquo; and your discount tier.</li>
-        <li>Your vet sees health trends only if you share them.</li>
-        <li>Underwriters see anonymised group trends only.</li>
+        <li>Routes and locations stay on your device.</li>
+        <li>Your insurer sees only &ldquo;target met this week: yes or no&rdquo; and your tier.</li>
+        <li>Your vet sees trends only if you share them.</li>
       </ul>
       <p className="mt-4 font-semibold">It can only lower your premium. Never raise it, never add exclusions.</p>
-      <p className="mt-3 text-sm text-muted">
-        <strong className="text-ink">Fair by design:</strong> targets are personal to breed, age and health, so a senior Pug and a young Collie can both earn the full discount. <strong className="text-ink">Rest mode:</strong> if a vet advises rest, targets pause and the discount is protected.
-      </p>
+      <p className="mt-3 text-sm text-muted">Targets fit breed, age and health. Vet-advised rest never costs the discount.</p>
     </aside>
   );
 }

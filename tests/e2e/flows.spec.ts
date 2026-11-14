@@ -96,16 +96,21 @@ test("4 and 5: the walk: stops, Doctapet line, charts, cover only when reached, 
   await page.goto("/walk");
   await expect(page.getByText("Powered by Doctapet.")).toBeVisible();
   await expect(page.getByText("Here with you.")).toBeVisible();
-  expect(await page.locator("section[id] [data-stop]").count()).toBe(9);
-  await expect(page.locator("#trends .recharts-line").first()).toBeAttached();
-  expect(await page.locator("#trends .recharts-line").count()).toBeGreaterThanOrEqual(4);
+  expect(await page.locator("section[id] [data-stop]").count()).toBe(7);
+  await expect(page.locator("#care-plan, #next-week")).toHaveCount(0);
+  await expect(page.locator("#sources summary")).toHaveText("Sources");
+  // One lifetime chart: typical owner against Petra, drawn when the paw arrives.
+  await page.locator("#lifetime").scrollIntoViewIfNeeded();
+  await expect(page.locator("#lifetime .recharts-line")).toHaveCount(2);
+  await expect(page.getByTestId("lifetime-saved")).toHaveText(/^£\d+ saved by age \d+\.$/);
+  await expect(page.locator("#lifetime")).toContainText("Illustrative");
 
   // Cover is not shown until the paw reaches it; payment only after a plan is chosen.
   const cover = page.locator("#cover > div").last();
   expect(Number(await cover.evaluate((e) => getComputedStyle(e).opacity))).toBeLessThan(0.5);
   await page.locator("#cover").scrollIntoViewIfNeeded();
   await expect.poll(() => cover.evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.9);
-  await expect(cover).toContainText("Uh oh. Your insurance isn't working for you.");
+  await expect(cover).toContainText("You're probably overpaying for Biscuit's insurance.");
   // The plans moved to Savings: payment still appears only after a plan is chosen.
   await page.goto("/savings");
   await expect(page.locator("#how-you-pay")).toHaveCount(0);
@@ -177,7 +182,7 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   // The moving paw is the only accent-filled circle with a 20px radius in the walk path.
   expect(await page.locator('svg circle[fill="var(--accent)"]').count()).toBe(0);
   await page.locator("#cover").scrollIntoViewIfNeeded();
-  await expect(page.locator("#uh-oh")).toContainText("Uh oh. Your insurance isn't working for you.");
+  await expect(page.locator("#uh-oh")).toContainText("You're probably overpaying for Biscuit's insurance.");
   await page.goto("/savings");
   await page.getByRole("radio", { name: /Lifetime/ }).click();
   await expect(page.locator("#how-you-pay")).toBeVisible();
