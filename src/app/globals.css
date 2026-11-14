@@ -1,19 +1,203 @@
 @import "tailwindcss";
 
+/*
+ * Theme variables are registered as colours so they can be transitioned.
+ * applyTheme() in src/lib/theme.ts changes them and the whole page eases to the pet's palette.
+ */
+@property --bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f7f5f0;
+}
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffd43b;
+}
+@property --accent-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fff3c4;
+}
+@property --dark {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #121212;
+}
+
 :root {
-  --background: #f6f8f7;
-  --foreground: #10201c;
+  --bg: #f7f5f0;
+  --accent: #ffd43b;
+  --accent-soft: #fff3c4;
+  --dark: #121212;
+  --ink: #141414;
+  --muted: #6b6b6b;
+  --line: rgb(20 20 20 / 0.14);
+  --radius: 6px;
+  transition:
+    --bg 600ms ease-out,
+    --accent 600ms ease-out,
+    --accent-soft 600ms ease-out,
+    --dark 600ms ease-out;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-dark: var(--dark);
+  --color-line: var(--line);
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --radius-brand: var(--radius);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Subtle film grain over everything (about 4% opacity). Purely decorative. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--accent);
+  border-radius: 2px;
+}
+
+/* ---------- Type helpers ---------- */
+
+.display {
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+.accent-word {
+  font-family: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Buttons and links ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: transform 200ms ease-out, background-color 300ms ease-out, opacity 200ms ease-out;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--ink);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgb(20 20 20 / 0.04);
+}
+.link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ---------- Pet avatar motion (see src/components/PetAvatar.tsx) ---------- */
+
+.pet-avatar .pet-eyes,
+.pet-avatar .pet-ear {
+  transform-box: fill-box;
+}
+.pet-avatar .pet-eyes {
+  transform-origin: center;
+}
+.pet-avatar .pet-ear {
+  transform-origin: 70% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pet-avatar-live .pet-eyes {
+    animation: pet-blink 5.2s ease-in-out infinite;
+  }
+  .pet-avatar-live:hover .pet-ear-l {
+    animation: pet-twitch 520ms ease-out;
+  }
+  .fade-up {
+    animation: fade-up 500ms ease-out both;
+  }
+  .shimmer {
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pet-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.08); }
+}
+@keyframes pet-twitch {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-11deg); }
+  60% { transform: rotate(5deg); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

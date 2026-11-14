@@ -2,9 +2,14 @@ import { z } from "zod";
 
 // ---------- Input: one weekly 60-second check-in ----------
 
+export const SPECIES = ["dog", "cat", "rabbit", "horse", "other"] as const;
+export const SIZE_CLASSES = ["toy", "small", "medium", "large", "giant"] as const;
+export type Species = (typeof SPECIES)[number];
+export type SizeClass = (typeof SIZE_CLASSES)[number];
+
 export const PetSchema = z.object({
   name: z.string().min(1).max(40),
-  species: z.enum(["dog", "cat", "rabbit", "other"]),
+  species: z.enum(SPECIES),
   breed: z.string().max(60).default(""),
   ageYears: z.number().min(0).max(30),
   weightKg: z.number().min(0).max(120).optional(),
@@ -85,6 +90,57 @@ export const ACTION_LABEL: Record<(typeof ACTIONS)[number], string> = {
   online_consult: "Book an online vet consult",
   vet_within_48h: "See a vet within 48 hours",
   emergency_now: "Contact an emergency vet now",
+};
+
+// ---------- Pet Twin: what the photo tells us (POST /api/twin) ----------
+
+export const COAT_PATTERNS = ["solid", "bicolour", "tabby", "spots", "tuxedo"] as const;
+export const EAR_SHAPES = ["upright", "floppy", "semi"] as const;
+export const MUZZLES = ["short", "medium", "long"] as const;
+export const BODY_CONDITIONS = ["under", "ideal", "over", "unknown"] as const;
+export const AGE_GUESSES = ["puppy", "adult", "senior"] as const;
+
+const PhotoSchema = z.object({
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  dataBase64: z.string().min(1).max(2_000_000),
+});
+
+export const TwinInputSchema = z.object({
+  name: z.string().max(40).default(""),
+  species: z.enum(SPECIES).optional(), // owner's hint, if they already told us
+  photo: PhotoSchema,
+});
+
+export const TwinProfileSchema = z.object({
+  species: z.enum(SPECIES),
+  breedGuess: z.string().max(60),
+  breedConfidence: z.number().min(0).max(1),
+  sizeClass: z.enum(SIZE_CLASSES),
+  coatColours: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).max(4),
+  coatPattern: z.enum(COAT_PATTERNS),
+  earShape: z.enum(EAR_SHAPES),
+  muzzle: z.enum(MUZZLES),
+  bodyCondition: z.enum(BODY_CONDITIONS),
+  ageGuess: z.enum(AGE_GUESSES),
+  notes: z.string().max(300),
+});
+
+export type TwinInput = z.infer<typeof TwinInputSchema>;
+export type TwinProfile = z.infer<typeof TwinProfileSchema>;
+
+export type TwinResult = {
+  profile: TwinProfile;
+  source: "gemini" | "fallback";
+  /** False when the model could not see an animal: the UI then asks the owner to pick. */
+  petVisible: boolean;
+};
+
+/** Owner-facing wording. Never a diagnosis: a visual impression to confirm with a vet. */
+export const BODY_CONDITION_LABEL: Record<(typeof BODY_CONDITIONS)[number], string | null> = {
+  under: "looks lean",
+  ideal: "looks ideal",
+  over: "looks a bit heavy",
+  unknown: null,
 };
 
 export const DISCLAIMER =
