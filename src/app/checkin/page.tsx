@@ -79,7 +79,8 @@ export default function CheckinPage() {
   async function submit() {
     setLoading(true);
     setError(null);
-    savePet(pet);
+    // Only create a pet from this form when there is none: demo scenarios must not overwrite the active pet.
+    if (!loadPet()) savePet(pet);
     const log = loadCheckins().filter((c) => c.petName === pet.name);
     try {
       const res = await fetch("/api/checkin", {

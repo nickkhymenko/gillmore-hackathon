@@ -172,7 +172,8 @@ export function extractPalette(img: PixelSource, k = 5): Swatch[] {
  *  - dark: a near-black shade carrying the coat hue, for the dark band.
  * `coat` (hex colours from the vision model, most dominant first) takes priority over the raw photo
  * palette for the tint, because the photo palette can include background.
- * Grey, black and white pets have no usable hue, so they keep the brand yellow on a cool stone page.
+ * Black, white and grey pets have no usable coat hue, so the accent comes from the photo background
+ * instead (the swatches furthest from the coat). Only a completely grey photo falls back to brand yellow.
  */
 export function deriveTheme(swatches: Swatch[], coat: string[] = []): ThemeTokens {
   const coatSwatches: Swatch[] = coat.filter(isHex).map((hex, i) => ({ hex, rgb: hexToRgb(hex), weight: 0.5 / (i + 1) }));
@@ -182,28 +183,60 @@ export function deriveTheme(swatches: Swatch[], coat: string[] = []): ThemeToken
   const dominant = coatSwatches[0] ?? swatches[0];
   const [dh, ds] = rgbToHsl(dominant.rgb);
   const hasHue = ds >= 0.1;
-  const baseHue = hasHue ? dh : 42;
+
+  if (!hasHue) {
+    // Neutral coat: look for colour in the background, ignoring anything close to the coat colours.
+    const coatRgb = coatSwatches.length ? coatSwatches.map((c) => c.rgb) : [dominant.rgb];
+    const background = swatches.filter((sw) => coatRgb.every((c) => Math.hypot(c[0] - sw.rgb[0], c[1] - sw.rgb[1], c[2] - sw.rgb[2]) > 40));
+    const pick = pickAccent(background, 0.12);
+    if (!pick) {
+      const bg = hslHex(220, 0.08, 0.925);
+      return { bg, accent: DEFAULT_THEME.accent, accentSoft: mix(bg, DEFAULT_THEME.accent, 0.35), dark: hslHex(220, 0.06, 0.08) };
+    }
+    const bg = hslHex(pick.h, clamp(pick.s, 0.2, 0.4), 0.925);
+    const dark = hslHex(pick.h, 0.12, 0.08);
+    return { bg, ...accentTokens(pick.h, pick.s, pick.l, dark), dark };
+  }
 
   // Light enough for near-black body text (well above AAA), tinted enough that the change is visible.
-  const bg = hasHue ? hslHex(baseHue, clamp(ds * 1.1, 0.3, 0.6), 0.905) : hslHex(220, 0.08, 0.925);
-  const dark = hasHue ? hslHex(baseHue, clamp(ds * 0.5, 0.1, 0.28), 0.085) : hslHex(220, 0.06, 0.08);
+  const bg = hslHex(dh, clamp(ds * 1.1, 0.3, 0.6), 0.905);
+  const dark = hslHex(dh, clamp(ds * 0.5, 0.1, 0.28), 0.085);
+  const pick = pickAccent(all, 0.2);
+  if (!pick) return { bg, accent: DEFAULT_THEME.accent, accentSoft: mix(bg, DEFAULT_THEME.accent, 0.35), dark };
+  return { bg, ...accentTokens(pick.h, pick.s, pick.l, dark), dark };
+}
 
+/** The most saturated, mid-light swatch, weighted a little by how much of the photo it covers. */
+function pickAccent(swatches: Swatch[], minSaturation: number) {
   let best: { h: number; s: number; l: number; score: number } | null = null;
-  for (const sw of all) {
+  for (const sw of swatches) {
     const [h, s, l] = rgbToHsl(sw.rgb);
     if (l < 0.15 || l > 0.9) continue;
     const score = s * Math.pow(sw.weight, 0.25) * (1 - Math.abs(l - 0.55));
     if (!best || score > best.score) best = { h, s, l, score };
   }
-  if (!best || best.s < 0.2) return { bg, accent: DEFAULT_THEME.accent, accentSoft: mix(bg, DEFAULT_THEME.accent, 0.35), dark };
+  return best && best.s >= minSaturation ? best : null;
+}
 
-  const s = clamp(best.s * 1.3, 0.68, 0.92);
-  let l = clamp(best.l, 0.52, 0.7);
-  let accent = hslHex(best.h, s, l);
+/** Accent and soft accent for a hue, lightened until both AA checks pass. */
+function accentTokens(h: number, sat: number, light: number, dark: string) {
+  const s = clamp(sat * 1.3, 0.68, 0.92);
+  let l = clamp(light, 0.52, 0.7);
+  let accent = hslHex(h, s, l);
   // Clamp for accessibility: dark ink on the accent, and the accent on the dark band, must both pass AA.
   while ((contrast(accent, INK) < 4.5 || contrast(accent, dark) < 4.5) && l < 0.9) {
     l += 0.02;
-    accent = hslHex(best.h, s, l);
+    accent = hslHex(h, s, l);
   }
-  return { bg, accent, accentSoft: hslHex(best.h, s * 0.7, 0.9), dark };
+  return { accent, accentSoft: hslHex(h, s * 0.7, 0.9) };
 }
+
+/** Owner picked a swatch as the accent: keep the page tint and dark band, re-derive the accent from that colour. */
+export function withAccent(theme: ThemeTokens, hex: string): ThemeTokens {
+  const [h, s, l] = rgbToHsl(hexToRgb(hex));
+  if (s < 0.08) return { ...theme, accent: DEFAULT_THEME.accent, accentSoft: mix(theme.bg, DEFAULT_THEME.accent, 0.35) };
+  return { ...theme, ...accentTokens(h, Math.max(s, 0.5), l, theme.dark) };
+}
+
+export const sameTheme = (a: ThemeTokens | null | undefined, b: ThemeTokens | null | undefined) =>
+  Boolean(a && b && a.bg === b.bg && a.accent === b.accent && a.accentSoft === b.accentSoft && a.dark === b.dark);
