@@ -25,7 +25,7 @@ test("partner: pricing switch and sliders recalculate; underwriter and Black Box
   await expect(page.getByText("Never shared: stay on the owner's phone")).toBeVisible();
   await expect(page.getByText("Rest mode", { exact: true })).toBeVisible();
 
-  await page.getByRole("tab", { name: "Black Box" }).click();
+  await page.getByRole("tab", { name: "Petra Savings" }).click();
   await expect(page.getByText("Hardware economics")).toBeVisible();
   await page.getByRole("radio", { name: /£5 a month, bundled/ }).click();
   await expect(page.getByText("10 months")).toBeVisible();
@@ -36,5 +36,5 @@ test("partner: pricing switch and sliders recalculate; underwriter and Black Box
 
 test("partner deep link opens the Black Box tab", async ({ page }) => {
   await page.goto("/partner#blackbox");
-  await expect(page.getByRole("tab", { name: "Black Box" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Petra Savings" })).toHaveAttribute("aria-selected", "true");
 });

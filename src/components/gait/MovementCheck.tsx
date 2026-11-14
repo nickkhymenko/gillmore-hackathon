@@ -15,10 +15,10 @@ type Phase = "idle" | "tracking" | "live" | "analysing" | "done" | "unknown";
 function Block({ n, title, aside, children }: { n: string; title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="space-y-6">
-      <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
-        <h2 className="eyebrow">
+      <div className="flex items-baseline justify-between gap-4">
+        <h4 className="eyebrow">
           <span className="tnum text-ink">{n}</span> / {title}
-        </h2>
+        </h4>
         {aside}
       </div>
       {children}
@@ -27,14 +27,15 @@ function Block({ n, title, aside, children }: { n: string; title: string; aside?
 }
 
 /**
- * Gait check, a top-level page next to Walk.
+ * Movement check (code name: gait check), shown in the dashboard's "Walks and movement" section.
+ * Moved from the old /gait page unchanged apart from headings.
  * 01 upload → 02 the skeleton appears on the owner's own video and the head and hip curves draw live
  * → 03 Analyse gives the result and what it means for their cover.
  *
  * Demo build: pose estimation (DeepLabCut SuperAnimal-Quadruped) ran offline on a GPU and the keypoints
  * ship as JSON in /public/gait/clips. An upload is recognised by file size (or length).
  */
-export default function GaitPage() {
+export function MovementCheck() {
   const { pet } = useActivePet();
   const [index, setIndex] = useState<ClipIndexRow[]>([]);
   const [src, setSrc] = useState<string | null>(null);
@@ -122,14 +123,13 @@ export default function GaitPage() {
   const analysed = phase === "done";
 
   return (
-    <div className="space-y-16 pb-16">
-      {/* hero */}
-      <section className="space-y-5 pt-6">
-        <p className="eyebrow">Petra / Gait check</p>
-        <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
-          Ten seconds of walking. <span className="accent-word">A clearer look at every leg.</span>
-        </h1>
-        <p className="max-w-[58ch] text-lg text-muted">
+    <div className="space-y-10">
+      {/* intro */}
+      <section className="space-y-3">
+        <h3 className="text-2xl font-semibold tracking-[-0.03em]">
+          Movement check: ten seconds of walking, a clearer look at every leg.
+        </h3>
+        <p className="max-w-[58ch] text-muted">
           Film {petName || "your pet"} walking past you on your phone. Watch us find every leg in real time, then tap Analyse to see if
           a leg needs a vet&apos;s look before it becomes a claim.
         </p>

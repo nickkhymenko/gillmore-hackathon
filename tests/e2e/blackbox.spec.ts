@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 test("simulated walk end to end: finish screen, target, live price and dashboard", async ({ page }) => {
   const { errors, requests } = watch(page);
   await seedPet(page);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills");
   await expect(page.getByText(/Up to £\d+ a year off Biscuit's cover/)).toBeVisible();
   const priceBefore = await page.locator("#your-price").textContent();
@@ -28,7 +28,7 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   await expect(page.locator("#your-price")).toContainText("Target met in");
 
   await page.goto("/dashboard");
-  await expect(page.locator("#savings-title")).toHaveText(/Black Box/);
+  await expect(page.locator("#savings-title")).toHaveText(/Petra Savings/);
   await expect(page.getByText(/of \d+ minutes/).first()).toBeVisible();
 
   // Routes never leave the device: no location in any request to our API.
@@ -40,14 +40,14 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
 
 test("pairing the simulated collar adds vitals; a 10-day dip raises an amber vet flag", async ({ page }) => {
   await seedPet(page);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   await page.getByRole("button", { name: "Pair Petra Collar" }).click();
   await expect(page.getByText("Paired (simulated for the demo)")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(/No sustained changes against Biscuit's own baseline/)).toBeVisible();
   await page.getByRole("button", { name: "Demo: simulate a 10-day dip" }).click();
   await expect(page.getByText("A change worth a vet's look")).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "A change worth a vet's look" })).toContainText("not a diagnosis");
-  await expect(page.getByRole("button", { name: /Online vet consult, Black Box summary attached/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Online vet consult, savings summary attached/ })).toBeVisible();
 });
 
 test("rest mode protects the discount", async ({ page }) => {
@@ -64,15 +64,15 @@ test("rest mode protects the discount", async ({ page }) => {
     }, restDaysAgo);
 
   await setup(null);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   const without = await page.locator("#your-price").textContent();
   expect(without).toContain("Target met in 5 of 6 weeks");
 
   await setup(8);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   await expect(page.getByText("Rest mode: no target today.")).toBeVisible();
   await expect(page.locator("#your-price")).toContainText("Target met in 6 of 6 weeks");
-  const pct = (t: string | null) => Number(/Black Box discount \(([\d.]+)%\)/.exec(t ?? "")?.[1] ?? -1);
+  const pct = (t: string | null) => Number(/Petra Savings discount \(([\d.]+)%\)/.exec(t ?? "")?.[1] ?? -1);
   expect(pct(await page.locator("#your-price").textContent())).toBeGreaterThan(pct(without));
 });
 
@@ -82,14 +82,14 @@ test("Web Bluetooth option is hidden when the browser does not support it", asyn
     delete (Navigator.prototype as unknown as Record<string, unknown>).bluetooth;
   });
   await seedPet(page);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   await expect(page.getByRole("button", { name: "Pair Petra Collar" })).toBeVisible();
   await expect(page.getByText("Connect a heart rate sensor")).toHaveCount(0);
 });
 
 test("the data rules are always one tap or one glance away", async ({ page }, info) => {
   await seedPet(page);
-  await page.goto("/blackbox");
+  await page.goto("/savings");
   if (info.project.name.startsWith("mobile")) {
     await page.getByRole("button", { name: /Your data, your rules/ }).click();
     await expect(page.getByRole("dialog")).toContainText("It can only lower your premium");

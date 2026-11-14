@@ -11,7 +11,7 @@ type Tab = "insurer" | "underwriter" | "blackbox";
 const TABS: { id: Tab; label: string }[] = [
   { id: "insurer", label: "Insurer" },
   { id: "underwriter", label: "Underwriter" },
-  { id: "blackbox", label: "Black Box" },
+  { id: "blackbox", label: "Petra Savings" },
 ];
 
 const pct = (v: number, dp = 0) => `${(v * 100).toFixed(dp)}%`;
@@ -19,7 +19,7 @@ const k = (n: number) => (Math.abs(n) >= 1_000_000 ? `£${(n / 1_000_000).toFixe
 
 // Illustrative live queue a vet group or insurer would see (synthetic records).
 const QUEUE = [
-  { pet: "Biscuit, Labrador, 8", signal: "Thirst up and stiffness; Black Box activity down 30% in 10 days", status: "amber", action: "Online consult booked" },
+  { pet: "Biscuit, Labrador, 8", signal: "Thirst up and stiffness; activity down 30% in 10 days", status: "amber", action: "Online consult booked" },
   { pet: "Miso, British Shorthair, 4", signal: "Straining to urinate", status: "red", action: "Emergency vet directed" },
   { pet: "Luna, Cockapoo, 3", signal: "Itchy skin three weeks running", status: "amber", action: "Nurse call offered" },
   { pet: "Pip, rabbit, 2", signal: "Normal week", status: "green", action: "Check-in counted" },
@@ -224,7 +224,7 @@ const RULES = [
   ["Discount-only", "Data can lower a premium, never raise it or be used to refuse cover. No surcharges."],
   ["No new exclusions", "Nothing the app spots is used to add an exclusion at renewal. Otherwise owners would hide problems."],
   ["Reward behaviour, not health", "The discount is for check-ins and walks, so owners of older or ill pets earn it equally."],
-  ["Personal, fair targets", "Black Box targets are normalised for breed, age and health: a senior Pug and a young Collie can both earn the full discount."],
+  ["Personal, fair targets", "Savings targets are normalised for breed, age and health: a senior Pug and a young Collie can both earn the full discount."],
   ["Rest mode", "When a vet advises rest, targets pause and the discount is protected."],
   ["Data minimisation", "Derived signals only. No location data and no raw video ever reach the insurer or underwriter."],
   ["Granular, revocable consent", "UK GDPR: separate choices for vet sharing, insurer engagement data and anonymised research."],
@@ -263,12 +263,12 @@ function UnderwriterTab({ inp }: { inp: BusinessInput }) {
             ))}
           </div>
           <div className="space-y-3">
-            <p className="font-semibold">Black Box: weeks with the personal target met</p>
+            <p className="font-semibold">Petra Savings: weeks with the personal target met</p>
             {bb.map((t, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                <input aria-label={`Share of weeks for Black Box tier ${i + 1}`} type="number" min={10} max={100} value={Math.round(t.ratio * 100)} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, ratio: Number(e.target.value) / 100 } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />
+                <input aria-label={`Share of weeks for savings tier ${i + 1}`} type="number" min={10} max={100} value={Math.round(t.ratio * 100)} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, ratio: Number(e.target.value) / 100 } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />
                 % of weeks earn
-                <input aria-label={`Discount for Black Box tier ${i + 1}`} type="number" min={0} max={20} step={0.5} value={t.pct} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, pct: Number(e.target.value) } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />% off
+                <input aria-label={`Discount for savings tier ${i + 1}`} type="number" min={0} max={20} step={0.5} value={t.pct} onChange={(e) => setBb(bb.map((x, j) => (j === i ? { ...x, pct: Number(e.target.value) } : x)))} className="tnum min-h-11 w-20 rounded-brand border border-line bg-white/70 px-2" />% off
               </div>
             ))}
             <p className="text-sm text-muted">Plus up to {CHECKIN_EXTRA.at(-1)!.pct}% for weekly check-ins; capped at {BB_CAP}%.</p>
@@ -343,9 +343,9 @@ function BlackBoxTab() {
           <Slider label="Retention uplift (members)" value={inp.retentionUplift} min={0} max={0.15} step={0.01} fmt={(v) => `+${(v * 100).toFixed(0)} pts`} onChange={(v) => set({ retentionUplift: v })} />
         </div>
         <div className="space-y-5 lg:col-span-8">
-          <H n="02">A year with the Black Box</H>
+          <H n="02">A year with Petra Savings</H>
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-brand border border-line bg-line lg:grid-cols-4">
-            <Kpi label="Black Box members" value={b.members.toLocaleString("en-GB")} />
+            <Kpi label="Petra Savings members" value={b.members.toLocaleString("en-GB")} />
             <Kpi label="Hitting targets" value={b.hitting.toLocaleString("en-GB")} />
             <Kpi label="Early-warning flags" value={b.flags.toLocaleString("en-GB")} note="Sustained activity changes" />
             <Kpi label="Consults triggered" value={b.consults.toLocaleString("en-GB")} />
@@ -406,7 +406,7 @@ function BlackBoxTab() {
   );
 }
 
-/** Partner view: insurer, underwriter and Black Box. A 100,000-policy illustrative insurer by default. */
+/** Partner view: insurer, underwriter and Petra Savings (code name: Black Box). A 100,000-policy illustrative insurer by default. */
 export default function PartnerPage() {
   const [tab, setTab] = useState<Tab>("insurer");
   const [inp, setInp] = useState<BusinessInput>(DEFAULT_BUSINESS);
@@ -424,7 +424,7 @@ export default function PartnerPage() {
         <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5.5rem)]">
           Prevention that <span className="accent-word">pays.</span>
         </h1>
-        <p className="mt-4 text-lg text-muted">For the insurer that owns the app, the underwriter that carries the risk, and the Black Box that rewards good care.</p>
+        <p className="mt-4 text-lg text-muted">For the insurer that owns the app, the underwriter that carries the risk, and Petra Savings, which rewards good care.</p>
       </header>
 
       <div role="tablist" aria-label="Partner views" className="flex gap-1 border-b border-line">
