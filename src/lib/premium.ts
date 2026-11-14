@@ -2,7 +2,12 @@
 import { useSyncExternalStore } from "react";
 import { readRaw, subscribe } from "./store";
 
-/** Petra Premium membership for the demo, kept in this browser only. Delete all my data clears it. */
+/** The membership's name, in one place: the sheet, the header badge, the dashboard and the copy all read it. */
+export const PLAN_NAME = "Petra Plus";
+/** The short form on the header badge. */
+export const PLAN_SHORT = "Plus";
+
+/** Petra Plus membership for the demo, kept in this browser only. Delete all my data clears it. */
 export const PREMIUM_KEY = "prevently.premium";
 export type Membership = { since: string; petId: string; petName: string };
 

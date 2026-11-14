@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowUpRight, CheckCircle, Footprints, LinkSimple, TrendDown, type Icon } from "@phosphor-icons/react";
+import { ArrowUpRight, CheckCircle, Footprints, Heartbeat, LinkSimple, MapPin, TrendDown, type Icon } from "@phosphor-icons/react";
 import { EmptyPetState } from "@/components/EmptyPetState";
-import { CompanionTag } from "@/components/blackbox/CompanionTag";
+import { PetAvatar } from "@/components/PetAvatar";
 import { JoinSheet } from "@/components/blackbox/JoinSheet";
 import { WalkMode } from "@/components/blackbox/WalkMode";
 import { AVG_MEMBER_PCT, TOP_TIER_PCT, annualPremium, avgSaving, maxSaving } from "@/data/premiums";
 import { blackBoxDiscount, dailyTarget, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
-import { usePremium } from "@/lib/premium";
+import { PLAN_NAME, usePremium } from "@/lib/premium";
 import type { PetRecord } from "@/lib/store";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
@@ -66,6 +66,32 @@ function Compare({ rec }: { rec: PetRecord }) {
         </span>{" "}
         Members save about {AVG_MEMBER_PCT}% on average, around {gbp(avgSaving(rec.pet))} a year for {rec.pet.name}. Illustrative.
       </p>
+    </div>
+  );
+}
+
+const BENEFITS: [Icon, string, string][] = [
+  [MapPin, "Never lose them", "GPS if they wander"],
+  [Heartbeat, "Healthier, happier walks", ""],
+  [TrendDown, "Lower insurance bills", ""],
+];
+
+/** The pet's own avatar wearing the Walk Companion on its collar, in the soft circle, floating gently. */
+function WearingTag({ rec, reduce }: { rec: PetRecord; reduce: boolean }) {
+  const loop = { duration: 5.5, repeat: Infinity, ease: "easeInOut" as const };
+  return (
+    <div className="relative mx-auto w-fit" data-testid="savings-hero-avatar">
+      <motion.div animate={reduce ? undefined : { y: [0, -10, 0] }} transition={loop}>
+        <div className="rounded-full bg-white/70 p-3 sm:p-4">
+          <PetAvatar traits={rec.profile} size={260} collar="companion" title={`${rec.pet.name} wearing the Petra Walk Companion on their collar`} className="h-52 w-52 sm:h-64 sm:w-64" />
+        </div>
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="mx-auto mt-3 h-2.5 w-40 rounded-[50%] bg-ink/10"
+        animate={reduce ? undefined : { scaleX: [1, 0.86, 1], opacity: [1, 0.6, 1] }}
+        transition={loop}
+      />
     </div>
   );
 }
@@ -126,15 +152,27 @@ export default function SavingsPage() {
     <div className="space-y-24 pb-20 sm:space-y-32">
       <header className="mx-auto max-w-4xl pt-6 text-center sm:pt-12">
         <motion.div {...enter()}>
+          <WearingTag rec={rec} reduce={reduce} />
+        </motion.div>
+        <motion.div {...enter(0.1)} className="mt-8 sm:mt-10">
           <p className="eyebrow">Petra Walk Companion</p>
-          <h1 className="display mt-4 text-[clamp(2.75rem,7vw,5.25rem)]">
-            Save on {name}&apos;s insurance <span className="accent-word">with every walk.</span>
+          <h1 className="display mt-4 text-[clamp(2.5rem,6.5vw,5rem)]">
+            Keep {name} safe. <span className="accent-word">Save on every walk.</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-[40ch] text-lg text-muted sm:text-xl">A small tag that counts {name}&apos;s walks. Never your location.</p>
         </motion.div>
-        <motion.div {...enter(0.12)} className="mt-6 flex justify-center sm:mt-8">
-          <CompanionTag className="h-auto w-72 sm:w-[25rem]" />
-        </motion.div>
+        <motion.ul {...enter(0.2)} className="mx-auto mt-8 grid max-w-3xl gap-3 text-left sm:grid-cols-3 sm:gap-4" data-testid="savings-benefits">
+          {BENEFITS.map(([I, line, note]) => (
+            <li key={line} className="card-quiet flex items-center gap-3 p-4 sm:flex-col sm:gap-3 sm:p-6 sm:text-center">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft" aria-hidden>
+                <I size={22} weight="duotone" />
+              </span>
+              <p className="font-semibold leading-snug tracking-[-0.02em]">
+                {line}
+                {note && <span className="block text-sm font-normal text-muted">{note}</span>}
+              </p>
+            </li>
+          ))}
+        </motion.ul>
       </header>
 
       <Section id="how" eyebrow="How it works" title="Three steps." reduce={reduce}>
@@ -165,7 +203,7 @@ export default function SavingsPage() {
           <div className="mx-auto max-w-2xl space-y-6" data-testid="join-done">
             <CheckCircle size={52} weight="fill" className="mx-auto" aria-hidden />
             <p className="display text-[clamp(2rem,5vw,3.5rem)]">
-              {name} is on <span className="accent-word">Petra Premium.</span>
+              {name} is on <span className="accent-word">{PLAN_NAME}.</span>
             </p>
             <Link href="/dashboard" className="btn btn-primary min-h-14 px-8 text-lg">
               Go to your dashboard <ArrowUpRight size={20} weight="bold" aria-hidden />

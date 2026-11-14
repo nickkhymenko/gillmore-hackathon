@@ -7,7 +7,7 @@ import { ArrowUpRight } from "@phosphor-icons/react";
 import { PetAvatar } from "../PetAvatar";
 import { Sheet } from "../Sheet";
 import { maxSaving } from "@/data/premiums";
-import { joinPremium } from "@/lib/premium";
+import { PLAN_NAME, joinPremium } from "@/lib/premium";
 import type { PetRecord } from "@/lib/store";
 
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
@@ -40,8 +40,8 @@ function SuccessMark({ reduce }: { reduce: boolean }) {
 }
 
 /**
- * The one-step sign-up. A sheet with the pet's avatar, one summary line and "Join Petra Premium"; confirming plays
- * the success mark, then "Welcome to Petra Premium" and the way to the dashboard. The membership is kept in this
+ * The one-step sign-up. A sheet with the pet's avatar, one summary line and "Join Petra Plus"; confirming plays
+ * the success mark, then "Welcome to Petra Plus" and the way to the dashboard. The membership is kept in this
  * browser (src/lib/premium.ts); "Reset demo" and "Delete all my data" clear it.
  */
 export function JoinSheet({ rec, open, onClose }: { rec: PetRecord; open: boolean; onClose: () => void }) {
@@ -53,13 +53,13 @@ export function JoinSheet({ rec, open, onClose }: { rec: PetRecord; open: boolea
     setDone(false);
   };
   return (
-    <Sheet open={open} onClose={close} title={done ? "Welcome to Petra Premium" : "Join Petra Premium"} hideTitle>
+    <Sheet open={open} onClose={close} title={done ? `Welcome to ${PLAN_NAME}` : `Join ${PLAN_NAME}`} hideTitle>
       {done ? (
         <div className="space-y-5 pb-2 text-center" role="status">
           <SuccessMark reduce={reduce} />
           <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 24, delay: reduce ? 0 : 0.45 }} className="space-y-5">
             <h2 className="display text-[clamp(2rem,6vw,2.75rem)]">
-              Welcome to <span className="accent-word">Petra Premium.</span>
+              Welcome to <span className="accent-word">{PLAN_NAME}.</span>
             </h2>
             <p className="text-lg text-muted">{name} is covered for every walk.</p>
             <Link href="/dashboard" onClick={close} className="btn btn-primary min-h-14 w-full text-lg">
@@ -74,7 +74,7 @@ export function JoinSheet({ rec, open, onClose }: { rec: PetRecord; open: boolea
           </div>
           <div className="space-y-2">
             <h2 className="display text-[clamp(2rem,6vw,2.75rem)]">
-              Petra Premium <span className="accent-word">for {name}.</span>
+              {PLAN_NAME} <span className="accent-word">for {name}.</span>
             </h2>
             <p className="text-lg text-muted" data-testid="join-summary">
               Walk Companion · up to {gbp(maxSaving(rec.pet))} a year off · cancel anytime
@@ -89,7 +89,7 @@ export function JoinSheet({ rec, open, onClose }: { rec: PetRecord; open: boolea
             }}
             className="btn btn-primary min-h-14 w-full text-lg"
           >
-            Join Petra Premium
+            Join {PLAN_NAME}
           </button>
           <p className="text-xs text-muted">A demo sign-up: nothing is charged and no details are taken. Illustrative saving at the top tier.</p>
         </div>
