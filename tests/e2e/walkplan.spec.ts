@@ -75,6 +75,23 @@ test("'Make my insurance cheaper today' leads to the Black Box", async ({ page }
   await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(2);
   await page.getByRole("link", { name: /Make my insurance cheaper today/ }).first().click();
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet insurance");
   await expect(page.getByText(/Up to £\d+ a year off Biscuit's cover/)).toBeVisible();
+});
+
+test("the poo moment: scroll to it, Pick it up, land on Savings", async ({ page }) => {
+  const { errors } = watch(page);
+  await mockWeather(page, 12);
+  await seedPet(page);
+  await page.goto("/walk");
+  const moment = page.locator("#uh-oh");
+  await moment.scrollIntoViewIfNeeded();
+  await expect(moment).toContainText("Uh oh. Your insurance isn't working for you yet.");
+  await expect(moment).toContainText("Make managing your pet insurance a walk in the park.");
+  await moment.getByRole("button", { name: "Pick it up: lower your insurance costs" }).click();
+  await page.waitForURL("**/savings");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet insurance a walk in the park.");
+  await expect(page.getByText("First-time owner? Start lower.")).toBeVisible();
+  await noHorizontalScroll(page);
+  expect(errors).toEqual([]);
 });

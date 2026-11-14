@@ -2,18 +2,32 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowUpRight, ListChecks, MapPin, ShieldCheck, Thermometer } from "@phosphor-icons/react";
 import { EmptyPetState } from "@/components/EmptyPetState";
 import { PetAvatar } from "@/components/PetAvatar";
 import { Sheet } from "@/components/Sheet";
 import { WalkMode } from "@/components/blackbox/WalkMode";
 import { Connect, DataRules, Diagnostics, PriceCard, Today } from "@/components/blackbox/sections";
+import { PrintShape } from "@/components/walk/WalkPath";
 import { blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
 import { useScans } from "@/lib/video/scans";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
+
+/** The walk's paw-print trail, carried on from /walk into the top of this page. Decorative. */
+function Trail({ species }: { species: Parameters<typeof PrintShape>[0]["species"] }) {
+  return (
+    <svg viewBox="0 0 360 24" className="h-6 w-full max-w-[360px] text-ink" fill="currentColor" aria-hidden>
+      {Array.from({ length: 8 }, (_, i) => (
+        <g key={i} transform={`translate(${14 + i * 44} ${i % 2 ? 8 : 16}) rotate(90)`} opacity={0.12 + i * 0.06}>
+          <PrintShape species={species} scale={0.55} />
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 function Block({ n, title, children, id }: { n: string; title: string; children: React.ReactNode; id?: string }) {
   return (
@@ -26,7 +40,7 @@ function Block({ n, title, children, id }: { n: string; title: string; children:
   );
 }
 
-/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make your pet bills work for you." */
+/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make managing your pet insurance a walk in the park." */
 export default function BlackBoxPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
@@ -44,7 +58,7 @@ export default function BlackBoxPage() {
         where="Savings"
         title={
           <>
-            Make your pet bills <span className="accent-word">work for you.</span>
+            Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
           </>
         }
         line="Meet your pet first: their savings targets are personal to their breed, age and health."
@@ -55,7 +69,7 @@ export default function BlackBoxPage() {
       <section className="space-y-6 py-16">
         <p className="eyebrow">Petra / Savings</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
-          Make your pet bills <span className="accent-word">work for you.</span>
+          Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
         </h1>
         <p className="max-w-[48ch] text-lg text-muted">First, a minute to meet your pet. Their targets are personal to their breed, age and health.</p>
         <Link href="/" className="btn btn-primary text-lg">
@@ -79,16 +93,17 @@ export default function BlackBoxPage() {
     <div className="space-y-16 py-6 pb-28 sm:py-10 lg:pb-10">
       <header className="grid items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <p className="eyebrow">Petra / Savings</p>
+          <Trail species={species} />
+          <p className="eyebrow mt-4">Petra / Savings</p>
           <h1 className="display mt-4 text-[clamp(3rem,8vw,7rem)]">
-            Make your pet bills <span className="accent-word">work for you.</span>
+            Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
           </h1>
           <p className="mt-6 max-w-[52ch] text-lg text-muted">
             UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Savings turns good care into a lower premium. Like a black box for car insurance, but for your pet.
           </p>
         </div>
         <div className="flex justify-center lg:col-span-4">
-          <PetAvatar traits={rec.profile} size={220} title={`${name}'s avatar wearing a Petra collar`} collar />
+          <PetAvatar traits={rec.profile} size={220} title={`${name}'s avatar wearing a Petra Walk Companion`} collar />
         </div>
       </header>
 
@@ -96,7 +111,7 @@ export default function BlackBoxPage() {
         <div className="min-w-0 space-y-16 lg:col-span-8">
           <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
             {[
-              ["Wear it", "A Petra collar, or your phone until it arrives."],
+              ["Wear it", "A Petra Walk Companion, or your phone until it arrives."],
               ["Walk and care as normal", `${species === "dog" ? "Walks" : "Play and activity"}, rest and check-ins all count.`],
               ["Your premium drops", `As you hit ${name}'s personal target. It can never go up.`],
             ].map(([t, d], i) => (
@@ -115,6 +130,37 @@ export default function BlackBoxPage() {
             <span className="mt-2 block text-sm font-normal tracking-normal text-muted">Illustrative: example premium of {gbp(premium)} a year, discount capped at 15%.</span>
           </p>
 
+          <section aria-labelledby="first-time-title" className="rounded-brand border-2 border-ink bg-accent-soft p-6">
+            <p className="eyebrow">Illustrative offer</p>
+            <h2 id="first-time-title" className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+              First-time owner? Start lower.
+            </h2>
+            <p className="mt-2 max-w-[56ch] text-muted">
+              An introductory discount on your first year, for example 10% off, plus a free Petra Walk Companion when you take a 2-year policy.
+            </p>
+          </section>
+
+          <section aria-labelledby="stress-free-title" className="space-y-4">
+            <h2 id="stress-free-title" className="text-2xl font-semibold tracking-[-0.03em]">
+              Stress-free walks with your companion
+            </h2>
+            <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3">
+              {(
+                [
+                  [MapPin, "GPS if they wander off", `See where ${name} is on a map if they slip the lead.`],
+                  [ListChecks, "Walk logs for your dog walker", "Every walk is logged, so you know it happened and how long it was."],
+                  [Thermometer, "Heat and rest reminders", "A nudge to walk early on hot days and to rest after a long one."],
+                ] as const
+              ).map(([Icon, t, d]) => (
+                <li key={t} className="bg-paper p-5">
+                  <Icon size={22} aria-hidden />
+                  <p className="mt-3 font-semibold">{t}</p>
+                  <p className="mt-1 text-sm text-muted">{d}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <Block n="01" title="Connect">
             <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
           </Block>
@@ -125,10 +171,10 @@ export default function BlackBoxPage() {
 
           <Block n="03" title={species === "dog" ? "Walk mode" : "Activity mode"} id="walk-mode">
             <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} onFinished={() => undefined} />
-            {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the collar, or log a session with your phone.</p>}
+            {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the Walk Companion, or log a session with your phone.</p>}
           </Block>
 
-          <Block n="04" title="Collar diagnostics">
+          <Block n="04" title="Walk Companion diagnostics">
             <Diagnostics rec={rec} days={collar} result={diag} now={now} />
             {latestScan && (
               <p className="text-sm">
