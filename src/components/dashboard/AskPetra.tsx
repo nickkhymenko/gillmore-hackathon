@@ -63,11 +63,11 @@ export function AskPetra({ rec, latest, walk, onAction }: { rec: PetRecord; late
                   ))}
                 </p>
               ) : t.a.vetNow ? (
-                <div className="space-y-3 rounded-brand border-2 border-ink bg-accent p-5" role="alert">
+                <div className="space-y-3 rounded-brand border-2 border-ink bg-[#FFD43B] p-5 text-ink" role="alert">
                   <p className="flex items-center gap-2 text-lg font-semibold">
                     <Siren size={22} weight="bold" aria-hidden /> This needs a vet now
                   </p>
-                  <p className="text-sm">{t.a.answer}</p>
+                  <p className="text-sm">{t.a.answer.replace(/^This needs a vet now\.\s*/, "")}</p>
                   {t.a.reasons.length > 0 && <p className="text-xs font-semibold">Why: {t.a.reasons.join("; ")}</p>}
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => onAction("Starting an online vet consult")} className="btn bg-ink text-white">
