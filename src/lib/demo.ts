@@ -70,7 +70,7 @@ export function seedDemoPet(which: DemoId, now = Date.now()): PetRecord {
       ...base(id, now),
       pet: { name: "Biscuit", species: "dog", breed: "Labrador Retriever", ageYears: 8, weightKg: 34, sizeClass: "large", neutered: true, activity: "moderate", pronoun: "he" },
       profile: { species: "dog", breedGuess: "Labrador Retriever", breedConfidence: 1, sizeClass: "large", coatColours: coat, coatPattern: "solid", earShape: "floppy", muzzle: "medium", bodyCondition: "ideal", ageGuess: "senior", notes: "" },
-      photo: "/images/dog-labrador.jpg",
+      photo: "/images/biscuit.svg", // illustration, not a stock photo; the owner's own upload replaces it
       swatches: ["#E2BE7A", "#6F7A3E", "#2F3A1E"],
       theme: deriveTheme([], coat),
       blackBox: { device: "collar", enrolledAt: new Date(now - 42 * DAY).toISOString(), restSince: null },

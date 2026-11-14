@@ -4,7 +4,7 @@ import { walkPlan } from "./walkplan";
 import { useMemo, useSyncExternalStore } from "react";
 
 /**
- * Prevently Black Box: telematics for pet insurance.
+ * Petra Black Box: telematics for pet insurance.
  * Everything here lives on the owner's device (localStorage). Routes and locations are never sent anywhere;
  * an insurer would only ever receive "target met this week: yes/no" and the discount tier.
  */

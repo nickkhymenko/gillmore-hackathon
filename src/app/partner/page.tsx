@@ -243,7 +243,7 @@ function UnderwriterTab({ inp }: { inp: BusinessInput }) {
         <H n="01">Loss ratio impact (whole book)</H>
         <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3">
           <Kpi label="Baseline loss ratio" value={pct(b.lossBefore, 1)} note={`Claims £${Math.round(CLAIM_COST_PER_POLICY)} a policy on a £${inp.avgPremium} premium`} />
-          <Kpi label="With Prevently" value={pct(b.lossAfter, 1)} note="Claims avoided, net of discounts" />
+          <Kpi label="With Petra" value={pct(b.lossAfter, 1)} note="Claims avoided, net of discounts" />
           <Kpi label="Change" value={`${((b.lossAfter - b.lossBefore) * 100).toFixed(1)} pts`} dark note="Moves with the insurer tab assumptions" />
         </dl>
         <p className="text-xs text-muted">Illustrative: the average premium is an assumption to verify before the pitch.</p>
@@ -420,7 +420,7 @@ export default function PartnerPage() {
   return (
     <div className="space-y-10 py-4 sm:py-8">
       <header className="max-w-3xl">
-        <p className="eyebrow">Prevently / For insurers</p>
+        <p className="eyebrow">Petra / For insurers</p>
         <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5.5rem)]">
           Prevention that <span className="accent-word">pays.</span>
         </h1>

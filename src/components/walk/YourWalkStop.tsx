@@ -110,7 +110,7 @@ function Conditions({ vulnerable, name, kind }: { vulnerable: boolean; name: str
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
         <span>
           Weather for {w.place} from Open-Meteo.
-          {w.place !== "your location" && " Your location is never sent to Prevently."}
+          {w.place !== "your location" && " Your location is never sent to Petra."}
         </span>
         {w.place !== "your location" && (
           <button type="button" onClick={useMyLocation} className="link inline-flex min-h-11 items-center gap-1 text-ink">

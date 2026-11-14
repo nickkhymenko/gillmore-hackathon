@@ -442,7 +442,7 @@ export function PhotoTwin({ petId, mode = "settings" }: { petId: string; mode?: 
                 )}
               </div>
             )}
-            <p className="text-xs text-muted">Appearance only. Prevently does not diagnose from a photo.</p>
+            <p className="text-xs text-muted">Appearance only. Petra does not diagnose from a photo.</p>
           </section>
         )}
       </div>

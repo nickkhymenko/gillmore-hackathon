@@ -103,7 +103,7 @@ export default function PetSettingsPage() {
   return (
     <div className="space-y-14 py-4 sm:py-8">
       <header>
-        <p className="eyebrow">Prevently / {rec.pet.name} / Settings</p>
+        <p className="eyebrow">Petra / {rec.pet.name} / Settings</p>
         <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5rem)]">
           {rec.pet.name}&apos;s <span className="accent-word">twin.</span>
         </h1>

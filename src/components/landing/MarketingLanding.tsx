@@ -1,17 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowDown, ArrowUpRight } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUpRight, Bone, Carrot, Drop, Footprints, Heartbeat, Scales, Toilet, Tooth, Yarn, type Icon } from "@phosphor-icons/react";
 import { PetAvatar } from "../PetAvatar";
-import { PHOTOS } from "@/data/photos";
+import { HeroIllustration, SpeciesIllustration, WalkIllustration } from "../illustrations";
 import type { Species } from "@/lib/types";
 
-const SPECIES: { id: Exclude<Species, "other">; label: string; line: string; focus: string }[] = [
-  { id: "dog", label: "Dog", line: "Walks, joints, weight", focus: "object-[12%_45%]" },
-  { id: "cat", label: "Cat", line: "Thirst, litter, play", focus: "object-[50%_30%]" },
-  { id: "rabbit", label: "Rabbit", line: "Eating, droppings, teeth", focus: "object-[55%_45%]" },
-  { id: "horse", label: "Horse", line: "Feet, weight, movement", focus: "object-[55%_50%]" },
+/** What we track for each species, shown as an icon row on its card. */
+const SPECIES: { id: Exclude<Species, "other">; label: string; track: [Icon, string][] }[] = [
+  { id: "dog", label: "Dog", track: [[Footprints, "Walks"], [Bone, "Joints"], [Scales, "Weight"]] },
+  { id: "cat", label: "Cat", track: [[Drop, "Thirst"], [Toilet, "Litter"], [Yarn, "Play"]] },
+  { id: "rabbit", label: "Rabbit", track: [[Carrot, "Eating"], [Toilet, "Droppings"], [Tooth, "Teeth"]] },
+  { id: "horse", label: "Horse", track: [[Footprints, "Feet"], [Scales, "Weight"], [Heartbeat, "Movement"]] },
 ];
 
 const STATS: { v: string; l: string; n: number }[] = [
@@ -39,21 +39,19 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
 
 const BISCUIT = { species: "dog" as const, sizeClass: "large" as const, coatColours: ["#E2BE7A"], coatPattern: "solid" as const, earShape: "floppy" as const, muzzle: "medium" as const };
 
-/** The landing page: editorial and photography-led, with the species choice as the first decision. */
+/** The landing page: editorial and illustration-led, with the species choice as the first decision. */
 export function MarketingLanding({ onStart }: { onStart: (species?: Species) => void }) {
   const story: { time: string; text: React.ReactNode; visual: React.ReactNode }[] = [
     {
       time: "Tuesday, 7:10am",
       text: "Biscuit is a little slower on his morning walk.",
       visual: (
-        <div className="relative aspect-[4/3] overflow-hidden rounded-brand">
-          <Image src={PHOTOS.dog.src} alt={PHOTOS.dog.alt} fill sizes="(min-width: 1024px) 520px, 100vw" className="object-cover" />
-        </div>
+        <WalkIllustration className="block h-auto w-full overflow-hidden rounded-brand" />
       ),
     },
     {
       time: "Tuesday, 7:45am",
-      text: "Prevently notices the dip against his own normal, not an average dog's.",
+      text: "Petra notices the dip against his own normal, not an average dog's.",
       visual: (
         <div className="rounded-brand border border-line bg-white/60 p-5">
           <p className="eyebrow">Mobility, last 6 weeks</p>
@@ -115,13 +113,14 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
       {/* Hero */}
       <section className="grid items-end gap-8 pt-6 lg:grid-cols-12 lg:pt-12">
         <div className="lg:col-span-7">
-          <p className="eyebrow">Prevently / Pet health, early</p>
+          <p className="eyebrow">Petra / Pet health, early</p>
           <h1 className="display mt-4 text-[clamp(3.25rem,9vw,7.5rem)]">
             Make your pet bills <span className="accent-word">work for you.</span>
           </h1>
           <p className="mt-6 max-w-[46ch] text-lg text-muted sm:text-xl">
-            Prevently helps you catch problems early and turns good care into a cheaper premium. Inside your insurer&apos;s app. Powered by Doctapet.
+            Petra helps you catch problems early and turns good care into a cheaper premium. Inside your insurer&apos;s app. Powered by Doctapet.
           </p>
+          <p className="mt-3 text-base font-medium">Petra. The rock your pet can rely on.</p>
           <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
             <a href="#start" className="btn btn-primary min-h-14 px-6 text-lg">
               Start with your pet <ArrowUpRight size={20} weight="bold" aria-hidden />
@@ -131,8 +130,8 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
             </a>
           </div>
         </div>
-        <div className="relative -mx-4 aspect-[4/3] overflow-hidden sm:mx-0 sm:rounded-brand lg:col-span-5 lg:aspect-[4/5]">
-          <Image src={PHOTOS.dog.src} alt={PHOTOS.dog.alt} fill priority sizes="(min-width: 1024px) 480px, 100vw" className="object-cover object-[30%_50%]" />
+        <div className="relative -mx-4 overflow-hidden sm:mx-0 sm:rounded-brand lg:col-span-5">
+          <HeroIllustration className="block h-auto w-full" />
           <span className="absolute bottom-4 left-4 rounded-brand bg-paper/95 px-3 py-2 text-sm">
             <strong>Biscuit, 8.</strong> On track this week.
           </span>
@@ -151,13 +150,22 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
         <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {SPECIES.map((s) => (
             <li key={s.id}>
-              <button type="button" onClick={() => onStart(s.id)} className="group relative block aspect-[3/4] w-full overflow-hidden rounded-brand text-left focus-visible:outline-offset-4">
-                <Image src={PHOTOS[s.id].src} alt="" fill sizes="(min-width: 1024px) 280px, 50vw" className={`object-cover ${s.focus} transition-transform duration-500 ease-out group-hover:scale-[1.03]`} />
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-16 text-white">
+              <button type="button" onClick={() => onStart(s.id)} className="group block h-full w-full overflow-hidden rounded-brand border border-line bg-white/60 text-left hover:border-ink/40 focus-visible:outline-offset-4">
+                <span className="block overflow-hidden">
+                  <SpeciesIllustration species={s.id} className="block aspect-square h-auto w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]" />
+                </span>
+                <span className="block p-4">
                   <span className="flex items-center justify-between text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
                     {s.label} <ArrowUpRight size={22} weight="bold" aria-hidden />
                   </span>
-                  <span className="block text-sm text-white/85">{s.line}</span>
+                  <span className="sr-only">, we track: {s.track.map(([, l]) => l.toLowerCase()).join(", ")}</span>
+                  <span aria-hidden className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
+                    {s.track.map(([I, l]) => (
+                      <span key={l} className="inline-flex items-center gap-1">
+                        <I size={16} weight="bold" /> {l}
+                      </span>
+                    ))}
+                  </span>
                 </span>
               </button>
             </li>
@@ -251,19 +259,6 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
             See a demo pet
           </a>
         </div>
-        <p className="text-xs text-muted">
-          Photos via Wikimedia Commons:{" "}
-          {Object.values(PHOTOS).map((p, i) => (
-            <span key={p.src}>
-              {i > 0 && "; "}
-              <a href={p.source} className="link" target="_blank" rel="noreferrer">
-                {p.author}
-              </a>{" "}
-              (<a href={p.licenceUrl} className="link" target="_blank" rel="noreferrer">{p.licence}</a>)
-            </span>
-          ))}
-          . Resized.
-        </p>
       </section>
     </div>
   );

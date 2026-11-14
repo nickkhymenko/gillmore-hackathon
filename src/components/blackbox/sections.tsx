@@ -43,7 +43,7 @@ export function Connect({
     }, 2700);
   }
 
-  const STEPS = ["Searching for your collar", "Found Prevently Collar PV-2041", `Syncing ${rec.pet.name}'s last 6 weeks`];
+  const STEPS = ["Searching for your collar", "Found Petra Collar PV-2041", `Syncing ${rec.pet.name}'s last 6 weeks`];
 
   return (
     <div className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
@@ -57,7 +57,7 @@ export function Connect({
       </div>
       <div className="bg-paper p-5">
         <ShieldCheck size={26} aria-hidden />
-        <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Prevently Collar</p>
+        <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Petra Collar</p>
         <p className="mt-1 text-sm text-muted">Steps, active minutes, resting heart and breathing rate, sleep and night restlessness.</p>
         {collar ? (
           <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold" role="status">
@@ -69,7 +69,7 @@ export function Connect({
           </p>
         ) : (
           <button type="button" onClick={pair} className="btn btn-primary mt-3">
-            Pair Prevently Collar
+            Pair Petra Collar
           </button>
         )}
       </div>

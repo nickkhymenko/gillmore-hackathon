@@ -165,7 +165,7 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
-  const story = page.getByText("Prevently notices the dip against his own normal, not an average dog's.");
+  const story = page.getByText("Petra notices the dip against his own normal, not an average dog's.");
   expect(Number(await story.evaluate((e) => getComputedStyle(e.closest("div")!).opacity))).toBe(1);
   await seedPet(page, { checkins: 6 });
   await page.goto("/walk");

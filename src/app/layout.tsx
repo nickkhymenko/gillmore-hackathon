@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Instrument_Serif, Inter_Tight } from "next/font/google";
+import { PetraLogo, PETRA_TAGLINE } from "@/components/brand/PetraLogo";
 import { DeleteAllData } from "@/components/DeleteAllData";
 import { DemoLoader } from "@/components/DemoLoader";
 import { PetSwitcher } from "@/components/PetSwitcher";
@@ -19,8 +20,10 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Prevently: prevention that pays",
-  description: "A weekly pet health scan inside your insurer's app. It catches the question before it becomes a claim.",
+  title: "Petra: the rock your pet can rely on",
+  description: `${PETRA_TAGLINE} A weekly pet health scan inside your insurer's app. It catches the question before it becomes a claim.`,
+  applicationName: "Petra",
+  openGraph: { siteName: "Petra", title: "Petra", description: PETRA_TAGLINE },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#F7F5F0" };
@@ -42,9 +45,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-sm">
           <nav className="mx-auto flex max-w-[1200px] items-center gap-4 px-4 py-3 sm:px-6" aria-label="Main">
-            <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-[-0.04em]">
-              <span aria-hidden className="inline-block h-3 w-3 rounded-[3px] bg-accent" />
-              Prevently
+            <Link href="/" className="flex shrink-0 items-center text-lg font-bold tracking-[-0.04em]" aria-label="Petra, home">
+              <PetraLogo size={24} />
             </Link>
             <div className="-mr-1 ml-auto flex min-w-0 items-center overflow-x-auto text-[13px] font-medium sm:gap-1 sm:text-sm">
               {NAV.map((n) => (
@@ -66,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </Link>
               <DeleteAllData />
             </span>
-            <span>Built for the Gillmore Hackathon 2026</span>
+            <span>{PETRA_TAGLINE} Built for the Gillmore Hackathon 2026</span>
           </div>
         </footer>
         <ThemeSync />

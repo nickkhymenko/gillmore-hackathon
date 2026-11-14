@@ -4,7 +4,7 @@ import { useState } from "react";
 import { deleteAllData } from "@/lib/store";
 import { undoable } from "@/lib/toast";
 
-/** Footer link: UK GDPR right to erasure for everything Prevently keeps in this browser. */
+/** Footer link: UK GDPR right to erasure for everything Petra keeps in this browser. */
 export function DeleteAllData() {
   const [confirming, setConfirming] = useState(false);
   if (!confirming)

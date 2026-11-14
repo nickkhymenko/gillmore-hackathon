@@ -35,7 +35,7 @@ export type PetRecord = {
   theme: ThemeTokens;
   twinSource: TwinResult["source"] | "owner" | "breed";
   consent: Consent;
-  /** Prevently Black Box enrolment (device, start date, vet-advised rest mode). */
+  /** Petra Black Box enrolment (device, start date, vet-advised rest mode). */
   blackBox?: { device: "phone" | "collar"; enrolledAt: string; restSince: string | null };
   /** Onboarding step index while setting up; null once finished. */
   setupStep: number | null;
@@ -210,7 +210,7 @@ export const themeEdited = (p: PetRecord) => Boolean(p.photoTheme && !sameTheme(
 
 const ALL_KEYS = [HOUSEHOLD_KEY, LOG_KEY, QUESTIONS_KEY, THEME_KEY, LEGACY_PET_KEY, LEGACY_TWIN_KEY, "prevently.walks", "prevently.collar", "prevently.scans"];
 
-/** UK GDPR right to erasure: removes every Prevently key from this browser. Returns an undo function. */
+/** UK GDPR right to erasure: removes every Petra key from this browser. Returns an undo function. */
 export function deleteAllData(): () => void {
   const snapshot = ALL_KEYS.map((k) => [k, readRaw(k)] as const);
   try {
