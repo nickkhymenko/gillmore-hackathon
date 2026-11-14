@@ -19,6 +19,8 @@ export type CareContext = {
   flatFaced: boolean;
   latest: StoredCheckin | null;
   trend: { mobilityDown: boolean; thirstUp: boolean; itchyWeeks: number };
+  /** From the Black Box, when enrolled: average active minutes over the last 10 days against the daily target. */
+  activity?: { recentAvg: number; target: number };
 };
 
 export type CarePlan = {
@@ -30,7 +32,7 @@ export type CarePlan = {
 
 const SENIOR_AGE = { dog: 8, cat: 11, rabbit: 6, horse: 18, other: 8 } as const;
 
-export function careContext(pet: Pet, profile: TwinProfile, log: StoredCheckin[]): CareContext {
+export function careContext(pet: Pet, profile: TwinProfile, log: StoredCheckin[], activity?: CareContext["activity"]): CareContext {
   const recent = log.slice(-4);
   const latest = log.at(-1) ?? null;
   const stiff = (c: StoredCheckin) => c.answers && c.answers.mobility !== "normal";
@@ -45,6 +47,7 @@ export function careContext(pet: Pet, profile: TwinProfile, log: StoredCheckin[]
     big: pet.sizeClass === "large" || pet.sizeClass === "giant",
     flatFaced: Boolean(isFlatFaced(pet, profile)),
     latest,
+    activity,
     trend: {
       mobilityDown: recent.filter(stiff).length >= 1,
       thirstUp: recent.filter((c) => c.answers?.water === "more").length >= 2 || latest?.answers?.water === "more",
