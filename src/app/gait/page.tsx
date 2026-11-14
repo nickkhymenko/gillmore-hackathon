@@ -125,7 +125,7 @@ export default function GaitPage() {
     <div className="space-y-16 pb-16">
       {/* hero */}
       <section className="space-y-5 pt-6">
-        <p className="eyebrow">Prevently / Gait check</p>
+        <p className="eyebrow">Petra / Gait check</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
           Ten seconds of walking. <span className="accent-word">A clearer look at every leg.</span>
         </h1>
