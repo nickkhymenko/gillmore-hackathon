@@ -25,7 +25,7 @@ function Block({ n, title, children, id }: { n: string; title: string; children:
   );
 }
 
-/** Prevently Black Box: telematics for pet insurance. "Make your pet bills work for you." */
+/** Petra Black Box: telematics for pet insurance. "Make your pet bills work for you." */
 export default function BlackBoxPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
@@ -40,7 +40,7 @@ export default function BlackBoxPage() {
   if (!rec || rec.setupStep !== null)
     return (
       <section className="space-y-6 py-16">
-        <p className="eyebrow">Prevently / Black Box</p>
+        <p className="eyebrow">Petra / Black Box</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
           Make your pet bills <span className="accent-word">work for you.</span>
         </h1>
@@ -66,16 +66,16 @@ export default function BlackBoxPage() {
     <div className="space-y-16 py-6 pb-28 sm:py-10 lg:pb-10">
       <header className="grid items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <p className="eyebrow">Prevently / Black Box</p>
+          <p className="eyebrow">Petra / Black Box</p>
           <h1 className="display mt-4 text-[clamp(3rem,8vw,7rem)]">
             Make your pet bills <span className="accent-word">work for you.</span>
           </h1>
           <p className="mt-6 max-w-[52ch] text-lg text-muted">
-            UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Prevently Black Box turns good care into a lower premium.
+            UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Black Box turns good care into a lower premium.
           </p>
         </div>
         <div className="flex justify-center lg:col-span-4">
-          <PetAvatar traits={rec.profile} size={220} title={`${name}'s avatar wearing a Prevently collar`} collar />
+          <PetAvatar traits={rec.profile} size={220} title={`${name}'s avatar wearing a Petra collar`} collar />
         </div>
       </header>
 
@@ -83,7 +83,7 @@ export default function BlackBoxPage() {
         <div className="min-w-0 space-y-16 lg:col-span-8">
           <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
             {[
-              ["Wear it", "A Prevently collar, or your phone until it arrives."],
+              ["Wear it", "A Petra collar, or your phone until it arrives."],
               ["Walk and care as normal", `${species === "dog" ? "Walks" : "Play and activity"}, rest and check-ins all count.`],
               ["Your premium drops", `As you hit ${name}'s personal target. It can never go up.`],
             ].map(([t, d], i) => (

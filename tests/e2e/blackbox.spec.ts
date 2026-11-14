@@ -41,7 +41,7 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
 test("pairing the simulated collar adds vitals; a 10-day dip raises an amber vet flag", async ({ page }) => {
   await seedPet(page);
   await page.goto("/blackbox");
-  await page.getByRole("button", { name: "Pair Prevently Collar" }).click();
+  await page.getByRole("button", { name: "Pair Petra Collar" }).click();
   await expect(page.getByText("Paired (simulated for the demo)")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(/No sustained changes against Biscuit's own baseline/)).toBeVisible();
   await page.getByRole("button", { name: "Demo: simulate a 10-day dip" }).click();
@@ -83,7 +83,7 @@ test("Web Bluetooth option is hidden when the browser does not support it", asyn
   });
   await seedPet(page);
   await page.goto("/blackbox");
-  await expect(page.getByRole("button", { name: "Pair Prevently Collar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pair Petra Collar" })).toBeVisible();
   await expect(page.getByText("Connect a heart rate sensor")).toHaveCount(0);
 });
 

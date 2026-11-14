@@ -10,7 +10,7 @@ export function EmptyPetState({ where = "Dashboard" }: { where?: string }) {
     <section className="grid items-center gap-12 py-10 lg:grid-cols-12 lg:py-16">
       <div className="space-y-8 lg:col-span-7">
         <div>
-          <p className="eyebrow">Prevently / {where}</p>
+          <p className="eyebrow">Petra / {where}</p>
           <h1 className="display mt-4 text-[clamp(2.75rem,7vw,5.5rem)]">
             This space is for <span className="accent-word">your pet.</span>
           </h1>

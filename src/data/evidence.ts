@@ -60,7 +60,7 @@ export function leversFor(species: Species): Lever[] {
     { id: "activity", label: "Daily activity", detail: "Regular exercise helps weight, joints and behaviour.", effect: 0.3, evidence: "Moderate", sources: ["pdsa"] },
     { id: "prevent", label: "Vaccinations and parasite control", detail: "Prevents infections that are serious and costly to treat.", effect: 0.3, evidence: "Strong", sources: ["pdsa"] },
     { id: "annual", label: "Annual vet check", detail: "Problems found earlier are usually easier and cheaper to treat.", effect: 0.3, evidence: "Moderate", sources: ["pdsa"] },
-    { id: "weekly", label: "Weekly Prevently check-in", detail: "Our hypothesis: spotting small changes weeks earlier adds healthy time. To be tested in the pilot.", effect: 0.2, evidence: "Untested", sources: [] },
+    { id: "weekly", label: "Weekly Petra check-in", detail: "Our hypothesis: spotting small changes weeks earlier adds healthy time. To be tested in the pilot.", effect: 0.2, evidence: "Untested", sources: [] },
   ];
 }
 

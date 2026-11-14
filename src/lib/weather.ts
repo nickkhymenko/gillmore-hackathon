@@ -1,6 +1,6 @@
 /**
  * Today's walking conditions from Open-Meteo (free, no key). The request goes straight from the browser
- * to Open-Meteo; location is never sent to Prevently. Default location: Coventry (CV4 7AL).
+ * to Open-Meteo; location is never sent to Petra. Default location: Coventry (CV4 7AL).
  */
 export const DEFAULT_PLACE = { name: "Coventry", lat: 52.38, lon: -1.56 };
 

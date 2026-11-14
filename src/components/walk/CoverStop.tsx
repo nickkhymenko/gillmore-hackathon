@@ -45,7 +45,7 @@ export function SavingsMeter({ done, next }: { done: number; next: { pct: number
 
 /**
  * Your cover, revealed only when the paw gets here: example insurers and illustrative plans, each showing
- * the Prevently discount this pet is on track for. How you pay appears only after a plan is picked.
+ * the Petra discount this pet is on track for. How you pay appears only after a plan is picked.
  */
 export function CoverStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[] }) {
   const [insurer, setInsurer] = useState<(typeof INSURERS)[number]["id"]>("harbourline");
@@ -122,7 +122,7 @@ export function CoverStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[] }
                     <span className="text-base font-medium text-muted"> a month</span>
                   </span>
                   <span className="tnum block text-xs text-muted">
-                    {gbp(monthly)} before your {discountPct}% Prevently discount
+                    {gbp(monthly)} before your {discountPct}% Petra discount
                   </span>
                 </span>
               </button>
@@ -156,7 +156,7 @@ export function CoverStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[] }
             <dl className="tnum grid max-w-md grid-cols-[1fr_auto] gap-x-6 gap-y-2 text-lg">
               <dt className="text-muted">{chosen.name}, {annual ? "per year" : "per month"}</dt>
               <dd>{gbp(payBase)}</dd>
-              <dt className="text-muted">Prevently discount ({discountPct}%)</dt>
+              <dt className="text-muted">Petra discount ({discountPct}%)</dt>
               <dd>−{gbp(saving)}</dd>
               <dt className="border-t border-line pt-2 font-semibold">You pay</dt>
               <dd className="border-t border-line pt-2 text-2xl font-semibold tracking-[-0.02em]">{gbp(payBase - saving)}</dd>

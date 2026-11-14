@@ -39,7 +39,7 @@ test("no page uses the old teal palette", async ({ page }) => {
 test("navigation: Walk, Black Box, Dashboard, For insurers; fits on a phone", async ({ page }, info) => {
   await page.goto("/");
   const nav = page.getByRole("navigation", { name: "Main" });
-  const labels = (await nav.getByRole("link").allTextContents()).map((t) => t.trim()).filter((t) => t && t !== "Prevently");
+  const labels = (await nav.getByRole("link").allTextContents()).map((t) => t.trim()).filter((t) => t && t !== "Petra");
   if (info.project.name.startsWith("mobile")) expect(labels).toEqual(["Walk", "Black Box", "Dashboard"]);
   else expect(labels).toEqual(["Walk", "Black Box", "Dashboard", "For insurers"]);
   const navBox = await nav.boundingBox();
