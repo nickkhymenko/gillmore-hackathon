@@ -14,6 +14,8 @@ import { SavingsHero } from "@/components/dashboard/SavingsHero";
 import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
 import { blackBoxDiscount, dailyTarget, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
+import { VideoScanPanel } from "@/components/video/VideoScanPanel";
+import { useScans } from "@/lib/video/scans";
 import { TrendChart } from "@/components/walk/TrendsStop";
 import type { CareRec } from "@/data/careRules";
 import { SUPPLEMENT_WARNING, buildCarePlan, careContext } from "@/lib/careplan";
@@ -122,6 +124,7 @@ export default function DashboardPage() {
   const log = useCheckins(rec?.id, rec?.pet.name);
   const walks = useWalks(rec?.id);
   const collarDays = useCollarDays(rec?.id);
+  const scans = useScans(rec?.id);
   const now = useNow();
   const reduce = Boolean(useReducedMotion());
   const [sheet, setSheet] = useState<string | null>(null);
@@ -307,9 +310,54 @@ export default function DashboardPage() {
         )}
       </Section>
 
+      <Section n="06" title="Video scan" aside={<span className="text-xs text-muted">Optional</span>}>
+        <div className="grid gap-10 lg:grid-cols-12">
+          <div className="min-w-0 lg:col-span-7">
+            <VideoScanPanel rec={rec} />
+          </div>
+          <div className="min-w-0 space-y-4 lg:col-span-5">
+            <p className="eyebrow">From video scans</p>
+            {scans.length === 0 ? (
+              <p className="text-sm text-muted">No scans yet. A 15-second walk or sleeping-breathing clip adds mobility and breathing to {pet.name}&apos;s trends.</p>
+            ) : (
+              <>
+                {(() => {
+                  const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
+                  const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
+                  if (pts.length < 2) return null;
+                  const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
+                  return (
+                    <figure>
+                      <figcaption className="text-sm font-medium">Mobility from walk scans</figcaption>
+                      <TrendChart s={series} reduce={reduce} />
+                    </figure>
+                  );
+                })()}
+                <ul className="divide-y divide-line border-y border-line text-sm">
+                  {scans
+                    .slice(-4)
+                    .reverse()
+                    .map((s) => (
+                      <li key={s.scanId} className="flex flex-wrap justify-between gap-2 py-2">
+                        <span>
+                          {new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, {s.scanType.replace("_", " ")}
+                        </span>
+                        <span className="text-muted">
+                          {[s.metrics.mobilityScore !== null && `mobility ${Math.round(s.metrics.mobilityScore)}`, s.metrics.breathingRatePerMin !== null && `breathing ${Math.round(s.metrics.breathingRatePerMin)}/min`].filter(Boolean).join(", ") || "no metrics"}
+                          {s.source === "mock" ? " (demo)" : ""}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      </Section>
+
       <div className="grid gap-14 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <Section n="06" title="Who sees what">
+          <Section n="07" title="Who sees what">
             <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2">
               {(
                 [
@@ -339,7 +387,7 @@ export default function DashboardPage() {
           </Section>
         </div>
         <div className="lg:col-span-4">
-          <Section n="07" title="Photo">
+          <Section n="08" title="Photo">
             <PhotoTile rec={rec} />
           </Section>
         </div>

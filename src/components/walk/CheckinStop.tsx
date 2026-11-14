@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { ResultCard } from "../ResultCard";
 import { ResultSkeleton } from "../ResultSkeleton";
@@ -98,6 +99,9 @@ export function CheckinStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[]
           <button type="button" onClick={() => setMode("details")} className="btn btn-ghost text-lg">
             Something&apos;s different
           </button>
+          <Link href="/dashboard#video" className="link min-h-11 content-center text-sm">
+            Add a video (optional)
+          </Link>
         </div>
       ) : (
         <AnimatePresence>
