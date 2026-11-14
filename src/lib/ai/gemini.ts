@@ -127,6 +127,14 @@ const responseSchema: Schema = {
   required: ["status", "healthScore", "headline", "ownerMessage", "flags", "nextStep", "preventionTips", "vetBrief"],
 };
 
+/** UI copy never uses em or en dashes: replace any the model writes with a comma. */
+export function noDashes<T>(v: T): T {
+  if (typeof v === "string") return v.replace(/\s*[\u2013\u2014]\s*/g, ", ") as T;
+  if (Array.isArray(v)) return v.map(noDashes) as T;
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, noDashes(x)])) as T;
+  return v;
+}
+
 export async function geminiAssessment(
   input: CheckinInput,
   safety: SafetyResult,
@@ -146,5 +154,5 @@ export async function geminiAssessment(
   if (photo) parts.push({ inlineData: { mimeType: photo.mimeType, data: photo.dataBase64 } });
 
   const json = await generateJson({ system: SYSTEM, parts, schema: responseSchema, timeoutMs });
-  return AssessmentSchema.parse(json);
+  return AssessmentSchema.parse(noDashes(json));
 }

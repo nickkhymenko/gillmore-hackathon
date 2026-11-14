@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "qa:api": "node --no-warnings scripts/qa/api.mjs all",
+    "qa:e2e": "playwright test",
+    "qa:fixtures": "node tests/fixtures/fetch-fixtures.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
@@ -19,6 +22,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",

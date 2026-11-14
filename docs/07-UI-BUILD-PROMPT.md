@@ -51,7 +51,8 @@ After onboarding, a clean transition: the screen clears, a paw icon appears and 
 ### Data rules (important for credibility with judges)
 
 Use only figures you are confident come from these public sources, and cite them in footnotes. If unsure of an exact number, use a range and mark it "approximate":
-- Teng et al. (2024), *Scientific Reports*: UK companion dog longevity by breed, about 585,000 dogs; overall median about 12.5 years; small breeds tend to live longer, flat-faced breeds shorter.
+- McMillan et al. (2024), *Scientific Reports*: UK companion dog longevity by breed, about 585,000 dogs; overall median about 12.5 years; small breeds tend to live longer, flat-faced breeds shorter.
+- Teng et al. (2022), *Scientific Reports*: UK dog life tables (RVC VetCompass).
 - RVC VetCompass studies (O'Neill et al.) on UK dog and cat longevity and common disorders.
 - Kealy et al. (2002), *JAVMA*: Labradors kept lean lived a median of about 1.8 years longer than their littermates fed more.
 - Teng et al. (2024), *Journal of Feline Medicine and Surgery*: UK cat life expectancy.

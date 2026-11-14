@@ -27,7 +27,6 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/walk", label: "Walk" },
-  { href: "/pet", label: "History", wide: true },
   { href: "/partner", label: "For insurers", wide: true },
 ];
 

@@ -12,11 +12,16 @@ export async function GET(request: NextRequest) {
     const n = v === null ? NaN : Number(v);
     return Number.isFinite(n) && n >= 0 ? n : DEFAULT_ECONOMICS[k];
   };
+  // Rates are fractions: anything outside 0..1 is invalid, so use the default rather than clamping to 100%.
+  const rate = (k: "engagementRate" | "claimCostReduction") => {
+    const v = num(k);
+    return v <= 1 ? v : DEFAULT_ECONOMICS[k];
+  };
   const input: EconomicsInput = {
     policies: num("policies"),
-    engagementRate: Math.min(1, num("engagementRate")),
+    engagementRate: rate("engagementRate"),
     feePerPetMonth: num("feePerPetMonth"),
-    claimCostReduction: Math.min(1, num("claimCostReduction")),
+    claimCostReduction: rate("claimCostReduction"),
     creditsPerPetYear: num("creditsPerPetYear"),
   };
   return Response.json({
