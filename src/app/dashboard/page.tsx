@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { Line, LineChart, ReferenceArea, ResponsiveContainer, YAxis } from "recharts";
-import { ArrowUpRight, CalendarPlus, ChatCircleText } from "@phosphor-icons/react";
+import { ArrowUpRight, CalendarPlus } from "@phosphor-icons/react";
 import { PetAvatar } from "@/components/PetAvatar";
 import { EmptyPetState } from "@/components/EmptyPetState";
 import { PhotoControls } from "@/components/PhotoTwin";
 import { StatusPill } from "@/components/ResultCard";
 import { PilotSheet } from "@/components/Sheet";
 import { SavingsHero } from "@/components/dashboard/SavingsHero";
+import { AskPetra } from "@/components/dashboard/AskPetra";
 import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
 import { blackBoxDiscount, dailyTarget, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
@@ -256,9 +257,13 @@ export default function DashboardPage() {
             </button>
           </Section>
           <Section n="03" title="Ask Petra">
-            <button type="button" onClick={() => setSheet("Ask Petra")} className="flex min-h-14 w-full items-center gap-3 rounded-brand border border-line bg-white/60 px-4 text-left text-muted hover:border-ink/40">
-              <ChatCircleText size={20} aria-hidden /> Is it normal that {pet.name}&hellip;
-            </button>
+            <AskPetra
+              key={rec.id}
+              rec={rec}
+              latest={latest}
+              walk={rec.blackBox ? { todayMinutes: todayMinutes(walks, collarDays, now), targetMinutes: target, weeksMet: bb?.weeksMet, weeksCounted: bb?.weeksCounted } : undefined}
+              onAction={setSheet}
+            />
           </Section>
         </div>
       </div>
@@ -406,7 +411,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <PilotSheet open={sheet !== null} onClose={() => setSheet(null)} what={sheet === "Ask Petra" ? "Ask Petra, the pet care assistant," : (sheet ?? "")} />
+      <PilotSheet open={sheet !== null} onClose={() => setSheet(null)} what={sheet ?? ""} />
     </div>
   );
 }
