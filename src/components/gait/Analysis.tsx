@@ -16,10 +16,10 @@ export function AnalysisProgress({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (step >= STEPS.length) {
-      const t = setTimeout(onDone, 350);
+      const t = setTimeout(onDone, 300);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setStep((s) => s + 1), 750);
+    const t = setTimeout(() => setStep((s) => s + 1), 480);
     return () => clearTimeout(t);
   }, [step, onDone]);
 
@@ -93,7 +93,7 @@ export function LiveChart({ clip, t, scores, warn = false }: { clip: GaitClip; t
   ];
   const until = t ?? Infinity;
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {rows.map(({ label, s, key }) => {
         if (!s || s.t.length < 2) return null;
         const { X, Y } = geometry(s);
@@ -121,7 +121,7 @@ export function LiveChart({ clip, t, scores, warn = false }: { clip: GaitClip; t
                 </span>
               )}
             </figcaption>
-            <svg viewBox={`0 0 ${W} ${H}`} className="h-24 w-full overflow-visible" role="img" aria-label={`${label} up and down movement`}>
+            <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full overflow-visible" role="img" aria-label={`${label} up and down movement`}>
               <line x1={0} x2={W} y1={H - 1} y2={H - 1} stroke="var(--line)" />
               {flagged && <rect x={0} y={0} width={W} height={H} fill={WARN} fillOpacity={0.06} rx={4} />}
               <path d={d} fill="none" stroke={flagged ? WARN : "var(--muted)"} strokeWidth={flagged ? 2.4 : 1.6} strokeLinejoin="round" />
@@ -146,10 +146,16 @@ export function LiveChart({ clip, t, scores, warn = false }: { clip: GaitClip; t
           </figure>
         );
       })}
-      <p className="text-xs text-muted">
-        Yellow and black dots are the lowest point of alternate steps. With a sore leg the body drops less while that leg carries
-        weight, so one colour sits higher than the other (Gómez Álvarez et al. 2017; Bergh et al. 2018).
-      </p>
     </div>
+  );
+}
+
+/** What the dots on the rhythm traces mean, with the research behind the method. */
+export function TraceNote() {
+  return (
+    <p className="text-xs text-muted">
+      Yellow and black dots are the lowest point of alternate steps. With a sore leg the body drops less while that leg carries
+      weight, so one colour sits higher than the other (Gómez Álvarez et al. 2017; Bergh et al. 2018).
+    </p>
   );
 }

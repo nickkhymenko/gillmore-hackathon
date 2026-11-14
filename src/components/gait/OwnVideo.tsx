@@ -149,7 +149,7 @@ export function OwnVideo({
 
       {phase === "idle" &&
         (source === "upload" ? (
-          <button type="button" onClick={pickFile} className="flex min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-brand border-2 border-dashed border-line p-8 text-center hover:bg-ink/[0.03]">
+          <button type="button" onClick={pickFile} className="flex min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-card border-2 border-dashed border-line bg-white/60 p-8 text-center hover:bg-white">
             <UploadSimple size={32} weight="bold" aria-hidden />
             <span className="text-lg font-semibold">Choose a video of {name}</span>
             <span className="max-w-[44ch] text-sm text-muted">
@@ -163,7 +163,7 @@ export function OwnVideo({
         ))}
 
       {phase === "denied" && (
-        <div className="space-y-3 rounded-brand border border-line bg-white/60 p-4" role="status">
+        <div className="card space-y-3 p-6" role="status">
           <p className="font-semibold">Camera not available.</p>
           <p className="text-sm text-muted">Permission was denied or there is no camera. You can upload a short video instead.</p>
           <button type="button" onClick={pickFile} className="btn btn-primary">
@@ -174,7 +174,7 @@ export function OwnVideo({
 
       {(phase === "camera" || phase === "recording") && (
         <div className="space-y-3">
-          <div className="relative overflow-hidden rounded-brand border border-line bg-ink">
+          <div className="relative overflow-hidden rounded-card border border-line bg-[#E9E6DF]">
             <video ref={videoEl} muted playsInline className="block aspect-video w-full object-cover" aria-label="Camera preview" />
             {phase === "recording" && (
               <div className="absolute right-3 top-3 grid h-16 w-16 place-items-center" role="timer" aria-live="off" aria-label={`${Math.ceil(left)} seconds left`}>
@@ -207,7 +207,7 @@ export function OwnVideo({
 
       {clip && phase !== "camera" && phase !== "recording" && phase !== "result" && (
         <div className="space-y-3">
-          <video src={clip.url} controls playsInline className="block aspect-video w-full rounded-brand border border-line bg-ink object-contain" aria-label="Your video" />
+          <video src={clip.url} controls playsInline className="block aspect-video w-full rounded-card border border-line bg-[#E9E6DF] object-contain" aria-label="Your video" />
           {(phase === "review" || phase === "analysing") && (
             <>
               <div className="flex flex-wrap items-center gap-3">
@@ -225,7 +225,7 @@ export function OwnVideo({
       )}
 
       {phase === "pilot" && (
-        <div className="space-y-3 rounded-brand border border-line bg-accent-soft p-5" role="status">
+        <div className="card space-y-3 p-6" role="status">
           <p className="text-lg font-semibold">Live analysis of your own videos is coming in the pilot. Try a demo walk.</p>
           <div className="flex flex-wrap items-center gap-3">
             {onTryDemo && (
@@ -242,7 +242,7 @@ export function OwnVideo({
       )}
 
       {phase === "result" && result && (
-        <article className="fade-up space-y-5 rounded-brand border border-line bg-white/60 p-5 sm:p-6" aria-live="polite">
+        <article className="card fade-up space-y-5 p-6" aria-live="polite">
           <p className="eyebrow">{meta.scanType === "walk" ? "Movement check" : "Sleeping breathing"} result</p>
           {!result.quality.ok ? (
             <p className="flex items-start gap-2 font-semibold">

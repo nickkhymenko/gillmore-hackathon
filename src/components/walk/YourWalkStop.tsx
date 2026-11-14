@@ -70,9 +70,9 @@ export function YourWalkStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[
         ) : (
           plan.kind === "walks" && <p className="text-2xl font-semibold tracking-[-0.03em]">No walk target today.</p>
         )}
-        <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
+        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft md:grid-cols-3">
           {tips.map(([t, d], i) => (
-            <li key={t} className="bg-paper p-5">
+            <li key={t} className="bg-surface p-5">
               <p className="eyebrow">
                 <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span> / {t}
               </p>

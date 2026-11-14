@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
@@ -9,10 +10,15 @@ import { HealthyStop } from "@/components/walk/HealthyStop";
 import { HelloStop } from "@/components/walk/HelloStop";
 import { PooMoment } from "@/components/walk/PooMoment";
 import { Stop } from "@/components/walk/Stop";
-import { LifetimeCostStop } from "@/components/walk/LifetimeCostStop";
 import { WalkBackdrop, WalkPath, WalkProgress } from "@/components/walk/WalkPath";
 import { YourWalkStop } from "@/components/walk/YourWalkStop";
 import { useActivePet, useCheckins } from "@/lib/usePets";
+
+// The lifetime chart (and the charting library behind it) loads after the first screen: it sits four stops down.
+const LifetimeCostStop = dynamic(() => import("@/components/walk/LifetimeCostStop").then((m) => m.LifetimeCostStop), {
+  ssr: false,
+  loading: () => <div className="h-[420px] sm:h-[560px]" aria-busy="true" />,
+});
 
 type StopId = "hello" | "your-walk" | "check-in" | "lifetime" | "healthspan" | "cover";
 
@@ -40,7 +46,7 @@ export default function WalkPage() {
   const reduce = Boolean(useReducedMotion());
   const container = useRef<HTMLDivElement>(null);
 
-  if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
+  if (!ready) return <div className="min-h-svh" aria-busy="true" />;
   if (!rec || rec.setupStep !== null)
     return (
       <section className="space-y-6 py-16">

@@ -6,6 +6,7 @@ import { PilotSheet } from "../Sheet";
 import { bluetoothSupported, connectHeartRate } from "./heartRate";
 import { BB_CAP, BB_TIERS, CHECKIN_EXTRA, setCollarDays, simulateCollarHistory, type CollarDay, type Signal } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
+import { savedSoFar } from "@/lib/savings";
 import { updatePet, type PetRecord } from "@/lib/store";
 
 const gbp = (n: number, dp = 0) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: dp, maximumFractionDigits: dp }).format(n);
@@ -46,8 +47,8 @@ export function Connect({
   const STEPS = ["Searching for your Walk Companion", "Found Petra Walk Companion PV-2041", `Syncing ${rec.pet.name}'s last 6 weeks`];
 
   return (
-    <div className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
-      <div className="bg-paper p-5">
+    <div className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft md:grid-cols-3">
+      <div className="bg-surface p-5">
         <DeviceMobile size={26} aria-hidden />
         <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Use my phone for now</p>
         <p className="mt-1 text-sm text-muted">Track walks with your phone&apos;s GPS. Start a walk below.</p>
@@ -55,7 +56,7 @@ export function Connect({
           <CheckCircle size={16} weight="fill" aria-hidden /> {collar ? "Available any time" : "Default"}
         </p>
       </div>
-      <div className="bg-paper p-5">
+      <div className="bg-surface p-5">
         <ShieldCheck size={26} aria-hidden />
         <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Petra Walk Companion</p>
         <p className="mt-1 text-sm text-muted">A wearable motion tracker: steps, active minutes, resting heart and breathing rate, sleep and night restlessness.</p>
@@ -74,7 +75,7 @@ export function Connect({
         )}
       </div>
       {bt && (
-        <div className="bg-paper p-5">
+        <div className="bg-surface p-5">
           <Bluetooth size={26} aria-hidden />
           <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Real sensor demo</p>
           <p className="mt-1 text-sm text-muted">Connect any Bluetooth heart rate sensor. A chest strap or watch can stand in for the Walk Companion on stage.</p>
@@ -132,7 +133,7 @@ export function Today({ rec, target, today, weeksMet, weeksCounted }: { rec: Pet
           </p>
         )}
         <div className="h-3 rounded-full bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={target || 1} aria-valuenow={rest ? target : Math.min(today, target)} aria-label="Today's activity target">
-          <div className="h-3 rounded-full bg-ink transition-[width] duration-700 ease-out" style={{ width: `${rest ? 100 : pct}%` }} />
+          <div className="h-3 rounded-full bg-accent ring-1 ring-ink/15 transition-[width] duration-700 ease-out" style={{ width: `${rest ? 100 : pct}%` }} />
         </div>
         <p className="text-sm text-muted">
           {weeksCounted ? `Target met in ${weeksMet} of ${weeksCounted} ${weeksCounted === 1 ? "week" : "weeks"} so far.` : "Your first week starts with your first walk."} A week counts when it adds up to five days of {rec.pet.name}&apos;s target, so rest days are fine.
@@ -144,7 +145,7 @@ export function Today({ rec, target, today, weeksMet, weeksCounted }: { rec: Pet
           role="switch"
           aria-checked={rest}
           onClick={() => updatePet(rec.id, (p) => ({ blackBox: { device: p.blackBox?.device ?? "phone", enrolledAt: p.blackBox?.enrolledAt ?? new Date().toISOString(), restSince: rest ? null : new Date().toISOString() } }))}
-          className="flex w-full items-start gap-4 rounded-brand border border-line bg-white/60 p-4 text-left"
+          className="card flex w-full items-start gap-4 p-5 text-left"
         >
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">Rest mode (vet advised)</span>
@@ -188,9 +189,9 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
           <CheckCircle size={18} weight="fill" aria-hidden /> No sustained changes against {rec.pet.name}&apos;s own baseline.
         </p>
       )}
-      <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+      <ul className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2 lg:grid-cols-5">
         {result.signals.map((s) => (
-          <li key={s.key} className="bg-paper p-4">
+          <li key={s.key} className="bg-surface p-4">
             <p className="eyebrow">{s.label}</p>
             <p className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
               {s.recent} <span className="text-sm font-medium text-muted">{s.unit}</span>
@@ -213,42 +214,49 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
 
 // ---------- Your price, live ----------
 
-export function PriceCard({ rec, discount }: { rec: PetRecord; discount: { metRatio: number; checkinRatio: number; target: number; checkins: number; total: number; weeksCounted: number; weeksMet: number; nextTier: { ratio: number; pct: number } | null } }) {
+export function PriceCard({ rec, discount }: { rec: PetRecord; discount: { metRatio: number; checkinRatio: number; target: number; checkins: number; total: number; weeksCounted: number; weeksMet: number; nextTier: { ratio: number; pct: number } | null; completeWeeks: number } }) {
   const yearly = basePremium(rec.pet);
   const monthly = yearly / 12;
   const newMonthly = monthly * (1 - discount.total / 100);
-  const savedSoFar = (yearly * discount.total) / 100 * (discount.weeksCounted / 52);
+  // Nothing is "saved" until a full week has been counted: the same rule as the dashboard's savings card.
+  const earning = discount.completeWeeks > 0 && discount.total > 0;
   return (
-    <section id="your-price" className="scroll-mt-32 rounded-brand p-6 text-white sm:p-10" style={{ background: "var(--dark)" }} aria-labelledby="price-title">
-      <p id="price-title" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+    <section id="your-price" className="card scroll-mt-32 p-6 sm:p-10" aria-labelledby="price-title">
+      <p id="price-title" className="eyebrow">
         Your price, live
       </p>
       <div className="mt-5 grid gap-8 lg:grid-cols-12">
         <dl className="tnum grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 text-lg lg:col-span-6">
-          <dt className="text-white/70">Base premium</dt>
+          <dt className="text-muted">Base premium</dt>
           <dd>{gbp(monthly, 2)} a month</dd>
-          <dt className="text-white/70">Petra Savings discount ({discount.total}%)</dt>
+          <dt className="text-muted">Petra Savings discount ({discount.total}%)</dt>
           <dd>−{gbp(monthly - newMonthly, 2)}</dd>
-          <dt className="border-t border-white/15 pt-2 font-semibold">Your new price</dt>
-          <dd className="border-t border-white/15 pt-2 text-3xl font-semibold tracking-[-0.03em] text-accent">{gbp(newMonthly, 2)}</dd>
+          <dt className="border-t border-line pt-3 font-semibold">Your new price</dt>
+          <dd className="border-t border-line pt-3 text-3xl font-semibold tracking-[-0.04em]">{gbp(newMonthly, 2)}</dd>
         </dl>
         <div className="space-y-3 lg:col-span-6">
-          <p className="text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-tight tracking-[-0.03em]">
-            You&apos;ve saved <span className="text-accent">{gbp(savedSoFar, 2)}</span> so far.
+          <p className="text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-tight tracking-[-0.04em]" data-testid="price-saved">
+            {earning ? (
+              <>
+                You&apos;ve saved <span className="rounded-lg bg-accent-soft px-2">{gbp(savedSoFar(yearly, discount.total, discount.weeksCounted), 2)}</span> so far.
+              </>
+            ) : (
+              <>Your saving starts after the first full week.</>
+            )}
           </p>
-          <ul className="space-y-1 text-sm text-white/80">
+          <ul className="space-y-1 text-sm text-muted">
             <li>
-              Target met in {discount.weeksMet} of {discount.weeksCounted} weeks ({Math.round(discount.metRatio * 100)}%): <strong className="text-white">{discount.target}%</strong>
+              Target met in {discount.weeksMet} of {discount.weeksCounted} weeks ({Math.round(discount.metRatio * 100)}%): <strong className="text-ink">{discount.target}%</strong>
             </li>
             <li>
-              Weekly check-ins ({Math.round(discount.checkinRatio * 100)}% of weeks): <strong className="text-white">+{discount.checkins}%</strong>
+              Weekly check-ins ({Math.round(discount.checkinRatio * 100)}% of weeks): <strong className="text-ink">+{discount.checkins}%</strong>
             </li>
             <li>Capped at {BB_CAP}%.</li>
           </ul>
-          {discount.nextTier && <p className="text-sm text-white">Next: hit the target in {Math.round(discount.nextTier.ratio * 100)}% of weeks for {discount.nextTier.pct}%.</p>}
+          {discount.nextTier && <p className="text-sm">Next: hit the target in {Math.round(discount.nextTier.ratio * 100)}% of weeks for {discount.nextTier.pct}%.</p>}
         </div>
       </div>
-      <p className="mt-6 border-t border-white/15 pt-4 text-xs text-white/60">
+      <p className="mt-6 border-t border-line pt-4 text-xs text-muted">
         Illustrative tiers: {BB_TIERS.map((t) => `${Math.round(t.ratio * 100)}% of weeks = ${t.pct}%`).join(", ")}; check-ins add up to {CHECKIN_EXTRA.at(-1)!.pct}%. Example premium {gbp(yearly)} a year.
       </p>
     </section>

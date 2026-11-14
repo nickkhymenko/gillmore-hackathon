@@ -24,10 +24,10 @@ test("old /checkin and /pet pages redirect into the new design", async ({ page }
   expect(new URL(page.url()).pathname).toBe("/dashboard");
 });
 
-test("no page uses the old teal palette", async ({ page }) => {
+test("every page: no old teal palette, no console errors, no horizontal scroll", async ({ page }) => {
   const { errors } = watch(page);
   await seedPet(page, { checkins: 6 });
-  for (const path of ["/", "/dashboard", "/walk", "/twin", "/partner", "/add"]) {
+  for (const path of ["/", "/dashboard", "/dashboard#walks", "/dashboard#health", "/dashboard#savings", "/walk", "/savings", "/twin", "/partner", "/add"]) {
     await page.goto(path);
     const teal = await page.evaluate(() => [...document.querySelectorAll("[class]")].filter((e) => /\bteal-/.test(e.getAttribute("class") ?? "")).length);
     expect(teal, `teal classes on ${path}`).toBe(0);

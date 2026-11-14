@@ -2,6 +2,7 @@
 import { deriveTheme } from "./palette";
 import { simulateCollarHistory, simulatedLoop, dailyTarget, type CollarDay, type WalkRecord } from "./blackbox";
 import { loadHousehold, saveHousehold, type PetRecord, type StoredCheckin } from "./store";
+import { PREMIUM_KEY } from "./premium";
 import type { Answers } from "./types";
 
 /**
@@ -11,6 +12,8 @@ import type { Answers } from "./types";
 export type DemoId = "biscuit" | "miso";
 
 const DAY = 864e5;
+/** Biscuit's whole history is this long: check-in streak, weeks on the Walk Companion and weeks counted. */
+export const BISCUIT_WEEKS = 12;
 const NORMAL: Answers = { appetite: "normal", energy: "normal", water: "normal", stool: "normal", vomiting: "none", mobility: "normal", skin: "normal", breathing: "normal", urination: "normal" };
 
 function readJson<T>(k: string, f: T): T {
@@ -73,17 +76,22 @@ export function seedDemoPet(which: DemoId, now = Date.now()): PetRecord {
       photo: "/images/biscuit.svg", // illustration, not a stock photo; the owner's own upload replaces it
       swatches: ["#E2BE7A", "#6F7A3E", "#2F3A1E"],
       theme: deriveTheme([], coat),
-      blackBox: { device: "collar", enrolledAt: new Date(now - 42 * DAY).toISOString(), restSince: null },
+      // Twelve weeks on the Walk Companion, the same twelve weeks as the check-ins below, so every number agrees.
+      blackBox: { device: "collar", enrolledAt: new Date(now - BISCUIT_WEEKS * 7 * DAY).toISOString(), restSince: null },
     };
     rec.photoTheme = rec.theme;
     // 12 weekly check-ins: nine normal weeks, then three weeks of stiffness and extra thirst.
-    log = Array.from({ length: 12 }, (_, i) => {
-      const daysAgo = (12 - i) * 7 - 5;
+    log = Array.from({ length: BISCUIT_WEEKS }, (_, i) => {
+      const daysAgo = (BISCUIT_WEEKS - i) * 7 - 5;
       return checkin(rec, daysAgo, now, i >= 9 ? { water: "more", mobility: "stiff" } : {});
     });
     const target = dailyTarget(rec, log.slice(0, 9), now);
-    // A 10-day dip deep enough that the last week misses even his reduced (stiffness-adjusted) target: 5 of 6 weeks met.
-    collar = simulateCollarHistory(rec, target, now, true, 0.35);
+    // A 10-day dip deep enough that the last week misses even his reduced (stiffness-adjusted) target, plus one
+    // quiet week in the middle (a week away): target met in 10 of 12 weeks, so 7.5% + 5% for check-ins = 12.5%.
+    collar = simulateCollarHistory(rec, target, now, true, 0.35, BISCUIT_WEEKS * 7).map((d) => {
+      const ago = Math.round((now - new Date(d.date).getTime()) / DAY);
+      return ago >= 43 && ago <= 49 ? { ...d, activeMin: Math.round(d.activeMin * 0.3), steps: Math.round(d.steps * 0.3) } : d;
+    });
     const loop = simulatedLoop().filter((_, i) => i % 6 === 0).map((p) => [p.lat, p.lon] as [number, number]);
     walks = Array.from({ length: 14 }, (_, i) => {
       const daysAgo = 41 - i * 3;
@@ -115,6 +123,13 @@ export function seedDemoPet(which: DemoId, now = Date.now()): PetRecord {
   writeJson("prevently.checkins", [...readJson<StoredCheckin[]>("prevently.checkins", []).filter((c) => c.petId !== id), ...log]);
   writeJson("prevently.collar", [...readJson<CollarDay[]>("prevently.collar", []).filter((c) => c.petId !== id), ...collar]);
   writeJson("prevently.walks", [...readJson<WalkRecord[]>("prevently.walks", []).filter((w) => w.petId !== id), ...walks]);
+  // A fresh demo pet: no earlier scanner results, and not yet a Premium member (the demo joins on stage).
+  writeJson("prevently.scans", readJson<{ petId: string }[]>("prevently.scans", []).filter((x) => x.petId !== id));
+  if (readJson<{ petId?: string } | null>(PREMIUM_KEY, null)?.petId === id) {
+    try {
+      localStorage.removeItem(PREMIUM_KEY);
+    } catch {}
+  }
   window.dispatchEvent(new Event("prevently:store"));
   return rec;
 }

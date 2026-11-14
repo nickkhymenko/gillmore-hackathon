@@ -111,7 +111,9 @@ export function weeks(rec: PetRecord, target: number, walks: WalkRecord[], colla
   if (!bb) return [];
   const byDay = minutesByDay(walks, collar);
   const firstData = [...byDay.keys()].sort()[0];
-  const start = Math.min(new Date(bb.enrolledAt).getTime(), firstData ? new Date(firstData).getTime() : now);
+  // Never before the pet existed: synced Walk Companion history cannot earn weeks for a pet that joined today.
+  const created = new Date(rec.createdAt).getTime() || 0;
+  const start = Math.max(created, Math.min(new Date(bb.enrolledAt).getTime(), firstData ? new Date(firstData).getTime() : now));
   const out: WeekResult[] = [];
   for (let s = start; s < now; s += WEEK) {
     let minutes = 0;
@@ -151,7 +153,7 @@ export function blackBoxDiscount(wk: WeekResult[], log: StoredCheckin[], now: nu
   const target = counted.length ? tier(BB_TIERS, metRatio) : 0;
   const checkins = counted.length ? tier(CHECKIN_EXTRA, checkinRatio) : 0;
   const nextTier = BB_TIERS.find((t) => metRatio < t.ratio) ?? null;
-  return { metRatio, checkinRatio, target, checkins, total: Math.min(BB_CAP, target + checkins), weeksCounted: counted.length, weeksMet: counted.filter((w) => w.met).length, nextTier };
+  return { metRatio, checkinRatio, target, checkins, total: Math.min(BB_CAP, target + checkins), weeksCounted: counted.length, weeksMet: counted.filter((w) => w.met).length, nextTier, completeWeeks: complete.length };
 }
 
 // ---------- diagnostics (a change worth a vet's look, never a diagnosis) ----------
@@ -188,14 +190,14 @@ export function diagnostics(days: CollarDay[]): { signals: Signal[]; amber: bool
 
 const rnd = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
-/** Six weeks of plausible collar history around this pet's own normal. `dip` adds a mild 10-day decline. */
-export function simulateCollarHistory(rec: PetRecord, target: number, now: number, dip = false, dipFactor = 0.66): CollarDay[] {
+/** Six weeks (or `days`) of plausible collar history around this pet's own normal. `dip` adds a mild 10-day decline. */
+export function simulateCollarHistory(rec: PetRecord, target: number, now: number, dip = false, dipFactor = 0.66, days = 42): CollarDay[] {
   const r = rnd(rec.id.length * 7919 + 17);
   const big = rec.pet.sizeClass === "large" || rec.pet.sizeClass === "giant";
   const hr = rec.pet.species === "cat" ? 140 : big ? 72 : 88;
   const rr = rec.pet.species === "cat" ? 22 : 18;
   const out: CollarDay[] = [];
-  for (let i = 41; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const late = dip && i < 10;
     const f = late ? dipFactor : 1;
     const active = Math.max(5, Math.round(target * (0.9 + r() * 0.35) * f));

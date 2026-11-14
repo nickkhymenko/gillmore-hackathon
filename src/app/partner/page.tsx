@@ -40,20 +40,20 @@ function Slider({ label, value, min, max, step, fmt, onChange, assumption = true
   );
 }
 
-function Kpi({ label, value, dark = false, note }: { label: string; value: string; dark?: boolean; note?: string }) {
+function Kpi({ label, value, dark: highlight = false, note }: { label: string; value: string; dark?: boolean; note?: string }) {
   return (
-    <div className={dark ? "p-5 text-white" : "bg-paper p-5"} style={dark ? { background: "var(--dark)" } : undefined}>
-      <dt className={dark ? "text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60" : "eyebrow"}>{label}</dt>
-      <dd className={`mt-2 text-2xl font-semibold tracking-[-0.02em] sm:text-3xl ${dark ? "text-accent" : ""}`}>{value}</dd>
-      {note && <p className={`mt-1 text-xs ${dark ? "text-white/60" : "text-muted"}`}>{note}</p>}
+    <div className={highlight ? "bg-accent-soft p-5" : "bg-surface p-5"}>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-2 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">{value}</dd>
+      {note && <p className="mt-1 text-xs text-muted">{note}</p>}
     </div>
   );
 }
 
 function H({ n, children }: { n: string; children: ReactNode }) {
   return (
-    <h2 className="eyebrow border-t border-line pt-3">
-      <span className="tnum text-ink">{n}</span> / {children}
+    <h2 className="text-2xl font-semibold tracking-[-0.035em]" data-n={n}>
+      {children}
     </h2>
   );
 }
@@ -85,7 +85,7 @@ function InsurerTab({ inp, set }: { inp: BusinessInput; set: (p: Partial<Busines
     <div className="space-y-14">
       <section className="space-y-5">
         <H n="01">This week, illustrative insurer</H>
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-brand border border-line bg-line lg:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft lg:grid-cols-4">
           <Kpi label="Members" value={kpi.members.toLocaleString("en-GB")} />
           <Kpi label="Weekly active" value={pct(kpi.weeklyActive)} />
           <Kpi label="Average streak" value={`${kpi.avgStreak} weeks`} />
@@ -241,7 +241,7 @@ function UnderwriterTab({ inp }: { inp: BusinessInput }) {
     <div className="space-y-14">
       <section className="space-y-5">
         <H n="01">Loss ratio impact (whole book)</H>
-        <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3">
+        <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-3">
           <Kpi label="Baseline loss ratio" value={pct(b.lossBefore, 1)} note={`Claims £${Math.round(CLAIM_COST_PER_POLICY)} a policy on a £${inp.avgPremium} premium`} />
           <Kpi label="With Petra" value={pct(b.lossAfter, 1)} note="Claims avoided, net of discounts" />
           <Kpi label="Change" value={`${((b.lossAfter - b.lossBefore) * 100).toFixed(1)} pts`} dark note="Moves with the insurer tab assumptions" />
@@ -306,9 +306,9 @@ function UnderwriterTab({ inp }: { inp: BusinessInput }) {
 
       <section className="space-y-5">
         <H n="04">Fairness rules and regulation</H>
-        <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2">
+        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2">
           {RULES.map(([t, d], i) => (
-            <li key={t} className="bg-paper p-5">
+            <li key={t} className="bg-surface p-5">
               <p className="eyebrow">
                 <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span>
               </p>
@@ -344,7 +344,7 @@ function BlackBoxTab() {
         </div>
         <div className="space-y-5 lg:col-span-8">
           <H n="02">A year with Petra Savings</H>
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-brand border border-line bg-line lg:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft lg:grid-cols-4">
             <Kpi label="Petra Savings members" value={b.members.toLocaleString("en-GB")} />
             <Kpi label="Hitting targets" value={b.hitting.toLocaleString("en-GB")} />
             <Kpi label="Early-warning flags" value={b.flags.toLocaleString("en-GB")} note="Sustained activity changes" />
@@ -377,7 +377,7 @@ function BlackBoxTab() {
               ))}
             </div>
           </div>
-          <dl className="grid grid-cols-1 gap-px self-start overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3 lg:col-span-8">
+          <dl className="grid grid-cols-1 gap-px self-start overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-3 lg:col-span-8">
             <Kpi label={inp.offer === "free2yr" ? "Hardware cost a year" : "Bundle income after cost"} value={inp.offer === "free2yr" ? k(b.hardwareYear) : k(b.bundleIncome)} />
             <Kpi label="Payback per Walk Companion" value={Number.isFinite(b.paybackMonths) ? `${b.paybackMonths} months` : "Not at these inputs"} />
             <Kpi label="Net benefit a year" value={`${b.net >= 0 ? "+" : "−"}${k(Math.abs(b.net))}`} dark />
@@ -388,14 +388,14 @@ function BlackBoxTab() {
 
       <section className="space-y-5">
         <H n="04">Why younger owners</H>
-        <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["The telematics playbook", "Black boxes made car insurance affordable for young drivers by rewarding good driving. The same deal works for pet care."],
             ["Pets are family", "69% of Millennials and Gen Z say their pet is family (reading guide). They want to do the right thing, and to see it count."],
             ["Price sensitive", "Vet prices up about 75% in ten years; younger owners feel premiums most. A visible way to pay less is a reason to choose you."],
             ["An acquisition channel", "A Walk Companion and a cheaper premium is a story people share. Every walk is a weekly touchpoint with your brand."],
           ].map(([t, d]) => (
-            <li key={t} className="bg-paper p-5">
+            <li key={t} className="bg-surface p-5">
               <p className="font-semibold">{t}</p>
               <p className="mt-2 text-sm text-muted">{d}</p>
             </li>

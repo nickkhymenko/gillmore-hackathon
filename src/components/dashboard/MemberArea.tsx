@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Crown } from "@phosphor-icons/react";
+import { ArrowUpRight, Bone, FirstAid, ShieldCheck, Sparkle, Tag, type Icon } from "@phosphor-icons/react";
 import { NUTRITION_BRAND, OFFER_GROUPS } from "@/data/partners";
 import { avgSaving } from "@/data/premiums";
 import { usePremium } from "@/lib/premium";
@@ -13,10 +13,10 @@ const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", c
 export function PremiumStatus({ rec }: { rec: PetRecord }) {
   const member = usePremium();
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-brand border border-line bg-white/60 p-5" data-testid="premium-status">
+    <div className="card flex flex-wrap items-center justify-between gap-4 p-5 sm:px-7" data-testid="premium-status">
       <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-ink text-[#FFD43B]">
-          <Crown size={20} weight="fill" aria-hidden />
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft text-ink">
+          <Sparkle size={20} weight="fill" aria-hidden />
         </span>
         <div>
           <p className="font-semibold">{member ? "Petra Premium member" : "Not a Premium member yet"}</p>
@@ -32,49 +32,68 @@ export function PremiumStatus({ rec }: { rec: PetRecord }) {
   );
 }
 
-/** The Savings tab: the member area. Example partners only, never tied to the discount. */
+const GROUP_ICON: Record<string, Icon> = { nutrition: Bone, vets: FirstAid, insurers: ShieldCheck, accessories: Tag };
+
+/** The Savings tab: a light, premium member area. Example partners only, never tied to the discount. */
 export function MemberArea({ rec }: { rec: PetRecord }) {
+  const member = usePremium();
   return (
-    <div className="space-y-12">
-      <div className="space-y-3">
+    <div className="space-y-12 sm:space-y-16">
+      <div className="mx-auto max-w-3xl space-y-4 pt-4 text-center sm:pt-8">
+        <p className="eyebrow">{member ? "Petra Premium member" : "Petra Premium"}</p>
         <h2 className="display text-[clamp(2.5rem,6vw,4.5rem)]">
           Your pet deserves <span className="accent-word">the best life.</span>
         </h2>
-        <p className="text-lg" data-testid="avg-saving">
-          Members save about <strong className="rounded-[4px] bg-accent px-1">{gbp(avgSaving(rec.pet))} a year</strong> on average. <span className="text-sm text-muted">Illustrative, for {rec.pet.name}&apos;s example premium.</span>
+        <p className="text-lg text-muted" data-testid="avg-saving">
+          Members save about <strong className="rounded-md bg-accent-soft px-1.5 py-0.5 font-semibold text-ink">{gbp(avgSaving(rec.pet))} a year</strong> on average. <span className="text-sm">Illustrative, for {rec.pet.name}&apos;s example premium.</span>
         </p>
       </div>
 
-      <article className="rounded-brand bg-[#161616] p-6 text-white sm:p-8" data-testid="featured-offer">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[#FFD43B] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#141414]">Planned</span>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">Featured</span>
+      <article className="card grid items-center gap-6 overflow-hidden p-7 sm:grid-cols-12 sm:p-10" data-testid="featured-offer">
+        <div className="sm:col-span-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink">Planned</span>
+            <span className="eyebrow">Nutrition and supplements</span>
+          </div>
+          <p className="mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.05] tracking-[-0.04em]">{NUTRITION_BRAND} (coming to the UK)</p>
+          <p className="mt-3 max-w-[52ch] text-muted">Vet-designed nutrition and supplements for {rec.pet.name}, with a member price. Planned, not yet available.</p>
         </div>
-        <p className="mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-tight tracking-[-0.03em]">{NUTRITION_BRAND} (coming to the UK)</p>
-        <p className="mt-2 max-w-[52ch] text-white/75">Vet-designed nutrition and supplements for {rec.pet.name}, with a member price. Planned, not yet available.</p>
+        <div className="hidden justify-end sm:col-span-4 sm:flex" aria-hidden>
+          <span className="grid h-32 w-32 place-items-center rounded-full bg-accent-soft">
+            <Bone size={56} weight="duotone" />
+          </span>
+        </div>
       </article>
 
-      <div className="grid gap-10 md:grid-cols-2">
-        {OFFER_GROUPS.map((g) => (
-          <section key={g.id} aria-labelledby={`offers-${g.id}`} className="space-y-3">
-            <h3 id={`offers-${g.id}`} className="eyebrow">
-              {g.title}
-            </h3>
-            <ul className="divide-y divide-line border-y border-line">
-              {g.offers.map((o) => (
-                <li key={o.brand} className="py-4">
-                  <p className="text-lg font-semibold tracking-[-0.02em]">{o.offer}</p>
-                  <p className="text-sm text-muted">
-                    {o.brand}
-                    {o.detail ? `. ${o.detail}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+      <div className="grid gap-5 md:grid-cols-2">
+        {OFFER_GROUPS.map((g) => {
+          const I = GROUP_ICON[g.id] ?? Tag;
+          return (
+            <section key={g.id} aria-labelledby={`offers-${g.id}`} className="card p-6 sm:p-7">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft" aria-hidden>
+                  <I size={20} weight="duotone" />
+                </span>
+                <h3 id={`offers-${g.id}`} className="text-xl font-semibold tracking-[-0.03em]">
+                  {g.title}
+                </h3>
+              </div>
+              <ul className="mt-4 divide-y divide-line">
+                {g.offers.map((o) => (
+                  <li key={o.brand} className="py-4 last:pb-0">
+                    <p className="text-lg font-semibold tracking-[-0.02em]">{o.offer}</p>
+                    <p className="text-sm text-muted">
+                      {o.brand}
+                      {o.detail ? `. ${o.detail}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
       </div>
-      <p className="text-xs text-muted">Example partners. Not real offers or companies, and never linked to your discount.</p>
+      <p className="text-center text-xs text-muted">Example partners. Not real offers or companies, and never linked to your discount.</p>
     </div>
   );
 }

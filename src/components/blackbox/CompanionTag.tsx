@@ -1,48 +1,48 @@
-/** The Petra Walk Companion: a sleek collar tag on a strap, with a soft yellow glow. Decorative illustration. */
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
+
+/**
+ * The Petra Walk Companion, as a clean light product render: a small white tag on a soft fabric loop, floating
+ * gently over its own shadow. Flat fills only, no gradients. Decorative illustration.
+ */
 export function CompanionTag({ className = "" }: { className?: string }) {
+  const reduce = useReducedMotion();
+  const float = reduce ? undefined : { y: [0, -10, 0] };
+  const shadow = reduce ? undefined : { scaleX: [1, 0.86, 1], opacity: [0.1, 0.06, 0.1] };
+  const loop = { duration: 5.5, repeat: Infinity, ease: "easeInOut" as const };
   return (
-    <svg viewBox="0 0 320 320" className={className} role="img" aria-label="The Petra Walk Companion, a small tag that clips to a collar">
-      <defs>
-        <radialGradient id="tag-glow" cx="50%" cy="55%" r="50%">
-          <stop offset="0%" stopColor="#FFD43B" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="#FFD43B" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#FFD43B" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="tag-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#3A3A3A" />
-          <stop offset="100%" stopColor="#141414" />
-        </linearGradient>
-        <linearGradient id="tag-face" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2A2A2A" />
-          <stop offset="100%" stopColor="#1A1A1A" />
-        </linearGradient>
-        <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F2C230" />
-          <stop offset="100%" stopColor="#D9A514" />
-        </linearGradient>
-      </defs>
-      <circle cx="160" cy="176" r="140" fill="url(#tag-glow)" />
-      {/* collar strap */}
-      <path d="M8 96 Q160 150 312 96 L312 124 Q160 178 8 124 Z" fill="url(#strap)" />
-      <path d="M8 104 Q160 158 312 104" fill="none" stroke="#141414" strokeOpacity="0.18" strokeWidth="1.5" strokeDasharray="4 6" />
-      <path d="M8 116 Q160 170 312 116" fill="none" stroke="#141414" strokeOpacity="0.18" strokeWidth="1.5" strokeDasharray="4 6" />
-      {/* clip */}
-      <rect x="138" y="118" width="44" height="30" rx="8" fill="#2B2B2B" stroke="#4A4A4A" strokeWidth="2" />
-      {/* tag */}
-      <rect x="98" y="138" width="124" height="150" rx="40" fill="url(#tag-body)" />
-      <rect x="106" y="146" width="108" height="134" rx="34" fill="url(#tag-face)" stroke="#FFFFFF" strokeOpacity="0.08" strokeWidth="2" />
-      <path d="M118 166 Q126 152 146 150" fill="none" stroke="#FFFFFF" strokeOpacity="0.22" strokeWidth="4" strokeLinecap="round" />
-      {/* paw mark */}
-      <g transform="translate(160 214) scale(2.1)" fill="#FFD43B">
-        <path d="M0 0 C-5 0 -7.5 4 -6.5 6.5 C-5.5 9 -2 8 0 8 C2 8 5.5 9 6.5 6.5 C7.5 4 5 0 0 0 Z" />
-        <ellipse cx="-6.8" cy="-3" rx="2" ry="2.8" transform="rotate(-20 -6.8 -3)" />
-        <ellipse cx="-2.4" cy="-6.6" rx="2" ry="2.9" />
-        <ellipse cx="2.4" cy="-6.6" rx="2" ry="2.9" />
-        <ellipse cx="6.8" cy="-3" rx="2" ry="2.8" transform="rotate(20 6.8 -3)" />
-      </g>
-      {/* status light */}
-      <circle cx="160" cy="262" r="4" fill="#FFD43B" />
-      <circle cx="160" cy="262" r="9" fill="#FFD43B" opacity="0.25" />
+    <svg viewBox="0 0 360 360" className={className} role="img" aria-label="The Petra Walk Companion, a small white tag that clips to a collar">
+      {/* soft, flat backdrop */}
+      <circle cx="180" cy="176" r="150" fill="#FFFFFF" fillOpacity="0.7" />
+      {/* contact shadow */}
+      <motion.ellipse cx="180" cy="318" rx="74" ry="9" fill="#141414" opacity="0.1" animate={shadow} transition={loop} style={{ transformOrigin: "180px 318px" }} />
+      <motion.g animate={float} transition={loop}>
+        {/* collar loop */}
+        <path d="M24 96 Q180 150 336 96 L336 124 Q180 178 24 124 Z" fill="#E7E2D8" />
+        <path d="M24 103 Q180 157 336 103" fill="none" stroke="#141414" strokeOpacity="0.12" strokeWidth="1.5" strokeDasharray="3 7" strokeLinecap="round" />
+        <path d="M24 117 Q180 171 336 117" fill="none" stroke="#141414" strokeOpacity="0.12" strokeWidth="1.5" strokeDasharray="3 7" strokeLinecap="round" />
+        {/* clip */}
+        <rect x="157" y="122" width="46" height="34" rx="11" fill="#D9D4C9" />
+        <rect x="165" y="130" width="30" height="18" rx="7" fill="var(--accent-soft)" />
+        {/* body: an outer shell, a lit top edge and the face */}
+        <rect x="112" y="146" width="136" height="152" rx="46" fill="#DEDAD1" />
+        <rect x="112" y="142" width="136" height="152" rx="46" fill="#FFFFFF" />
+        <rect x="124" y="154" width="112" height="128" rx="36" fill="#F7F5F0" />
+        {/* highlight */}
+        <path d="M134 178 Q140 162 160 160" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" />
+        {/* paw mark */}
+        <g transform="translate(180 216) scale(2.2)" fill="#141414">
+          <path d="M0 0 C-5 0 -7.5 4 -6.5 6.5 C-5.5 9 -2 8 0 8 C2 8 5.5 9 6.5 6.5 C7.5 4 5 0 0 0 Z" />
+          <ellipse cx="-6.8" cy="-3" rx="2" ry="2.8" transform="rotate(-20 -6.8 -3)" />
+          <ellipse cx="-2.4" cy="-6.6" rx="2" ry="2.9" />
+          <ellipse cx="2.4" cy="-6.6" rx="2" ry="2.9" />
+          <ellipse cx="6.8" cy="-3" rx="2" ry="2.8" transform="rotate(20 6.8 -3)" />
+        </g>
+        {/* status light */}
+        <circle cx="180" cy="264" r="9" fill="var(--accent)" opacity="0.4" />
+        <motion.circle cx="180" cy="264" r="4.5" fill="var(--accent)" stroke="#141414" strokeOpacity="0.25" strokeWidth="1" animate={reduce ? undefined : { opacity: [1, 0.45, 1] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
+      </motion.g>
     </svg>
   );
 }

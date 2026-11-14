@@ -55,31 +55,31 @@ export function AskPetra({ rec, latest, walk, onAction }: { rec: PetRecord; late
         <ol className="space-y-4" aria-live="polite">
           {turns.map((t, i) => (
             <li key={i} className="space-y-3">
-              <p className="ml-auto w-fit max-w-[90%] rounded-brand bg-ink px-4 py-2.5 text-sm text-white">{t.q}</p>
+              <p className="ml-auto w-fit max-w-[90%] rounded-[20px] rounded-br-md bg-accent-soft px-4 py-2.5 text-sm">{t.q}</p>
               {t.a === null ? (
-                <p className="inline-flex items-center gap-1.5 rounded-brand border border-line bg-white/60 px-4 py-3" role="status" aria-label="Petra is typing">
+                <p className="inline-flex items-center gap-1.5 rounded-[20px] rounded-bl-md bg-surface px-4 py-3 shadow-soft" role="status" aria-label="Petra is typing">
                   {[0, 1, 2].map((d) => (
                     <span key={d} className="typing-dot h-2 w-2 rounded-full bg-ink/60" style={{ animationDelay: `${d * 160}ms` }} aria-hidden />
                   ))}
                 </p>
               ) : t.a.vetNow ? (
-                <div className="space-y-3 rounded-brand border-2 border-ink bg-[#FFD43B] p-5 text-ink" role="alert">
+                <div className="card space-y-3 border-2 !border-[#c8412b] p-5" role="alert">
                   <p className="flex items-center gap-2 text-lg font-semibold">
                     <Siren size={22} weight="bold" aria-hidden /> This needs a vet now
                   </p>
                   <p className="text-sm">{t.a.answer.replace(/^This needs a vet now\.\s*/, "")}</p>
                   {t.a.reasons.length > 0 && <p className="text-xs font-semibold">Why: {t.a.reasons.join("; ")}</p>}
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => onAction("Starting an online vet consult")} className="btn bg-ink text-white">
+                    <button type="button" onClick={() => onAction("Starting an online vet consult")} className="btn btn-primary">
                       <VideoCamera size={18} aria-hidden /> Start online consult
                     </button>
-                    <button type="button" onClick={() => onAction("Finding the nearest emergency vet")} className="btn border-2 border-ink bg-white/70">
+                    <button type="button" onClick={() => onAction("Finding the nearest emergency vet")} className="btn btn-ghost">
                       Find emergency vet <ArrowUpRight size={16} weight="bold" aria-hidden />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 rounded-brand border border-line bg-white/60 p-4">
+                <div className="space-y-3 rounded-[20px] rounded-bl-md bg-surface p-4 shadow-soft">
                   <p className="text-sm leading-relaxed">{t.a.answer}</p>
                   {t.a.suggestVet && (
                     <button type="button" onClick={() => onAction("Booking an online vet consult")} className="link inline-flex min-h-11 items-center gap-1 text-sm">
@@ -97,7 +97,7 @@ export function AskPetra({ rec, latest, walk, onAction }: { rec: PetRecord; late
         <ul className="flex flex-wrap gap-2" aria-label={turns.length ? "Follow-up questions" : "Starter questions"}>
           {chips.map((c) => (
             <li key={c}>
-              <button type="button" onClick={() => ask(c)} className="min-h-11 rounded-brand border border-line bg-white/60 px-3 py-2 text-left text-sm hover:border-ink/40">
+              <button type="button" onClick={() => ask(c)} className="min-h-11 rounded-full border border-line bg-surface px-4 py-2 text-left text-sm hover:border-ink/40">
                 {c}
               </button>
             </li>
@@ -119,7 +119,7 @@ export function AskPetra({ rec, latest, walk, onAction }: { rec: PetRecord; late
           maxLength={500}
           aria-label={`Ask Petra about ${name}`}
           placeholder={`Is it normal that ${name}…`}
-          className="min-h-12 min-w-0 flex-1 rounded-brand border border-line bg-white/60 px-4 text-base placeholder:text-muted focus:border-ink"
+          className="min-h-12 min-w-0 flex-1 rounded-full border border-line bg-surface px-5 text-base placeholder:text-muted focus:border-ink"
         />
         <button type="submit" disabled={busy || !text.trim()} className="btn btn-primary min-h-12 px-4" aria-label="Send question">
           <PaperPlaneRight size={18} weight="bold" aria-hidden />

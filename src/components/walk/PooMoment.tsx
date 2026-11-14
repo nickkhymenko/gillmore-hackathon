@@ -97,8 +97,8 @@ function Bag() {
 }
 
 /**
- * The walk's insurance moment, told on scroll: a teaser, then the poo alone and centred, the saving and one big
- * "Pick it up". The bag drops in, scoops, ties and lifts away; then the insurance page slides up over the walk.
+ * The walk's insurance moment: a teaser, and right under it the (small) poo, the saving and one big "Pick it up",
+ * all in one viewport. The bag drops in, scoops, ties and lifts away; then the insurance page slides up over the walk.
  * Nothing persists: it resets on refresh, and ?replay=1 scrolls back to a fresh one.
  * Reduced motion: a static poo, and the button goes straight to /savings.
  */
@@ -133,22 +133,22 @@ export function PooMoment({ rec }: { rec: PetRecord }) {
   }
 
   const reveal = (delay = 0) =>
-    reduce ? {} : { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "0px 0px -20% 0px" }, transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as const } };
+    reduce ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "0px 0px -6% 0px" }, transition: { type: "spring" as const, stiffness: 200, damping: 26, delay } };
 
   return (
     <div className="text-center">
-      <div className="flex min-h-[55svh] items-center justify-center">
-        <motion.p {...reveal()} className="display text-[clamp(2rem,5.5vw,4rem)] text-muted" data-testid="insurance-teaser">
-          Now, about {name}&apos;s insurance&hellip;
-        </motion.p>
-      </div>
+      {/* The teaser sits right on top of the moment: no empty scroll between them. */}
+      <motion.p {...reveal()} className="display pb-8 pt-2 text-[clamp(1.5rem,3.6vw,2.5rem)] text-muted sm:pb-10" data-testid="insurance-teaser">
+        Now, about {name}&apos;s insurance&hellip;
+      </motion.p>
 
-      <div id="uh-oh" data-walk-pause className="flex min-h-[85svh] scroll-mt-24 flex-col items-center justify-center gap-8">
-        <svg viewBox="0 0 120 100" className="h-auto w-44 overflow-visible sm:w-56" data-testid="poo" aria-hidden>
+      {/* Poo, headline, number and button fit in one viewport on a phone and on a laptop. */}
+      <div id="uh-oh" data-walk-pause className="flex scroll-mt-36 flex-col items-center gap-5 sm:gap-6">
+        <svg viewBox="0 0 120 100" className="h-auto w-[106px] overflow-visible sm:w-[134px]" data-testid="poo" aria-hidden>
           <motion.g
             initial={reduce ? false : { y: -60, scale: 0.4, opacity: 0 }}
             whileInView={{ y: 0, scale: 1, opacity: 1 }}
-            viewport={{ once: true, margin: "0px 0px -30% 0px" }}
+            viewport={{ once: true, margin: "0px 0px -10% 0px" }}
             transition={{ type: "spring", stiffness: 420, damping: 12 }}
             style={{ transformOrigin: "60px 90px" }}
           >
@@ -164,18 +164,14 @@ export function PooMoment({ rec }: { rec: PetRecord }) {
           {picked && <Bag />}
         </svg>
 
-        <motion.h3 {...reveal(0.1)} className="display max-w-4xl text-[clamp(2.25rem,6vw,4.75rem)]" data-testid="overpay">
+        <motion.h3 {...reveal(0.05)} className="display max-w-4xl text-[clamp(2rem,5.2vw,4.25rem)]" data-testid="overpay">
           You and owners like you could save up to <span className="accent-word">£{upTo} a year.</span>
         </motion.h3>
-        <motion.p {...reveal(0.2)} className="max-w-[40ch] text-lg text-muted sm:text-xl">
+        <motion.p {...reveal(0.1)} className="max-w-[40ch] text-lg text-muted">
           Your premium ignores the walks and care you already do.
         </motion.p>
-        <motion.div {...reveal(0.3)}>
-          <button
-            type="button"
-            onClick={pickUp}
-            className="btn btn-primary min-h-16 rounded-full px-10 text-xl shadow-[0_10px_30px_-10px_rgba(20,20,20,0.45)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
-          >
+        <motion.div {...reveal(0.15)}>
+          <button type="button" onClick={pickUp} className="btn btn-primary min-h-14 px-9 text-xl sm:min-h-16 sm:px-10">
             Pick it up <ArrowUpRight size={22} weight="bold" aria-hidden />
           </button>
         </motion.div>
@@ -187,10 +183,11 @@ export function PooMoment({ rec }: { rec: PetRecord }) {
         <p className="text-xs text-muted">Illustrative: {name}&apos;s example premium at the top 15% tier.</p>
       </div>
 
+      {/* The insurance page slides up over the walk, in the page's own light colour. */}
       {leaving && (
         <motion.div
           aria-hidden
-          className="fixed inset-0 z-[80] bg-[#161616]"
+          className="fixed inset-0 z-[80] bg-paper"
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           transition={{ duration: SLIDE_MS / 1000, ease: [0.65, 0, 0.35, 1] }}

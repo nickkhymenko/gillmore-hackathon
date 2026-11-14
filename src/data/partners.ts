@@ -12,7 +12,7 @@ export type OfferGroup = { id: string; title: string; offers: Offer[] };
 export const OFFER_GROUPS: OfferGroup[] = [
   {
     id: "nutrition",
-    title: "Supplements and nutrition",
+    title: "Nutrition and supplements",
     offers: [
       { brand: "Wholebowl", offer: "20% off joint and omega-3 supplements", detail: "Check with your vet first." },
       { brand: "Barkley Kitchen", offer: "First bag of fresh food half price" },
@@ -28,7 +28,7 @@ export const OFFER_GROUPS: OfferGroup[] = [
   },
   {
     id: "insurers",
-    title: "Insurer partnerships",
+    title: "Insurer partnership",
     offers: [
       { brand: "Harbourline", offer: "The Petra discount: up to 15% off your premium" },
       { brand: "Kestrel Mutual", offer: "The Petra discount, plus a loyalty month at renewal" },
@@ -36,7 +36,7 @@ export const OFFER_GROUPS: OfferGroup[] = [
   },
   {
     id: "accessories",
-    title: "Accessories and grooming",
+    title: "Accessories",
     offers: [
       { brand: "Tagalong Supply", offer: "15% off leads and harnesses" },
       { brand: "Suds & Tails", offer: "£10 off your first groom" },

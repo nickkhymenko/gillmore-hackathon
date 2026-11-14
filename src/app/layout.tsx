@@ -1,18 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Instrument_Serif, Inter_Tight } from "next/font/google";
+import { Geist, Instrument_Serif } from "next/font/google";
 import { PetraLogo, PETRA_TAGLINE } from "@/components/brand/PetraLogo";
 import { DeleteAllData } from "@/components/DeleteAllData";
 import { DemoLoader } from "@/components/DemoLoader";
 import { PetSwitcher } from "@/components/PetSwitcher";
 import { PremiumBadge } from "@/components/PremiumBadge";
+import { ResetDemo } from "@/components/ResetDemo";
 import { SourcesLink } from "@/components/SourcesLink";
 import { ThemeSync } from "@/components/ThemeSync";
 import { Toaster } from "@/components/Toaster";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-const interTight = Inter_Tight({ variable: "--font-inter-tight", subsets: ["latin"], display: "swap" });
+// Geist (Vercel's open-source typeface) for the UI; Instrument Serif italic for the one accent word in a headline.
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"], display: "swap" });
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   subsets: ["latin"],
@@ -39,20 +41,20 @@ const NAV = [
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-GB" className={`${interTight.variable} ${instrumentSerif.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en-GB" className={`${geist.variable} ${instrumentSerif.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Applies the saved pet theme before first paint, so there is no flash of the default colours. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-sm">
+        <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl backdrop-saturate-150">
           <nav className="mx-auto flex max-w-[1200px] items-center gap-4 px-4 py-3 sm:px-6" aria-label="Main">
-            <Link href="/" className="flex shrink-0 items-center text-lg font-bold tracking-[-0.04em]" aria-label="Petra, home">
+            <Link href="/" className="flex shrink-0 items-center text-lg font-semibold tracking-[-0.04em]" aria-label="Petra, home">
               <PetraLogo size={24} />
             </Link>
             <div className="-mr-1 ml-auto flex min-w-0 items-center overflow-x-auto text-[13px] font-medium sm:gap-1 sm:text-sm">
               {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className={`min-h-11 items-center whitespace-nowrap rounded-brand px-2 hover:bg-ink/5 sm:px-3 ${n.wide ? "hidden sm:flex" : "flex"}`}>
+                <Link key={n.href} href={n.href} className={`min-h-11 items-center whitespace-nowrap rounded-full px-2 hover:bg-ink/5 sm:px-3.5 ${n.wide ? "hidden sm:flex" : "flex"}`}>
                   {n.label}
                 </Link>
               ))}
@@ -70,6 +72,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 For insurers
               </Link>
               <SourcesLink />
+              <ResetDemo />
               <DeleteAllData />
             </span>
             <span>Built for the Gillmore Hackathon 2026</span>

@@ -59,7 +59,7 @@ export function WalkMap({ points, live, className = "" }: { points: [number, num
     if (!live && points.length > 1) m.fitBounds(line.current.getBounds(), { padding: [24, 24] });
   }, [points, live]);
 
-  return <div ref={el} className={`z-0 h-72 w-full overflow-hidden rounded-brand border border-line sm:h-96 ${className}`} role="region" aria-label="Map of this walk, visible only to you" />;
+  return <div ref={el} className={`z-0 h-72 w-full overflow-hidden rounded-card border border-line shadow-soft sm:h-96 ${className}`} role="region" aria-label="Map of this walk, visible only to you" />;
 }
 
 /** A static route thumbnail drawn as SVG: no map tiles, nothing loaded from anywhere. */

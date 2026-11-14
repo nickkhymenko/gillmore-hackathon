@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { noHorizontalScroll, seedPet, watch } from "./helpers";
 
 // The demo in one go, at 390px and 1440px (both projects): the poo on the walk, Pick it up, an example walk,
-// Try it today, the Premium badge, then the member area on the dashboard.
+// Try it today, Join Petra Premium, the Premium badge, then the member area on the dashboard.
 
 test("demo flow: /walk poo, Pick it up, /savings walk, Try it today, Premium badge, dashboard Savings tab", async ({ page }) => {
   const { errors } = watch(page);
@@ -30,13 +30,19 @@ test("demo flow: /walk poo, Pick it up, /savings walk, Try it today, Premium bad
   await expect(page.getByText("Walk saved")).toBeVisible({ timeout: 25_000 });
   await expect(page.getByTestId("finish-saving")).toContainText(/Down from £[\d.]+: \d+(\.\d+)?% off/);
 
+  // One step: Try it today opens the sheet, Join Petra Premium confirms.
   await page.getByRole("button", { name: "Try it today" }).click();
-  await expect(page.locator("#join")).toContainText("Welcome to Petra Premium. Biscuit is covered for every walk.");
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByTestId("join-summary")).toHaveText(/^Walk Companion · up to £\d+ a year off · cancel anytime$/);
+  await expect(page.getByTestId("premium-badge")).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Join Petra Premium" }).click();
+  await expect(sheet).toContainText("Welcome to Petra Premium.");
+  await expect(sheet).toContainText("Biscuit is covered for every walk.");
   await expect(page.getByTestId("premium-badge")).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("prevently.premium") ?? "null")?.petId)).toBe("p1");
   await noHorizontalScroll(page);
 
-  await page.getByRole("link", { name: "Go to your dashboard" }).click();
+  await sheet.getByRole("link", { name: "Go to your dashboard" }).click();
   await page.waitForURL("**/dashboard");
   await expect(page.getByTestId("premium-status")).toContainText("Petra Premium member");
   await page.getByRole("tab", { name: "Savings" }).click();

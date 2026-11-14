@@ -36,7 +36,7 @@ function PawProgress({ step }: { step: number }) {
   return (
     <ol className="flex items-center gap-0.5 sm:gap-2" aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}>
       {STEPS.map((label, i) => (
-        <li key={label} title={label} className={`grid h-6 w-6 place-items-center rounded-full sm:h-7 sm:w-7 transition-colors duration-500 ${i === step ? "bg-accent" : ""}`}>
+        <li key={label} title={label} className={`grid h-6 w-6 place-items-center rounded-full sm:h-7 sm:w-7 transition-[background-color,transform] duration-500 ${i === step ? "scale-110 bg-accent" : ""}`}>
           <PawPrint size={16} weight={i <= step ? "fill" : "regular"} className={`transition-opacity duration-500 ${i <= step ? "opacity-100" : "opacity-30"}`} style={{ transform: `rotate(${i % 2 ? 14 : -14}deg)` }} aria-hidden />
         </li>
       ))}
@@ -137,10 +137,11 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
 
   // ---------- the flow ----------
 
+  // Each question springs in from the side it came from and the last one eases away: one idea per screen.
   const variants = {
-    enter: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * 48 }),
-    centre: { opacity: 1, x: 0 },
-    exit: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * -48 }),
+    enter: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * 56, scale: reduce ? 1 : 0.985 }),
+    centre: { opacity: 1, x: 0, scale: 1, transition: reduce ? { duration: 0.12 } : { type: "spring" as const, stiffness: 260, damping: 28, mass: 0.9 } },
+    exit: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * -40, transition: { duration: reduce ? 0.1 : 0.16, ease: "easeIn" as const } }),
   };
 
   let content: React.ReactNode = null;
@@ -234,11 +235,14 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
         </button>
         <PawProgress step={flow.step} />
       </div>
-      <AnimatePresence mode="wait" custom={flow.dir} initial={false}>
-        <motion.div key={flow.step} custom={flow.dir} variants={variants} initial="enter" animate="centre" exit="exit" transition={{ duration: reduce ? 0.12 : 0.36, ease: [0.22, 1, 0.36, 1] }} className="flex-1">
-          {content}
-        </motion.div>
-      </AnimatePresence>
+      {/* Clipped at the page gutter, so a question sliding in never makes the page scroll sideways. */}
+      <div className="-mx-4 flex flex-1 flex-col overflow-x-clip px-4 sm:-mx-6 sm:px-6">
+        <AnimatePresence mode="wait" custom={flow.dir} initial={false}>
+          <motion.div key={flow.step} custom={flow.dir} variants={variants} initial="enter" animate="centre" exit="exit" className="flex-1">
+            {content}
+          </motion.div>
+        </AnimatePresence>
+      </div>
       {leaving && <WalkOff onDone={() => router.push("/walk")} />}
     </div>
   );
@@ -250,7 +254,7 @@ function GoTo({ href }: { href: string }) {
   useEffect(() => {
     router.replace(href);
   }, [router, href]);
-  return <div className="min-h-[70svh]" aria-busy="true" />;
+  return <div className="min-h-svh" aria-busy="true" />;
 }
 
 function Landing({
