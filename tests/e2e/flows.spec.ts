@@ -105,12 +105,16 @@ test("4 and 5: the walk: stops, Doctapet line, charts, cover only when reached, 
   expect(Number(await cover.evaluate((e) => getComputedStyle(e).opacity))).toBeLessThan(0.5);
   await page.locator("#cover").scrollIntoViewIfNeeded();
   await expect.poll(() => cover.evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.9);
+  await expect(cover).toContainText("Uh oh. Your insurance isn't working for you.");
+  // The plans moved to Savings: payment still appears only after a plan is chosen.
+  await page.goto("/savings");
   await expect(page.locator("#how-you-pay")).toHaveCount(0);
   await page.getByRole("radio", { name: /Lifetime/ }).click();
   await expect(page.locator("#how-you-pay")).toBeVisible();
   await shot(page, "04-walk-cover-and-pay");
 
   // Amber check-in (flow 5): the last seeded week was 5 days ago, so check in again.
+  await page.goto("/walk");
   await page.locator("#check-in").scrollIntoViewIfNeeded();
   await page.getByRole("button", { name: /Check in again/ }).click();
   await page.getByRole("button", { name: "Something's different" }).click();
@@ -157,7 +161,7 @@ test("11: refresh mid-journey keeps progress; Delete all my data clears everythi
   const keys = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("prevently")));
   expect(keys).toEqual([]);
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances");
 });
 
 test("12: reduced motion: no moving paw, content visible without scroll animations", async ({ page }) => {
@@ -173,6 +177,8 @@ test("12: reduced motion: no moving paw, content visible without scroll animatio
   // The moving paw is the only accent-filled circle with a 20px radius in the walk path.
   expect(await page.locator('svg circle[fill="var(--accent)"]').count()).toBe(0);
   await page.locator("#cover").scrollIntoViewIfNeeded();
+  await expect(page.locator("#uh-oh")).toContainText("Uh oh. Your insurance isn't working for you.");
+  await page.goto("/savings");
   await page.getByRole("radio", { name: /Lifetime/ }).click();
   await expect(page.locator("#how-you-pay")).toBeVisible();
 });

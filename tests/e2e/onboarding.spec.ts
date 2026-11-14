@@ -7,7 +7,7 @@ test("landing: species card first, then name, photo (skipped), breed and the res
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make your pet bills work for you.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances a walk in the park.");
   await expect(page.getByText("69%")).toBeVisible();
   await noHorizontalScroll(page);
   await page.getByRole("button", { name: /^Cat/ }).click();

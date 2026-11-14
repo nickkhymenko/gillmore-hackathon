@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowDown, ArrowUpRight, Bone, Carrot, Drop, Footprints, Heartbeat, Scales, Toilet, Tooth, Yarn, type Icon } from "@phosphor-icons/react";
 import { PetAvatar } from "../PetAvatar";
 import { HeroIllustration, SpeciesIllustration, WalkIllustration } from "../illustrations";
+import { ParkWalk } from "../illustrations/ParkWalk";
 import type { Species } from "@/lib/types";
 
 /** What we track for each species, shown as an icon row on its card. */
@@ -114,9 +115,10 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
       <section className="grid items-end gap-8 pt-6 lg:grid-cols-12 lg:pt-12">
         <div className="lg:col-span-7">
           <p className="eyebrow">Petra / Pet health, early</p>
-          <h1 className="display mt-4 text-[clamp(3.25rem,9vw,7.5rem)]">
-            Make your pet bills <span className="accent-word">work for you.</span>
+          <h1 className="display mt-4 text-[clamp(3rem,8.5vw,7rem)]">
+            Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
           </h1>
+          <p className="mt-5 text-[clamp(1.5rem,3vw,2.25rem)] font-semibold tracking-[-0.03em]">Make your pet bills work for you.</p>
           <p className="mt-6 max-w-[46ch] text-lg text-muted sm:text-xl">
             Petra helps you catch problems early and turns good care into a cheaper premium. Inside your insurer&apos;s app. Powered by Doctapet.
           </p>
@@ -137,6 +139,9 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
           </span>
         </div>
       </section>
+
+      {/* A light interactive park walk: the dog follows scroll, paw prints follow the cursor or a finger. */}
+      <ParkWalk className="-mt-12 sm:-mt-16" />
 
       {/* First decision: species */}
       <section id="start" className="scroll-mt-24 space-y-8">
