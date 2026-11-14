@@ -32,8 +32,12 @@
   --dark: #121212;
   --ink: #141414;
   --muted: #5e5e5e; /* AA on every tinted pet page, not just the default cream */
-  --line: rgb(20 20 20 / 0.14);
-  --radius: 6px;
+  --line: rgb(20 20 20 / 0.1);
+  --radius: 14px;
+  --r-card: 24px;
+  --surface: #ffffff;
+  --sh-soft: 0 1px 2px rgb(20 20 20 / 0.04), 0 12px 32px -16px rgb(20 20 20 / 0.14);
+  --sh-lift: 0 2px 4px rgb(20 20 20 / 0.05), 0 24px 48px -20px rgb(20 20 20 / 0.2);
   transition:
     --bg 600ms ease-out,
     --accent 600ms ease-out,
@@ -49,34 +53,27 @@
   --color-accent-soft: var(--accent-soft);
   --color-dark: var(--dark);
   --color-line: var(--line);
-  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --radius-brand: var(--radius);
+  --radius-card: var(--r-card);
+  --color-surface: var(--surface);
+  --shadow-soft: var(--sh-soft);
+  --shadow-lift: var(--sh-lift);
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01", "cv11";
-}
-
-/* Subtle film grain over everything (about 4% opacity). Purely decorative. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  font-family: var(--font-geist), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.011em;
 }
 
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
   box-shadow: 0 0 0 5px var(--accent);
-  border-radius: 2px;
+  border-radius: 6px;
 }
 
 /* Underline inputs show focus with the line itself (it darkens), not the yellow focus box. */
@@ -100,9 +97,10 @@ input[type="number"] {
 /* ---------- Type helpers ---------- */
 
 .display {
-  font-weight: 650;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  text-wrap: balance;
 }
 .accent-word {
   font-family: var(--font-instrument-serif), ui-serif, Georgia, serif;
@@ -111,11 +109,26 @@ input[type="number"] {
   letter-spacing: -0.02em;
 }
 .eyebrow {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* ---------- Surfaces ---------- */
+
+/* The one card: white, soft shadow, generous radius. Used for every panel that used to be a dark band. */
+.card {
+  background: var(--surface);
+  border: 1px solid rgb(20 20 20 / 0.06);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-soft);
+}
+.card-quiet {
+  background: rgb(255 255 255 / 0.6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
 }
 .tnum {
   font-variant-numeric: tabular-nums;
@@ -129,11 +142,14 @@ input[type="number"] {
   justify-content: center;
   gap: 0.5rem;
   min-height: 2.75rem;
-  padding: 0.625rem 1.125rem;
-  border-radius: var(--radius);
+  padding: 0.625rem 1.375rem;
+  border-radius: 999px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  transition: transform 200ms ease-out, background-color 300ms ease-out, opacity 200ms ease-out;
+  letter-spacing: -0.015em;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background-color 300ms ease-out, box-shadow 300ms ease-out, opacity 200ms ease-out;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .btn:disabled {
   opacity: 0.5;
@@ -143,15 +159,21 @@ input[type="number"] {
   background: var(--accent);
   color: var(--ink);
 }
+.btn-primary {
+  box-shadow: 0 1px 2px rgb(20 20 20 / 0.08), 0 8px 20px -12px rgb(20 20 20 / 0.35);
+}
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
 }
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
 .btn-ghost {
   border: 1px solid var(--line);
-  background: transparent;
+  background: var(--surface);
 }
 .btn-ghost:hover:not(:disabled) {
-  background: rgb(20 20 20 / 0.04);
+  background: rgb(20 20 20 / 0.03);
 }
 .link {
   text-decoration: underline;
@@ -191,8 +213,41 @@ input[type="number"] {
   .typing-dot {
     animation: typing-dot 1s ease-in-out infinite;
   }
+  dialog.sheet[open] {
+    animation: sheet-up 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  dialog.sheet[open]::backdrop {
+    animation: backdrop-in 300ms ease-out both;
+  }
+  .scan-line {
+    animation: scan-sweep 1.3s cubic-bezier(0.45, 0, 0.55, 1) both;
+  }
 }
 
+/* The Pet Scanner's sweep: one thin line with a soft trailing band. Flat colour, no gradient. */
+.scan-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 3px;
+  background: var(--accent);
+  box-shadow: -18px 0 0 0 rgb(255 255 255 / 0.14), 0 0 14px 2px rgb(255 255 255 / 0.5);
+  pointer-events: none;
+}
+
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(28px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scan-sweep {
+  from { left: -4%; }
+  to { left: 100%; }
+}
 @keyframes pet-blink {
   0%, 93%, 100% { transform: scaleY(1); }
   96% { transform: scaleY(0.08); }

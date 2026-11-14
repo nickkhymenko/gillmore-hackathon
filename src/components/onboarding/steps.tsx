@@ -11,14 +11,14 @@ import { SIZE_CLASSES, type ActivityLevel, type Consent, type SizeClass, type Sp
 
 export type StepProps = { rec: PetRecord; fresh: boolean; next: () => void };
 
-const ON_CARD = "border-ink bg-accent";
-const OFF_CARD = "border-line bg-white/50 hover:border-ink/50 hover:bg-white/80";
+const ON_CARD = "border-ink bg-accent shadow-soft";
+const OFF_CARD = "border-transparent bg-surface shadow-soft hover:border-ink/30";
 
 export function Question({ eyebrow, children, sub }: { eyebrow: string; children: ReactNode; sub?: ReactNode }) {
   return (
     <div className="max-w-3xl">
       <p className="eyebrow">{eyebrow}</p>
-      <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5.25rem)]">{children}</h1>
+      <h1 className="display mt-3 text-[clamp(2.5rem,7vw,5rem)]">{children}</h1>
       {sub && <p className="mt-4 max-w-[52ch] text-lg text-muted">{sub}</p>}
     </div>
   );
@@ -82,7 +82,7 @@ export function SpeciesStep({ name, value, known, onPick }: { name?: string; val
               aria-checked={on}
               autoFocus={s === (value ?? "dog")}
               onClick={() => onPick(s)}
-              className={`flex min-h-44 flex-col items-center justify-center gap-3 rounded-brand border-2 p-4 transition-colors duration-300 ${on ? ON_CARD : OFF_CARD}`}
+              className={`flex min-h-44 flex-col items-center justify-center gap-3 rounded-card border-2 p-4 transition-[colors,transform] duration-300 active:scale-[0.97] ${on ? ON_CARD : OFF_CARD}`}
             >
               <PetAvatar traits={{ ...SPECIES_DEFAULT_SHAPE[s], species: s, coatColours: [], coatPattern: "solid" }} size={88} ring={false} animated={false} title="" />
               <span className="text-xl font-semibold tracking-[-0.02em]">{SPECIES_THEME[s].label}</span>
@@ -180,7 +180,7 @@ export function BreedStep({ rec, next }: StepProps) {
                   role="radio"
                   aria-checked={selected === id}
                   onClick={() => choose(id)}
-                  className={`min-h-12 rounded-brand border-2 px-4 text-left transition-colors ${selected === id ? ON_CARD : OFF_CARD}`}
+                  className={`min-h-12 rounded-full border-2 px-5 text-left transition-colors ${selected === id ? ON_CARD : OFF_CARD}`}
                 >
                   <span className="font-semibold">{b.breed}</span> <span className="tnum text-sm text-muted">{Math.round(b.confidence * 100)}%</span>
                 </button>
@@ -191,7 +191,7 @@ export function BreedStep({ rec, next }: StepProps) {
               role="radio"
               aria-checked={selected === NOT_SURE}
               onClick={() => choose(NOT_SURE)}
-              className={`min-h-12 rounded-brand border-2 px-4 font-semibold transition-colors ${selected === NOT_SURE ? ON_CARD : OFF_CARD}`}
+              className={`min-h-12 rounded-full border-2 px-5 font-semibold transition-colors ${selected === NOT_SURE ? ON_CARD : OFF_CARD}`}
             >
               Mixed / not sure
             </button>
@@ -303,7 +303,7 @@ export function lifeStage(species: Species, age: number) {
 
 function Stepper({ label, onClick, icon }: { label: string; onClick: () => void; icon: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-line hover:bg-ink/5">
+    <button type="button" onClick={onClick} aria-label={label} className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-surface shadow-soft transition-transform active:scale-95">
       {icon}
     </button>
   );
@@ -380,7 +380,7 @@ export function ActivityStep({ rec, next }: StepProps) {
             aria-checked={rec.pet.activity === a}
             autoFocus={rec.pet.activity ? rec.pet.activity === a : a === "moderate"}
             onClick={() => choose(a)}
-            className={`flex min-h-28 flex-col items-start justify-between gap-3 rounded-brand border-2 p-4 text-left transition-colors ${rec.pet.activity === a ? ON_CARD : OFF_CARD}`}
+            className={`flex min-h-28 flex-col items-start justify-between gap-3 rounded-card border-2 p-5 text-left transition-[colors,transform] duration-300 active:scale-[0.97] ${rec.pet.activity === a ? ON_CARD : OFF_CARD}`}
           >
             <span className="text-2xl font-semibold capitalize tracking-[-0.02em]">{a}</span>
             <span className="text-sm text-muted">{ACTIVITY[rec.pet.species][a]}</span>
@@ -406,7 +406,7 @@ export function ConsentStep({ rec, onFinish }: { rec: PetRecord; onFinish: (c: C
       <Question eyebrow="Your data, your choice" sub="Each one is separate, off until you turn it on, and you can change it any time in settings.">
         What can we share?
       </Question>
-      <ul className="max-w-2xl divide-y divide-line border-y border-line">
+      <ul className="card max-w-2xl divide-y divide-line px-5 sm:px-6">
         {CONSENTS.map((item, i) => (
           <li key={item.key}>
             <button

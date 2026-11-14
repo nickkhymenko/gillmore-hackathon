@@ -131,7 +131,7 @@ export function CheckinStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[]
                           role="radio"
                           aria-checked={on}
                           onClick={() => setAnswers({ ...answers, [q.key]: v })}
-                          className={`min-h-11 rounded-brand border px-3 text-sm transition-colors ${on ? "border-ink bg-ink font-semibold text-paper" : "border-line bg-white/50 hover:border-ink/40"}`}
+                          className={`min-h-11 rounded-full border px-4 text-sm transition-colors ${on ? "border-ink bg-accent font-semibold" : "border-line bg-surface hover:border-ink/40"}`}
                         >
                           {l}
                         </button>

@@ -11,7 +11,7 @@ import { updatePet, type PetRecord } from "@/lib/store";
 
 const WalkMap = dynamic(() => import("./WalkMap").then((m) => m.WalkMap), {
   ssr: false,
-  loading: () => <div className="shimmer h-72 w-full rounded-brand bg-ink/10 sm:h-96" aria-busy="true" />,
+  loading: () => <div className="shimmer h-72 w-full rounded-card bg-ink/10 sm:h-96" aria-busy="true" />,
 });
 
 type Phase = "idle" | "running" | "paused" | "done";
@@ -212,49 +212,59 @@ export function WalkMode({
         </p>
       )}
 
-      <dl className="grid grid-cols-3 gap-4 border-y border-line py-4" aria-live="polite">
-        <div>
-          <dt className="eyebrow">Time</dt>
-          <dd className="tnum text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{fmtTime(elapsed)}</dd>
-        </div>
-        <div>
-          <dt className="eyebrow">Distance</dt>
-          <dd className="tnum text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-            {km.toFixed(2)}
-            <span className="text-base font-medium text-muted"> km</span>
-          </dd>
-        </div>
-        <div>
-          <dt className="eyebrow">Pace</dt>
-          <dd className="tnum text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-            {pace ? fmtTime(pace * 60) : "--"}
-            <span className="text-base font-medium text-muted"> /km</span>
-          </dd>
-        </div>
-        {(collar || liveHr !== null) && (
-          <>
+      {phase === "idle" ? (
+        <p className="text-xs text-muted">
+          Only you see the map. The route stays on this device. {name}&apos;s target today: {target} minutes.
+        </p>
+      ) : (
+        <>
+          <dl className="grid grid-cols-3 gap-4 border-y border-line py-4" aria-live="off">
             <div>
-              <dt className="eyebrow">Steps</dt>
-              <dd className="tnum text-2xl font-semibold tracking-[-0.02em]">{Math.round((elapsed / 60) * 105).toLocaleString("en-GB")}</dd>
+              <dt className="eyebrow">Time</dt>
+              <dd className="tnum text-3xl font-semibold tracking-[-0.04em] sm:text-4xl" data-testid="walk-time">
+                {fmtTime(elapsed)}
+              </dd>
             </div>
             <div>
-              <dt className="eyebrow">Heart rate{liveHr !== null ? " (sensor)" : ""}</dt>
-              <dd className="tnum text-2xl font-semibold tracking-[-0.02em]">{hr ?? "--"} bpm</dd>
+              <dt className="eyebrow">Distance</dt>
+              <dd className="tnum text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                {km.toFixed(2)}
+                <span className="text-base font-medium text-muted"> km</span>
+              </dd>
             </div>
             <div>
-              <dt className="eyebrow">Temperature</dt>
-              <dd className="text-2xl font-semibold tracking-[-0.02em]">Normal</dd>
+              <dt className="eyebrow">Pace</dt>
+              <dd className="tnum text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                {pace ? fmtTime(pace * 60) : "--"}
+                <span className="text-base font-medium text-muted"> /km</span>
+              </dd>
             </div>
-          </>
-        )}
-      </dl>
+            {(collar || liveHr !== null) && (
+              <>
+                <div>
+                  <dt className="eyebrow">Steps</dt>
+                  <dd className="tnum text-2xl font-semibold tracking-[-0.02em]">{Math.round((elapsed / 60) * 105).toLocaleString("en-GB")}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">Heart rate{liveHr !== null ? " (sensor)" : ""}</dt>
+                  <dd className="tnum text-2xl font-semibold tracking-[-0.02em]">{hr ?? "--"} bpm</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">Temperature</dt>
+                  <dd className="text-2xl font-semibold tracking-[-0.02em]">Normal</dd>
+                </div>
+              </>
+            )}
+          </dl>
 
-      {phase !== "idle" && target > 0 && <TargetBar today={todayBefore + elapsed / 60} target={target} />}
+          {target > 0 && <TargetBar today={todayBefore + elapsed / 60} target={target} />}
 
-      <WalkMap points={points} live={phase === "running"} />
-      <p className="text-xs text-muted">
-        Only you see this map. The route stays on this device; map tiles load from OpenStreetMap. {name}&apos;s target today: {target} minutes.
-      </p>
+          <WalkMap points={points} live={phase === "running"} />
+          <p className="text-xs text-muted">
+            Only you see this map. The route stays on this device; map tiles load from OpenStreetMap. {name}&apos;s target today: {target} minutes.
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -302,7 +312,7 @@ function FinishCard({ rec, walk, target, todayBefore, discountPct, cta, onAgain 
   const before = monthly * (1 - discountPct / 100);
   const after = monthly * (1 - pctAfter / 100);
   return (
-    <article className="fade-up space-y-6 rounded-brand border border-line bg-white/60 p-5 sm:p-7" aria-live="polite">
+    <article className="card fade-up space-y-6 p-6 sm:p-8" aria-live="polite">
       <p className="eyebrow">Walk saved</p>
       <div className="flex flex-wrap items-start gap-6">
         <RouteThumb points={walk.route} size={128} />
@@ -328,16 +338,16 @@ function FinishCard({ rec, walk, target, todayBefore, discountPct, cta, onAgain 
           Target: {Math.min(today, target)} of {target} minutes today{today >= target ? `. Done for today, well walked ${rec.pet.name}.` : "."}
         </p>
         <div className="mt-2 h-3 rounded-full bg-ink/10" role="meter" aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.min(today, target)} aria-label="Today's target">
-          <div className="h-3 rounded-full bg-ink transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
+          <div className="h-3 rounded-full bg-accent ring-1 ring-ink/15 transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="rounded-brand bg-dark p-5 text-white" data-testid="finish-saving">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">A week like today</p>
-        <p className="tnum mt-1 text-4xl font-semibold tracking-[-0.03em] text-accent sm:text-5xl">
+      <div className="rounded-brand bg-accent-soft p-5" data-testid="finish-saving">
+        <p className="eyebrow">A week like today</p>
+        <p className="tnum mt-1 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
           <TickingPrice from={before} to={after} />
-          <span className="text-base font-medium text-white/70"> a month</span>
+          <span className="text-base font-medium tracking-normal text-muted"> a month</span>
         </p>
-        <p className="mt-1 text-sm text-white/70">
+        <p className="mt-1 text-sm text-muted">
           {pctAfter > discountPct ? `Down from ${gbp2(before)}: ${pctAfter}% off with weekly check-ins.` : `Keep walking to move up a tier.`} Illustrative.
         </p>
       </div>

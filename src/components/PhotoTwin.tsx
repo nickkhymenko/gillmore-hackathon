@@ -251,13 +251,13 @@ export function PhotoTwin({ petId, mode = "settings" }: { petId: string; mode?: 
       {/* Twin */}
       <div className="min-w-0 space-y-8 lg:col-span-7">
         {!hasTwin && (
-          <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line text-sm sm:grid-cols-3">
+          <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft text-sm sm:grid-cols-3">
             {[
               ["01", "Palette", "Colours taken from the photo on this device. No AI for this part."],
               ["02", "Twin", "Breed, size, coat, ears and muzzle guessed from the photo. You confirm."],
               ["03", "Avatar", `An illustrated portrait of ${name}, assembled from those traits.`],
             ].map(([n, t, d]) => (
-              <li key={n} className="bg-paper p-4">
+              <li key={n} className="bg-surface p-4">
                 <p className="eyebrow">
                   <span className="tnum text-ink">{n}</span> / {t}
                 </p>

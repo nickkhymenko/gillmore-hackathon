@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Line, LineChart, ReferenceArea, ResponsiveContainer, YAxis } from "recharts";
 import { ArrowUpRight, CalendarPlus } from "@phosphor-icons/react";
 import { PetAvatar } from "@/components/PetAvatar";
@@ -11,9 +11,8 @@ import { EmptyPetState } from "@/components/EmptyPetState";
 import { PhotoControls } from "@/components/PhotoTwin";
 import { StatusPill } from "@/components/ResultCard";
 import { PilotSheet } from "@/components/Sheet";
-import { SavingsHero } from "@/components/dashboard/SavingsHero";
+import { SavingsCard } from "@/components/dashboard/SavingsCard";
 import { AskPetra } from "@/components/dashboard/AskPetra";
-import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
 import { MemberArea, PremiumStatus } from "@/components/dashboard/MemberArea";
 import { RouteThumb } from "@/components/blackbox/WalkMap";
 import { WalkMode } from "@/components/blackbox/WalkMode";
@@ -21,7 +20,7 @@ import { Connect, Diagnostics, PriceCard, Today } from "@/components/blackbox/se
 import { HealthspanStop } from "@/components/walk/HealthspanStop";
 import { blackBoxDiscount, dailyTarget, diagnostics, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
 import type { Series } from "@/lib/metrics";
-import { MovementCheck } from "@/components/gait/MovementCheck";
+import { PetScanner } from "@/components/gait/PetScanner";
 import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
 import { useScans } from "@/lib/video/scans";
 import { TrendChart } from "@/components/walk/TrendsStop";
@@ -32,6 +31,7 @@ import { preparePhoto } from "@/lib/image";
 import { downloadIcs, nextWeekSameDay } from "@/lib/ics";
 import { METRIC_LABEL, buildSeries, metricsFor, sentenceFor } from "@/lib/metrics";
 import { deriveTheme } from "@/lib/palette";
+import { savingsView } from "@/lib/savings";
 import { seedDemo, updatePet, type PetRecord, type StoredCheckin } from "@/lib/store";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 import { ACTION_LABEL } from "@/lib/types";
@@ -40,25 +40,24 @@ const DAY = 24 * 3600 * 1000;
 
 const TABS = [
   ["overview", "Overview"],
-  ["movement", "Movement"],
   ["walks", "Walks"],
   ["health", "Health"],
   ["savings", "Savings"],
 ] as const;
 type TabId = (typeof TABS)[number][0];
+/** Old links to the movement check and the video scan open the Walks tab at the Pet Scanner. */
+const SCANNER_HASHES = ["pet-scanner", "movement", "video"];
 function tabFromHash(hash: string): TabId {
   const h = hash.replace(/^#/, "");
-  if (h === "video") return "movement";
+  if (SCANNER_HASHES.includes(h)) return "walks";
   return (TABS.find(([id]) => id === h)?.[0] ?? "overview") as TabId;
 }
 
-function Section({ n, title, children, aside, id }: { n: string; title: string; children: React.ReactNode; aside?: React.ReactNode; id?: string }) {
+function Section({ title, children, aside, id }: { title: string; children: React.ReactNode; aside?: React.ReactNode; id?: string }) {
   return (
-    <section id={id} className="scroll-mt-24 space-y-5">
-      <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
-        <h2 className="eyebrow">
-          <span className="tnum text-ink">{n}</span> / {title}
-        </h2>
+    <section id={id} className="scroll-mt-28 space-y-5">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-2xl font-semibold tracking-[-0.035em]">{title}</h2>
         {aside}
       </div>
       {children}
@@ -118,12 +117,12 @@ function PhotoTile({ rec }: { rec: PetRecord }) {
 
 function CareItem({ r, i, onVet }: { r: CareRec; i: number; onVet: () => void }) {
   return (
-    <li className="flex flex-col bg-paper p-5">
+    <li className="flex flex-col bg-surface p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="eyebrow">
-          <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span> / {r.type}
+          <span className="tnum text-ink">{i + 1}</span> · {r.type}
         </span>
-        {r.evidence && <span className="rounded-[3px] border border-line px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider">Evidence: {r.evidence}</span>}
+        {r.evidence && <span className="rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold">Evidence: {r.evidence}</span>}
       </div>
       <h3 className="mt-2 text-lg font-semibold tracking-[-0.02em]">{r.title}</h3>
       <details className="text-sm">
@@ -153,20 +152,35 @@ export default function DashboardPage() {
   const [hr, setHr] = useState<{ name: string; bpm: number | null } | null>(null);
   const [tab, setTab] = useState<TabId>("overview");
 
-  // The tab follows the URL hash, so /dashboard#movement or #savings opens that tab (and old #video links still work).
+  const [focusScanner, setFocusScanner] = useState(false);
+
+  // The tab follows the URL hash, so /dashboard#walks or #savings opens that tab; #pet-scanner (and the old
+  // #movement and #video links) open Walks and scroll to the Pet Scanner.
   useEffect(() => {
-    const sync = () => setTab(tabFromHash(window.location.hash));
+    const sync = () => {
+      setTab(tabFromHash(window.location.hash));
+      setFocusScanner(SCANNER_HASHES.includes(window.location.hash.replace(/^#/, "")));
+    };
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
-  const pick = (id: TabId) => {
+  const hasPet = Boolean(rec && rec.setupStep === null);
+  useEffect(() => {
+    if (!focusScanner || tab !== "walks" || !ready || !hasPet) return;
+    const t = window.setTimeout(() => {
+      document.getElementById("pet-scanner")?.scrollIntoView({ block: "start" });
+      setFocusScanner(false);
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [focusScanner, tab, ready, hasPet]);
+  const pick = (id: TabId, scanner = false) => {
     setTab(id);
-    window.history.replaceState(null, "", id === "overview" ? window.location.pathname : `#${id}`);
+    setFocusScanner(scanner);
+    window.history.replaceState(null, "", scanner ? "#pet-scanner" : id === "overview" ? window.location.pathname : `#${id}`);
   };
 
-
-  if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
+  if (!ready) return <div className="min-h-svh" aria-busy="true" />;
   if (!rec) return <EmptyPetState />;
   if (rec.setupStep !== null)
     return (
@@ -189,6 +203,8 @@ export default function DashboardPage() {
   const plan = buildCarePlan(careContext(pet, rec.profile, log, activity), 4);
   const wkDiscount = blackBoxDiscount(bbWeeks(rec, target, walks, collarDays, now), log, now);
   const bb = rec.blackBox ? wkDiscount : null;
+  // One reading of the savings, shared by the Overview card and the Walks tab.
+  const view = savingsView(rec, log, Boolean(rec.blackBox) && (walks.length > 0 || collarDays.length > 0), wkDiscount, now);
   const mobility = mobilitySummary(scans, log, pet.name);
   const activitySeries: Series | null = rec.blackBox && byDay.size
     ? (() => {
@@ -205,38 +221,48 @@ export default function DashboardPage() {
   const due = !latest || now - new Date(latest.createdAt).getTime() >= 6 * DAY;
 
   return (
-    <div className="space-y-10 py-4 sm:py-8">
+    <div className="space-y-8 py-4 sm:space-y-10 sm:py-8">
       {/* Top band */}
       <header className="grid items-end gap-6 lg:grid-cols-12">
         <div className="flex items-center gap-5 lg:col-span-7">
-          <PetAvatar traits={rec.profile} size={112} title={`${pet.name}'s avatar`} />
+          <PetAvatar traits={rec.profile} size={104} title={`${pet.name}'s avatar`} />
           <div className="min-w-0">
-            <p className="eyebrow">Petra / Dashboard</p>
-            <h1 className="display mt-2 text-[clamp(2.75rem,7vw,5.5rem)]">{pet.name}</h1>
+            <p className="eyebrow">Dashboard</p>
+            <h1 className="display mt-1 text-[clamp(2.75rem,7vw,5rem)]">{pet.name}</h1>
             <p className="mt-2 text-muted">
               {[pet.breed || "Mixed or not sure", `${pet.ageYears} ${pet.ageYears === 1 ? "year" : "years"}`, pet.weightKg !== undefined ? `${pet.weightKg} kg` : null].filter(Boolean).join(" · ")}
             </p>
           </div>
         </div>
-        <dl className="flex flex-wrap items-end gap-x-10 gap-y-4 lg:col-span-5 lg:justify-end">
+        <dl className="flex flex-wrap items-end gap-x-10 gap-y-4 lg:col-span-5 lg:justify-end" data-testid="pet-stats">
           <div>
             <dt className="eyebrow">Health score</dt>
             <dd className="flex items-end gap-3">
-              <span className="text-5xl font-semibold tracking-[-0.04em]">{latest ? latest.healthScore : "None yet"}</span>
+              {latest ? (
+                <span className="tnum text-5xl font-semibold tracking-[-0.05em]" data-testid="health-score">
+                  {latest.healthScore}
+                </span>
+              ) : (
+                <span className="pt-2 text-lg font-medium text-muted" data-testid="health-score">
+                  After your first check-in
+                </span>
+              )}
               <ScoreSparkline log={log} />
             </dd>
           </div>
-          <div>
-            <dt className="eyebrow">Streak</dt>
-            <dd className="text-5xl font-semibold tracking-[-0.04em]">
-              {weeks}
-              <span className="text-lg font-medium tracking-normal text-muted"> {weeks === 1 ? "week" : "weeks"} in a row</span>
-            </dd>
-          </div>
+          {weeks > 0 && (
+            <div>
+              <dt className="eyebrow">Streak</dt>
+              <dd className="tnum text-5xl font-semibold tracking-[-0.05em]">
+                <span data-testid="streak">{weeks}</span>
+                <span className="text-lg font-medium tracking-normal text-muted"> {weeks === 1 ? "week" : "weeks"} in a row</span>
+              </dd>
+            </div>
+          )}
         </dl>
       </header>
 
-      <div role="tablist" aria-label="Dashboard" className="-mx-4 flex overflow-x-auto border-b border-line px-2 sm:mx-0 sm:gap-1 sm:px-0">
+      <div role="tablist" aria-label="Dashboard" className="flex rounded-full bg-ink/[0.06] p-1 sm:inline-flex">
         {TABS.map(([id, label]) => (
           <button
             key={id}
@@ -246,20 +272,21 @@ export default function DashboardPage() {
             aria-selected={tab === id}
             aria-controls={`panel-${id}`}
             onClick={() => pick(id)}
-            className={`-mb-px min-h-12 flex-1 whitespace-nowrap border-b-2 px-1.5 text-[13px] font-semibold sm:flex-none sm:px-4 sm:text-sm transition-colors ${tab === id ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
+            className={`relative min-h-11 flex-1 whitespace-nowrap rounded-full px-2 text-sm font-semibold transition-colors duration-300 sm:flex-none sm:px-6 ${tab === id ? "text-ink" : "text-muted hover:text-ink"}`}
           >
-            {label}
+            {tab === id && <motion.span layoutId="dashboard-tab" className="absolute inset-0 rounded-full bg-surface shadow-soft" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }} aria-hidden />}
+            <span className="relative">{label}</span>
           </button>
         ))}
       </div>
 
       {tab === "overview" && (
         <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-14">
-          {bb ? <BlackBoxHero rec={rec} d={bb} /> : <SavingsHero rec={rec} log={log} now={now} />}
+          <SavingsCard rec={rec} view={view} onStartWalk={() => pick("walks")} />
           <PremiumStatus rec={rec} />
           <div className="grid gap-14 lg:grid-cols-12">
             <div className="lg:col-span-7">
-          <Section n="01" title="This week">
+          <Section title="This week">
               {latest && !due ? (
                 <div className="space-y-4">
                   <StatusPill status={latest.status} />
@@ -294,7 +321,7 @@ export default function DashboardPage() {
             </Section>
             </div>
             <div className="space-y-14 lg:col-span-5">
-          <Section n="02" title="Next check-in">
+          <Section title="Next check-in">
               <p className="text-2xl font-semibold tracking-[-0.03em]">
                 {due ? "Due now" : `In ${daysToNext} ${daysToNext === 1 ? "day" : "days"}`}
                 <span className="block text-base font-medium text-muted">{next.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</span>
@@ -303,7 +330,7 @@ export default function DashboardPage() {
                 <CalendarPlus size={16} aria-hidden /> Add a weekly reminder
               </button>
             </Section>
-          <Section n="03" title="Ask Petra">
+          <Section title="Ask Petra">
               <AskPetra
                 key={rec.id}
                 rec={rec}
@@ -316,15 +343,15 @@ export default function DashboardPage() {
           </div>
           <div className="grid gap-14 lg:grid-cols-12">
             <div className="lg:col-span-8">
-          <Section n="07" title="Who sees what">
-              <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2">
+          <Section title="Who sees what">
+              <ul className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2">
                 {(
                   [
                     ["vet", "Your vet", "Check-in briefs, trends and any video you choose to send.", "Never your premium or payments."],
                     ["insurer", "Your insurer", "How often you check in, for your discount. Engagement only.", "Never health answers, photos, video or notes."],
                   ] as const
                 ).map(([k, who, sees, never]) => (
-                  <li key={k} className="bg-paper p-5">
+                  <li key={k} className="bg-surface p-5">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-lg font-semibold">{who}</p>
                       <button
@@ -346,7 +373,7 @@ export default function DashboardPage() {
             </Section>
             </div>
             <div className="lg:col-span-4">
-          <Section n="08" title="Photo">
+          <Section title="Photo">
               <PhotoTile rec={rec} />
             </Section>
             </div>
@@ -354,20 +381,21 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {tab === "movement" && (
-        <div role="tabpanel" id="panel-movement" aria-labelledby="tab-movement" className="space-y-14">
-          <section id="movement" className="scroll-mt-24 space-y-10">
-            <MovementCheck rec={rec} log={log} />
-            <div className="min-w-0 space-y-4 lg:max-w-[60%]">
-                <p className="eyebrow">From movement checks</p>
+      {tab === "walks" && (
+        <div role="tabpanel" id="panel-walks" aria-labelledby="tab-walks" className="space-y-14">
+          <Section title="Walk tracker" id="walks">
+            <WalkMode rec={rec} target={target} todayBefore={todayMinutes(walks, collarDays, now)} collar={rec.blackBox?.device === "collar"} liveHr={hr?.bpm ?? null} discountPct={bb?.total ?? 0} onFinished={() => undefined} />
+          </Section>
+          <section id="pet-scanner" className="scroll-mt-28 border-t border-line pt-12">
+            <div id="movement" className="space-y-10">
+              <PetScanner rec={rec} log={log} />
+              <div className="min-w-0 space-y-4 lg:max-w-[60%]">
+                <p className="eyebrow">Earlier scans</p>
                 {scans.length === 0 ? (
-                  <p className="text-sm text-muted">No checks yet. A movement check adds mobility to {pet.name}&apos;s trends.</p>
+                  <p className="text-sm text-muted">No scans yet. A scan adds mobility to {pet.name}&apos;s trends.</p>
                 ) : (
                   <>
-                    {(() => {
-                      const sum = mobilitySummary(scans, log, pet.name);
-                      return sum && <p className="text-lg font-semibold" data-testid="dashboard-mobility">{sum.text}.</p>;
-                    })()}
+                    {mobility && <p className="text-lg font-semibold" data-testid="dashboard-mobility">{mobility.text}.</p>}
                     {(() => {
                       const mob = scans.filter((s) => s.metrics.mobilityScore !== null);
                       const pts = mob.slice(-12).map((s) => ({ week: new Date(s.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: Math.round(s.metrics.mobilityScore!), date: s.timestamp }));
@@ -375,7 +403,7 @@ export default function DashboardPage() {
                       const series: Series = { key: "mobility", points: pts, baseline: null, band: null, latest: pts.at(-1)!.value, delta: null, unit: "", domain: [0, 100] };
                       return (
                         <figure>
-                          <figcaption className="text-sm font-medium">Mobility from movement checks</figcaption>
+                          <figcaption className="text-sm font-medium">Mobility from Pet Scanner</figcaption>
                           <TrendChart s={series} reduce={reduce} />
                         </figure>
                       );
@@ -398,17 +426,10 @@ export default function DashboardPage() {
                     </ul>
                   </>
                 )}
+              </div>
             </div>
           </section>
-        </div>
-      )}
-
-      {tab === "walks" && (
-        <div role="tabpanel" id="panel-walks" aria-labelledby="tab-walks" className="space-y-14">
-          <Section n="01" title="Walk tracker" id="walks">
-            <WalkMode rec={rec} target={target} todayBefore={todayMinutes(walks, collarDays, now)} collar={rec.blackBox?.device === "collar"} liveHr={hr?.bpm ?? null} discountPct={bb?.total ?? 0} onFinished={() => undefined} />
-          </Section>
-          <Section n="02" title="Today">
+          <Section title="Today">
             <Today rec={rec} target={target} today={todayMinutes(walks, collarDays, now)} weeksMet={wkDiscount.weeksMet} weeksCounted={wkDiscount.weeksCounted} />
               {activitySeries && (
                 <figure className="min-w-0 mt-8">
@@ -421,7 +442,7 @@ export default function DashboardPage() {
               )}
           </Section>
           <PriceCard rec={rec} discount={wkDiscount} />
-          <Section n="03" title="History">
+          <Section title="History">
             {walks.length === 0 ? (
               <p className="text-muted">No walks yet. Start one above.</p>
             ) : (
@@ -446,16 +467,16 @@ export default function DashboardPage() {
               </ul>
             )}
           </Section>
-          <Section n="04" title="Your Walk Companion">
+          <Section title="Your Walk Companion">
             <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
             <Diagnostics rec={rec} days={collarDays} result={diagnostics(collarDays)} now={now} />
             {mobility && (
               <p className="text-sm" data-testid="savings-health">
-                Latest movement check ({new Date(mobility.scan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                Latest scan ({new Date(mobility.scan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                 {isDemoScan(mobility.scan) ? ", demo walk" : ""}): {mobility.text}
                 {mobility.scan.flags.length ? `. ${mobility.scan.flags.map((f) => f.label).join("; ")}` : ""}.{" "}
-                <button type="button" onClick={() => pick("movement")} className="link">
-                  Movement check
+                <button type="button" onClick={() => pick("walks", true)} className="link">
+                  Pet Scanner
                 </button>
               </p>
             )}
@@ -465,18 +486,18 @@ export default function DashboardPage() {
 
       {tab === "health" && (
         <div role="tabpanel" id="panel-health" aria-labelledby="tab-health" className="space-y-14">
-          <Section n="01" title="Healthspan" id="health">
+          <Section title="Healthspan" id="health">
             <HealthspanStop rec={rec} reduce={reduce} />
           </Section>
-      <Section n="02" title="Care plan">
+      <Section title="Care plan">
         {plan.paused && <p className="text-sm font-semibold">{plan.pausedReason}</p>}
-        <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-soft sm:grid-cols-2 lg:grid-cols-4">
           {plan.recs.map((r, i) => (
             <CareItem key={r.id} r={r} i={i} onVet={() => setSheet("Booking with your vet from here")} />
           ))}
         </ol>
       </Section>
-      <Section n="03" title="Trends">
+      <Section title="Trends">
         {log.filter((c) => c.answers).length < 2 ? (
           <div className="flex flex-wrap items-center gap-4">
             <p className="text-muted">Trends appear after two check-ins.</p>
