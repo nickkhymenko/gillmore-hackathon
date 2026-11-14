@@ -54,7 +54,7 @@ export function HealthyPet({ rec, reduce }: { rec: PetRecord; reduce: boolean })
       ].map(([x, y, d]) => (
         <motion.path key={`${x}`} d={`M${x} ${y - 9} L${x + 3} ${y - 3} L${x + 9} ${y} L${x + 3} ${y + 3} L${x} ${y + 9} L${x - 3} ${y + 3} L${x - 9} ${y} L${x - 3} ${y - 3} Z`} fill="#fff" animate={reduce ? undefined : { opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} transition={{ duration: 1.8, repeat: Infinity, delay: d }} />
       ))}
-      <ellipse cx="180" cy="222" rx="120" ry="8" fill={INK} opacity="0.1" />
+      <ellipse cx="180" cy="198" rx="110" ry="7" fill={INK} opacity="0.1" />
       <motion.g animate={reduce ? undefined : { y: [0, -6, 0] }} transition={{ duration: 0.35, repeat: Infinity, ease: "easeInOut" }}>
         {/* tail */}
         {cat ? (
