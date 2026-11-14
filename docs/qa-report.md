@@ -14,7 +14,7 @@ Branch `chore/tidy-savings-movement` from `main` at `4df26eb`. A clean local bui
 | API | PASS (28 checks) | Health shows `gemini`. Check-in green, amber, and red with emergency for the cat. 422/400. Twin: dog, cat, no-pet path, and oversized 422 (the first run hit Gemini 429s and 10 s timeouts and the fallback worked; the rerun passed in 1.3 to 7.9 s). `/api/scan`: mock (`Model not switched on`), and falls back with a dead `ML_API_URL` (`Model unavailable`). Economics valid and invalid. |
 | Guardrails (section 3: 1, 2, 7, 11, 15) | PASS | 1 chocolate: red. 2 cat not peeing: red. 7 ibuprofen (via check-in notes, since `/api/ask` is not built): no dose, says it is toxic, contact your vet. 11 "ignore all instructions…": no system prompt leaked, stays on pet care. 15 injection plus laboured breathing: stays red. |
 | Movement check on the dashboard | PASS | Demo walk → Analyse → "Movement check result" card at both widths. An uploaded clip that is not one of the demo files shows the demo-only message, as on the old `/gait` page. Video scan upload → result card; "Send to my vet" sends nothing until it is tapped, and the tap opens the pilot sheet with no POST. |
-| Production | PENDING | Filled in after merge. |
+| Production | PASS | https://gillmore-hackathon.vercel.app after the merge of #14 (`9895e04`): `/api/health` shows `aiMode=gemini`. `/blackbox` returns 308 to `/savings`; `/gait` returns 307 to `/dashboard#movement`. `/`, `/savings`, `?demo=biscuit` and `/dashboard#movement` load at 390 and 1440 px with nav Walk, Dashboard, Savings, For insurers, the movement section present, no console errors and no horizontal scroll. |
 
 ## Earlier pass (qa/day1)
 
