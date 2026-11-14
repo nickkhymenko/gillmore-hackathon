@@ -232,7 +232,7 @@ export function MovementCheck({ rec, log, intro = true }: { rec: PetRecord; log:
                   <>
                     <dl className="grid grid-cols-3 gap-4">
                       <Stat label="Body points" value={`${frame.points} / ${clip.bodyparts.length}`} />
-                      <Stat label="Steps seen" value={String(stepsSeen(clip, played ? clip.duration : frame.t))} />
+                      <Stat label="Steps seen" value={String(stepsSeen(clip, played || phase === "done" ? clip.duration : frame.t))} />
                       <Stat label="Frames a second" value={String(Math.round(clip.fps))} />
                     </dl>
                     <LiveChart clip={clip} t={phase === "live" && !played ? frame.t : null} scores={phase === "done"} warn={played || phase !== "live"} />
