@@ -8,12 +8,14 @@ import { PetAvatar } from "@/components/PetAvatar";
 import { Sheet } from "@/components/Sheet";
 import { WalkMode } from "@/components/blackbox/WalkMode";
 import { Connect, DataRules, Diagnostics, PriceCard, Today } from "@/components/blackbox/sections";
+import { CoverStop } from "@/components/walk/CoverStop";
 import { PrintShape } from "@/components/walk/WalkPath";
-import { blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
+import { BB_CAP, blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
 import { useScans } from "@/lib/video/scans";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
+const gbp2 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
 
 /** The walk's paw-print trail, carried on from /walk into the top of this page. Decorative. */
@@ -29,6 +31,40 @@ function Trail({ species }: { species: Parameters<typeof PrintShape>[0]["species
   );
 }
 
+/** What you pay now vs with Petra: two bars for this pet, at the current tier with the maximum marked. Illustrative. */
+function Compare({ yearly, current }: { yearly: number; current: number }) {
+  const withPetra = yearly * (1 - current / 100);
+  const atMax = yearly * (1 - BB_CAP / 100);
+  const money = (y: number) => `${gbp2(y / 12)} a month · ${gbp(y)} a year`;
+  return (
+    <div className="space-y-5">
+      <dl className="space-y-4">
+        <div>
+          <dt className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
+            <span className="font-semibold">Now</span>
+            <span className="tnum text-muted">{money(yearly)}</span>
+          </dt>
+          <dd className="mt-1.5 h-6 rounded-[4px] bg-ink" aria-hidden />
+        </div>
+        <div>
+          <dt className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
+            <span className="font-semibold">With Petra, at your current {current}% tier</span>
+            <span className="tnum text-muted">{money(withPetra)}</span>
+          </dt>
+          <dd className="relative mt-1.5 h-6" aria-hidden>
+            <span className="absolute inset-y-0 left-0 rounded-[4px] bg-accent ring-1 ring-ink/20" style={{ width: `${(withPetra / yearly) * 100}%` }} />
+            <span className="absolute -inset-y-1 w-0.5 bg-ink" style={{ left: `${(atMax / yearly) * 100}%` }} />
+          </dd>
+        </div>
+      </dl>
+      <p className="text-sm">
+        <strong>At the maximum {BB_CAP}%:</strong> <span className="tnum">{money(atMax)}</span>, saving {gbp(yearly - atMax)} a year (the black line).{" "}
+        <span className="text-muted">Illustrative: example premium for this pet; the discount can only lower it.</span>
+      </p>
+    </div>
+  );
+}
+
 function Block({ n, title, children, id }: { n: string; title: string; children: React.ReactNode; id?: string }) {
   return (
     <section id={id} className="scroll-mt-32 space-y-6">
@@ -40,7 +76,7 @@ function Block({ n, title, children, id }: { n: string; title: string; children:
   );
 }
 
-/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make managing your pet insurance a walk in the park." */
+/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make managing your pet's finances a walk in the park." */
 export default function BlackBoxPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
@@ -58,7 +94,7 @@ export default function BlackBoxPage() {
         where="Savings"
         title={
           <>
-            Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
+            Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
           </>
         }
         line="Meet your pet first: their savings targets are personal to their breed, age and health."
@@ -69,7 +105,7 @@ export default function BlackBoxPage() {
       <section className="space-y-6 py-16">
         <p className="eyebrow">Petra / Savings</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
-          Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
+          Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
         </h1>
         <p className="max-w-[48ch] text-lg text-muted">First, a minute to meet your pet. Their targets are personal to their breed, age and health.</p>
         <Link href="/" className="btn btn-primary text-lg">
@@ -96,7 +132,7 @@ export default function BlackBoxPage() {
           <Trail species={species} />
           <p className="eyebrow mt-4">Petra / Savings</p>
           <h1 className="display mt-4 text-[clamp(3rem,8vw,7rem)]">
-            Make managing your pet insurance <span className="accent-word">a walk in the park.</span>
+            Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
           </h1>
           <p className="mt-6 max-w-[52ch] text-lg text-muted">
             UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Savings turns good care into a lower premium. Like a black box for car insurance, but for your pet.
@@ -109,26 +145,54 @@ export default function BlackBoxPage() {
 
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="min-w-0 space-y-16 lg:col-span-8">
-          <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
-            {[
-              ["Wear it", "A Petra Walk Companion, or your phone until it arrives."],
-              ["Walk and care as normal", `${species === "dog" ? "Walks" : "Play and activity"}, rest and check-ins all count.`],
-              ["Your premium drops", `As you hit ${name}'s personal target. It can never go up.`],
-            ].map(([t, d], i) => (
-              <li key={t} className="bg-paper p-5">
-                <p className="eyebrow">
-                  <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span> / Step
-                </p>
-                <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">{t}</p>
-                <p className="mt-1 text-sm text-muted">{d}</p>
-              </li>
-            ))}
-          </ol>
+          <Block n="01" title="What you pay now vs with Petra" id="compare">
+            <Compare yearly={premium} current={discount.total} />
+          </Block>
 
-          <p className="text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-tight tracking-[-0.03em]">
-            Up to <span className="rounded-[4px] bg-accent px-1">{gbp(premium * 0.15)}</span> a year off {name}&apos;s cover.
-            <span className="mt-2 block text-sm font-normal tracking-normal text-muted">Illustrative: example premium of {gbp(premium)} a year, discount capped at 15%.</span>
-          </p>
+          <Block n="02" title="How your Walk Companion lowers it">
+            <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
+              {[
+                ["Wear it", "Wear the Petra Walk Companion, or use your phone."],
+                ["Share only the basics", `It shares only walking minutes and whether ${name}'s target was met. Never your location or routes.`],
+                ["Move up the tiers", "Hitting the personal target plus weekly check-ins moves you up the discount tiers."],
+              ].map(([t, d], i) => (
+                <li key={t} className="bg-paper p-5">
+                  <p className="eyebrow">
+                    <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span> / Step
+                  </p>
+                  <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">{t}</p>
+                  <p className="mt-1 text-sm text-muted">{d}</p>
+                </li>
+              ))}
+            </ol>
+          </Block>
+
+          <Block n="03" title={species === "dog" ? "Walk mode: the live map" : "Activity mode: the live map"} id="walk-mode">
+            <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} onFinished={() => undefined} />
+            {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the Walk Companion, or log a session with your phone.</p>}
+            <Today rec={rec} target={target} today={today} weeksMet={discount.weeksMet} weeksCounted={discount.weeksCounted} />
+            <PriceCard rec={rec} discount={discount} />
+          </Block>
+
+          <Block n="04" title="Your Walk Companion">
+            <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
+            <Diagnostics rec={rec} days={collar} result={diag} now={now} />
+            {latestScan && (
+              <p className="text-sm">
+                Latest video scan ({new Date(latestScan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                {latestScan.source === "mock" ? ", demo" : ""}):{" "}
+                {[latestScan.metrics.mobilityScore !== null && `mobility ${Math.round(latestScan.metrics.mobilityScore)}/100`, latestScan.metrics.breathingRatePerMin !== null && `breathing ${Math.round(latestScan.metrics.breathingRatePerMin)} a minute`].filter(Boolean).join(", ") || "no metrics"}
+                {latestScan.flags.length ? `. ${latestScan.flags.map((f) => f.label).join("; ")}.` : "."}{" "}
+                <Link href="/dashboard#video" className="link">
+                  Video scans
+                </Link>
+              </p>
+            )}
+          </Block>
+
+          <Block n="05" title="Pick your cover" id="plans">
+            <CoverStop rec={rec} log={log} />
+          </Block>
 
           <section aria-labelledby="first-time-title" className="rounded-brand border-2 border-ink bg-accent-soft p-6">
             <p className="eyebrow">Illustrative offer</p>
@@ -160,36 +224,6 @@ export default function BlackBoxPage() {
               ))}
             </ul>
           </section>
-
-          <Block n="01" title="Connect">
-            <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
-          </Block>
-
-          <Block n="02" title="Today">
-            <Today rec={rec} target={target} today={today} weeksMet={discount.weeksMet} weeksCounted={discount.weeksCounted} />
-          </Block>
-
-          <Block n="03" title={species === "dog" ? "Walk mode" : "Activity mode"} id="walk-mode">
-            <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} onFinished={() => undefined} />
-            {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the Walk Companion, or log a session with your phone.</p>}
-          </Block>
-
-          <Block n="04" title="Walk Companion diagnostics">
-            <Diagnostics rec={rec} days={collar} result={diag} now={now} />
-            {latestScan && (
-              <p className="text-sm">
-                Latest video scan ({new Date(latestScan.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                {latestScan.source === "mock" ? ", demo" : ""}):{" "}
-                {[latestScan.metrics.mobilityScore !== null && `mobility ${Math.round(latestScan.metrics.mobilityScore)}/100`, latestScan.metrics.breathingRatePerMin !== null && `breathing ${Math.round(latestScan.metrics.breathingRatePerMin)} a minute`].filter(Boolean).join(", ") || "no metrics"}
-                {latestScan.flags.length ? `. ${latestScan.flags.map((f) => f.label).join("; ")}.` : "."}{" "}
-                <Link href="/dashboard#video" className="link">
-                  Video scans
-                </Link>
-              </p>
-            )}
-          </Block>
-
-          <PriceCard rec={rec} discount={discount} />
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link href="/dashboard" className="btn btn-ghost">

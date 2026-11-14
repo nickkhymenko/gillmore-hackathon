@@ -11,8 +11,8 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   const { errors, requests } = watch(page);
   await seedPet(page);
   await page.goto("/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet insurance");
-  await expect(page.getByText(/Up to £\d+ a year off Biscuit's cover/)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances");
+  await expect(page.locator("#compare")).toContainText("What you pay now vs with Petra");
   const priceBefore = await page.locator("#your-price").textContent();
 
   await page.locator("#walk-mode select").selectOption("60");

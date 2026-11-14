@@ -18,6 +18,8 @@ export const SOURCES = {
   vohc: "Veterinary Oral Health Council (VOHC). Seal of acceptance for dental products that meet plaque or tartar standards.",
   rwaf: "Rabbit Welfare Association and Fund. Hay or grass should make up most of a rabbit's diet (about 85%).",
   reading: "Gillmore Hackathon 2026 Participant Reading Guide (UK pet insurance figures, 2024).",
+  abi2024: "Association of British Insurers (ABI). UK pet insurance figures for 2024: owners paid an average of £389 per pet for insurance.",
+  which2025: "Which? (October 2025). Member survey on pet insurance: 62% of insured owners saw their premium rise in the last year, and over half of them said the rise was unreasonable.",
 } as const;
 
 export type SourceId = keyof typeof SOURCES;
