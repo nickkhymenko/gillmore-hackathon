@@ -102,7 +102,7 @@ function Stat({ label, value, note, strong = false, testId }: { label: string; v
       <dd className="tnum mt-2 text-[clamp(1.6rem,3.4vw,2.25rem)] font-semibold leading-none tracking-[-0.045em]" data-testid={testId}>
         {value}
       </dd>
-      {note && <p className="mt-2 text-xs text-muted">{note}</p>}
+      {note && <dd className="mt-2 text-xs text-muted">{note}</dd>}
     </div>
   );
 }
