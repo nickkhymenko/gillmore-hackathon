@@ -10,7 +10,10 @@ The first screen is almost empty: one big question at a time. Nothing about insu
 
 Order, one question per screen, smooth slide transitions, paw-print progress:
 1. Pet name.
-2. **Photo** (Pet Twin: instant palette re-theme, Gemini breed guess, editable chips, avatar). For black, white and grey pets, take the accent from the photo background.
+2. **Photo** (Pet Twin: instant palette re-theme, Gemini breed guess, editable chips, avatar). For black, white and grey pets, take the accent from the photo background. Photo is optional: "Skip, I'll add one later" builds the twin from the species/breed answers with the default palette.
+   - **Photo controls everywhere the photo appears** (onboarding, walk, dashboard, settings): **Replace photo**, **Remove photo** and **Reset theme**. Remove deletes the stored image from browser storage, reverts to the default brand palette (animated), and keeps the twin traits (avatar redraws from the chips). Reset theme keeps the photo but restores the photo's own palette after manual edits. Confirm removal with a small undo toast ("Photo removed. Undo") rather than a modal.
+   - **Multiple pets:** a pet switcher in the header (avatar stack) with "Add another pet" and "Remove this pet" (with undo). Each pet has its own photo, palette, twin, check-ins and discount.
+   - A "Delete all my data" link in the footer/settings clears everything (UK GDPR right to erasure, good for the pitch).
 3. Confirm species and breed (prefilled from the twin).
 4. Age (prefilled life stage), weight, neutered.
 5. Activity level.
