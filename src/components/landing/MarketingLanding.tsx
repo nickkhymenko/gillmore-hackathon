@@ -227,7 +227,7 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
         <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["Weekly check-in", "One minute of taps. It learns your pet's own normal, so small changes stand out."],
-            ["Walks and your savings", "Your phone, or a collar, counts walks, play and rest. Routes stay on your phone."],
+            ["Walks and your savings", "Your phone, or a Petra Walk Companion, counts walks, play and rest. Routes stay on your phone."],
             ["Personal targets", "Set by breed, age and health. A senior Pug and a young Collie can both earn the full discount."],
             ["Only ever down", "Your data can only lower your premium. Never raise it, never add exclusions."],
           ].map(([t, d], i) => (

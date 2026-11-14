@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, type ReactNode } from "react";
+import { Fragment, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { CarePlanStop } from "@/components/walk/CarePlanStop";
@@ -10,6 +10,7 @@ import { CoverStop } from "@/components/walk/CoverStop";
 import { HealthspanStop } from "@/components/walk/HealthspanStop";
 import { HelloStop } from "@/components/walk/HelloStop";
 import { NextWeekStop } from "@/components/walk/NextWeekStop";
+import { PooMoment } from "@/components/walk/PooMoment";
 import { Footnotes, Stop } from "@/components/walk/Stop";
 import { TrendsStop } from "@/components/walk/TrendsStop";
 import { WalkBackdrop, WalkPath, WalkProgress } from "@/components/walk/WalkPath";
@@ -84,9 +85,13 @@ export default function WalkPage() {
         <WalkPath containerRef={container} species={rec.pet.species} reduce={reduce} />
         <div className="relative" data-walk-content>
           {order.map((id, i) => (
-            <Stop key={id} id={id} n={i + 1} label={LABEL[id][0]} traits={traits}>
-              {body[id]}
-            </Stop>
+            <Fragment key={id}>
+              {/* The poo moment sits just before the last stop and its "Make my insurance cheaper today" call to action. */}
+              {i === order.length - 1 && <PooMoment rec={rec} />}
+              <Stop id={id} n={i + 1} label={LABEL[id][0]} traits={traits}>
+                {body[id]}
+              </Stop>
+            </Fragment>
           ))}
           <div className="pb-10">
             <Footnotes />

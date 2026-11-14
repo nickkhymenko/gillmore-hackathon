@@ -44,7 +44,9 @@ export function PrintShape({ species, scale = 1 }: { species: Species; scale?: n
   );
 }
 
-type Geo = { w: number; h: number; d: string; stops: { x: number; y: number }[] };
+type Geo = { w: number; h: number; d: string; stops: { x: number; y: number }[]; pauseY: number | null };
+
+const PAUSE_PX = 160; // how much scrolling the paw waits at a data-walk-pause moment
 type Print = { x: number; y: number; r: number; at: number };
 
 /**
@@ -86,7 +88,9 @@ export function WalkPath({ containerRef, species, reduce }: { containerRef: RefO
         const dy = (b.y - a.y) * 0.5;
         d += ` C${a.x},${a.y + dy} ${b.x},${b.y - dy} ${b.x},${b.y}`;
       }
-      setGeo({ w, h, d, stops });
+      const pause = el.querySelector<HTMLElement>("[data-walk-pause]");
+      const pauseY = pause ? pause.getBoundingClientRect().top - top + pause.offsetHeight / 2 : null;
+      setGeo({ w, h, d, stops, pauseY });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -116,13 +120,35 @@ export function WalkPath({ containerRef, species, reduce }: { containerRef: RefO
     return out;
   }, [len, geo]);
 
+  // The paw pauses briefly at a data-walk-pause moment: scroll progress maps to path length with a flat step there.
+  const pause = useMemo(() => {
+    const p = pathRef.current;
+    if (!p || !len || !geo || geo.pauseY === null || geo.h <= 0) return null;
+    let lo = 0;
+    let hi = len;
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (p.getPointAtLength(mid).y < geo.pauseY) lo = mid;
+      else hi = mid;
+    }
+    const q = Math.min(0.98, Math.max(0.02, geo.pauseY / geo.h));
+    return { at: lo, q, hold: Math.min(0.5 * (1 - q), PAUSE_PX / geo.h) };
+  }, [len, geo]);
+  const lengthAt = (p: number) => {
+    if (!pause) return p * len;
+    const { at, q, hold } = pause;
+    if (p <= q) return (p / q) * at;
+    if (p <= q + hold) return at;
+    return at + ((p - q - hold) / (1 - q - hold)) * (len - at);
+  };
+
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start 62%", "end 62%"] });
   const drawn = useTransform(scrollYProgress, (p) => (reduce ? 1 : p));
 
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     const path = pathRef.current;
     if (!path || !len || reduce) return;
-    const at = Math.max(0, Math.min(len, p * len));
+    const at = Math.max(0, Math.min(len, lengthAt(p)));
     const a = path.getPointAtLength(at);
     const b = path.getPointAtLength(Math.min(len, at + 2));
     x.set(a.x);

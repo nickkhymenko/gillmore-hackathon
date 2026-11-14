@@ -362,8 +362,8 @@ function BlackBoxTab() {
         <H n="03">Hardware economics</H>
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="space-y-5 lg:col-span-4">
-            <Slider label="Collar cost to make" value={inp.collarCost} min={40} max={60} step={1} fmt={(v) => `£${v}`} onChange={(v) => set({ collarCost: v })} />
-            <div role="radiogroup" aria-label="Collar offer" className="grid gap-2">
+            <Slider label="Walk Companion cost to make" value={inp.collarCost} min={40} max={60} step={1} fmt={(v) => `£${v}`} onChange={(v) => set({ collarCost: v })} />
+            <div role="radiogroup" aria-label="Walk Companion offer" className="grid gap-2">
               {(
                 [
                   ["free2yr", "Free with a 2-year policy", "The insurer pays; cost spread over two years."],
@@ -379,11 +379,11 @@ function BlackBoxTab() {
           </div>
           <dl className="grid grid-cols-1 gap-px self-start overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3 lg:col-span-8">
             <Kpi label={inp.offer === "free2yr" ? "Hardware cost a year" : "Bundle income after cost"} value={inp.offer === "free2yr" ? k(b.hardwareYear) : k(b.bundleIncome)} />
-            <Kpi label="Payback per collar" value={Number.isFinite(b.paybackMonths) ? `${b.paybackMonths} months` : "Not at these inputs"} />
+            <Kpi label="Payback per Walk Companion" value={Number.isFinite(b.paybackMonths) ? `${b.paybackMonths} months` : "Not at these inputs"} />
             <Kpi label="Net benefit a year" value={`${b.net >= 0 ? "+" : "−"}${k(Math.abs(b.net))}`} dark />
           </dl>
         </div>
-        <p className="text-xs text-muted">Collar build cost of £40 to £60 is illustrative. Until a collar arrives, the owner&apos;s phone does the job for walks.</p>
+        <p className="text-xs text-muted">Walk Companion build cost of £40 to £60 is illustrative. Until one arrives, the owner&apos;s phone does the job for walks.</p>
       </section>
 
       <section className="space-y-5">
@@ -393,7 +393,7 @@ function BlackBoxTab() {
             ["The telematics playbook", "Black boxes made car insurance affordable for young drivers by rewarding good driving. The same deal works for pet care."],
             ["Pets are family", "69% of Millennials and Gen Z say their pet is family (reading guide). They want to do the right thing, and to see it count."],
             ["Price sensitive", "Vet prices up about 75% in ten years; younger owners feel premiums most. A visible way to pay less is a reason to choose you."],
-            ["An acquisition channel", "A collar and a cheaper premium is a story people share. Every walk is a weekly touchpoint with your brand."],
+            ["An acquisition channel", "A Walk Companion and a cheaper premium is a story people share. Every walk is a weekly touchpoint with your brand."],
           ].map(([t, d]) => (
             <li key={t} className="bg-paper p-5">
               <p className="font-semibold">{t}</p>

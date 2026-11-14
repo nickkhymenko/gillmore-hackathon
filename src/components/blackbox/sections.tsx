@@ -43,7 +43,7 @@ export function Connect({
     }, 2700);
   }
 
-  const STEPS = ["Searching for your collar", "Found Petra Collar PV-2041", `Syncing ${rec.pet.name}'s last 6 weeks`];
+  const STEPS = ["Searching for your Walk Companion", "Found Petra Walk Companion PV-2041", `Syncing ${rec.pet.name}'s last 6 weeks`];
 
   return (
     <div className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
@@ -57,8 +57,8 @@ export function Connect({
       </div>
       <div className="bg-paper p-5">
         <ShieldCheck size={26} aria-hidden />
-        <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Petra Collar</p>
-        <p className="mt-1 text-sm text-muted">Steps, active minutes, resting heart and breathing rate, sleep and night restlessness.</p>
+        <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Petra Walk Companion</p>
+        <p className="mt-1 text-sm text-muted">A wearable motion tracker: steps, active minutes, resting heart and breathing rate, sleep and night restlessness.</p>
         {collar ? (
           <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold" role="status">
             <CheckCircle size={16} weight="fill" aria-hidden /> Paired (simulated for the demo)
@@ -69,7 +69,7 @@ export function Connect({
           </p>
         ) : (
           <button type="button" onClick={pair} className="btn btn-primary mt-3">
-            Pair Petra Collar
+            Pair Petra Walk Companion
           </button>
         )}
       </div>
@@ -77,7 +77,7 @@ export function Connect({
         <div className="bg-paper p-5">
           <Bluetooth size={26} aria-hidden />
           <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">Real sensor demo</p>
-          <p className="mt-1 text-sm text-muted">Connect any Bluetooth heart rate sensor. A chest strap or watch can stand in for the collar on stage.</p>
+          <p className="mt-1 text-sm text-muted">Connect any Bluetooth heart rate sensor. A chest strap or watch can stand in for the Walk Companion on stage.</p>
           {hr ? (
             <p className="mt-3 flex flex-wrap items-center gap-2 text-sm font-semibold" role="status">
               <Heartbeat size={18} weight="fill" aria-hidden /> {hr.name}: <span className="tnum text-2xl">{hr.bpm ?? "--"}</span> bpm
@@ -166,7 +166,7 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
   if (!result)
     return (
       <p className="text-muted">
-        {days.length ? "A few more weeks of collar data and we can compare against " : "Pair the collar to compare activity, rest, resting heart and breathing rate against "}
+        {days.length ? "A few more weeks of Walk Companion data and we can compare against " : "Pair the Walk Companion to compare activity, rest, resting heart and breathing rate against "}
         {rec.pet.name}&apos;s own baseline.
       </p>
     );
@@ -202,7 +202,7 @@ export function Diagnostics({ rec, days, result, now }: { rec: PetRecord; days: 
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted">Last 10 days against the 4 weeks before. Simulated collar data for the demo.</p>
+      <p className="text-xs text-muted">Last 10 days against the 4 weeks before. Simulated Walk Companion data for the demo.</p>
       <button type="button" onClick={() => setCollarDays(rec.id, simulateCollarHistory(rec, Math.max(20, result.signals[0].baseline), now, !result.amber))} className="link min-h-11 text-sm">
         {result.amber ? "Demo: back to normal" : "Demo: simulate a 10-day dip"}
       </button>
