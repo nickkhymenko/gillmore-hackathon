@@ -1,46 +1,63 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Inter_Tight } from "next/font/google";
+import { HeaderAvatar } from "@/components/HeaderAvatar";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const interTight = Inter_Tight({ variable: "--font-inter-tight", subsets: ["latin"], display: "swap" });
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: "italic",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Prevently: prevention that pays",
-  description: "AI weekly pet health check-ins that catch problems early and turn prevention into savings for owners, vets and insurers.",
+  description: "A weekly pet health scan inside your insurer's app. It catches the question before it becomes a claim.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0f766e" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#F7F5F0" };
 
 const NAV = [
-  { href: "/checkin", label: "Check-in" },
-  { href: "/pet", label: "My pet" },
-  { href: "/partner", label: "Partners" },
+  { href: "/twin", label: "Pet Twin" },
+  { href: "/checkin", label: "Scan" },
+  { href: "/pet", label: "History" },
+  { href: "/partner", label: "For insurers" },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <header className="sticky top-0 z-10 border-b border-teal-900/10 bg-white/90 backdrop-blur">
-          <nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-            <Link href="/" className="flex items-center gap-2 font-semibold text-teal-800">
-              <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-teal-700 text-white">P</span>
+    <html lang="en-GB" className={`${interTight.variable} ${instrumentSerif.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Applies the saved pet theme before first paint, so there is no flash of the default colours. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="flex min-h-full flex-col">
+        <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-sm">
+          <nav className="mx-auto flex max-w-[1200px] items-center gap-4 px-4 py-3 sm:px-6" aria-label="Main">
+            <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-[-0.04em]">
+              <span aria-hidden className="inline-block h-3 w-3 rounded-[3px] bg-accent" />
               Prevently
             </Link>
-            <div className="flex gap-1 text-sm">
+            <div className="-mr-1 ml-auto flex min-w-0 items-center overflow-x-auto text-[13px] font-medium sm:gap-1 sm:text-sm">
               {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className="rounded-full px-3 py-1.5 text-teal-900 hover:bg-teal-50">
+                <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-brand px-2 py-1.5 hover:bg-ink/5 sm:px-3">
                   {n.label}
                 </Link>
               ))}
             </div>
+            <HeaderAvatar />
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
-        <footer className="border-t border-teal-900/10 py-4 text-center text-xs text-teal-900/60">
-          Gillmore Hackathon 2026 prototype. Triage and monitoring support only, not a diagnosis.
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6">{children}</main>
+        <footer className="border-t border-line">
+          <div className="mx-auto flex max-w-[1200px] flex-col gap-1 px-4 py-5 text-xs text-muted sm:flex-row sm:justify-between sm:px-6">
+            <span>Triage and monitoring support only, not a diagnosis.</span>
+            <span>Built for the Gillmore Hackathon 2026</span>
+          </div>
         </footer>
       </body>
     </html>
