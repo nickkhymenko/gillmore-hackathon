@@ -243,3 +243,22 @@ export function haversine(a: [number, number], b: [number, number]) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
+
+// ---------- what members save (the model's headline figures) ----------
+
+/** ABI 2024: UK owners paid an average of £389 per pet for insurance. */
+export const UK_AVG_PREMIUM = 389;
+/** The model's average member discount: about 4%, or around £16 a year on a £389 premium. The 15% cap is the "up to". */
+export const AVG_MEMBER_PCT = 4;
+
+/**
+ * Illustrative tier for a walking habit: weekly minutes against five days of the pet's target, read on the same
+ * ratios as the real tiers, plus the weekly check-in extra at its top rate. Capped at BB_CAP.
+ */
+export function estimateDiscount(walksPerWeek: number, minutesPerWalk: number, target: number, checkins = true) {
+  const weekly = walksPerWeek * minutesPerWalk;
+  const coverage = target > 0 ? Math.min(1, weekly / (target * 5)) : 1;
+  const walking = tier(BB_TIERS, coverage);
+  const extra = checkins ? CHECKIN_EXTRA[CHECKIN_EXTRA.length - 1].pct : 0;
+  return { coverage, walking, extra, total: Math.min(BB_CAP, walking + extra) };
+}

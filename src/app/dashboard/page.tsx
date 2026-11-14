@@ -268,7 +268,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Section n="04" title="Care plan" aside={<Link href="/walk#care-plan" className="link text-sm">Full plan</Link>}>
+      <Section n="04" title="Care plan">
         {plan.paused && <p className="text-sm font-semibold">{plan.pausedReason}</p>}
         <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
           {plan.recs.map((r, i) => (
@@ -277,7 +277,7 @@ export default function DashboardPage() {
         </ol>
       </Section>
 
-      <Section n="05" title="Trends" aside={<Link href="/walk#trends" className="link text-sm">On the walk</Link>}>
+      <Section n="05" title="Trends">
         {log.filter((c) => c.answers).length < 2 ? (
           <div className="flex flex-wrap items-center gap-4">
             <p className="text-muted">Trends appear after two check-ins.</p>

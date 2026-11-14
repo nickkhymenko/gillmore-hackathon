@@ -29,17 +29,16 @@ test("14: script tags in a pet name and notes render as text, never run", async 
 
 test("16: an amber flag pauses supplements and puts the vet step first", async ({ page }) => {
   await seedPet(page, { checkins: 30, lastStatus: "amber", lastAnswers: { mobility: "stiff", water: "more" } });
-  for (const path of ["/dashboard", "/walk"]) {
-    await page.goto(path);
-    await expect(page.getByText(/supplement and product ideas are paused/i).first()).toBeVisible();
-    const titles = await page.locator("ol h3, ol h4").allTextContents();
-    expect(titles.join(" | ")).not.toMatch(/omega|glucosamine|probiotic|chews/i);
-    expect(titles[0]).toMatch(/vet/i);
-  }
+  // The care plan lives on the dashboard (the walk no longer has a care plan stop).
+  await page.goto("/dashboard");
+  await expect(page.getByText(/supplement and product ideas are paused/i).first()).toBeVisible();
+  const titles = await page.locator("ol h3, ol h4").allTextContents();
+  expect(titles.join(" | ")).not.toMatch(/omega|glucosamine|probiotic|chews/i);
+  expect(titles[0]).toMatch(/vet/i);
   // Control: the same pet with a green week does get the joint supplement suggestion.
   await seedPet(page, { checkins: 30, lastStatus: "green", lastAnswers: { mobility: "stiff" } });
-  await page.goto("/walk");
-  await expect(page.locator("#care-plan h4", { hasText: /omega-3/i })).toBeVisible();
+  await page.goto("/dashboard");
+  await expect(page.locator("ol h3", { hasText: /omega-3/i })).toBeVisible();
 });
 
 test("17: the discount comes from check-ins only; partner offers cannot change it", async ({ page }) => {
@@ -47,14 +46,16 @@ test("17: the discount comes from check-ins only; partner offers cannot change i
   await page.goto("/dashboard");
   const hero = page.locator("section[aria-labelledby=savings-title]");
   const before = await hero.textContent();
-  await page.goto("/walk");
-  const offers = page.locator("#care-plan li li");
+  await page.goto("/savings");
+  const offers = page.locator("#partners li");
+  await expect(offers.first()).toBeVisible();
   const count = await offers.count();
   for (let i = 0; i < count; i++) await offers.nth(i).click({ force: true });
+  // Partner offers are not links or buttons: nothing to buy, nothing tracked.
+  expect(await page.locator("#partners li a, #partners li button").count()).toBe(0);
+  await expect(page.locator("#partners")).toContainText("Example partners. Not real offers.");
   await page.goto("/dashboard");
   expect(await hero.textContent()).toBe(before);
-  // Partner offers are not links or buttons: nothing to buy, nothing tracked.
-  expect(await page.locator("#care-plan li li a, #care-plan li li button").count()).toBe(0);
 });
 
 test("19: nothing is sent to any insurer or third party without an owner action", async ({ page }) => {

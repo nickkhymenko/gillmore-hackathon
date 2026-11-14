@@ -39,9 +39,9 @@ test("senior Labrador: Kennel Club target, adjusted for age, split into walks, c
   await expect(card.locator("ul li", { hasText: "Midday" })).toBeVisible();
   await expect(card).toContainText("Weight: Labradors gain easily");
   await expect(card.getByRole("alert")).toHaveCount(0);
-  // Seniors get the care plan before the charts.
+  // Seniors get healthspan before the money chart.
   const ids = await page.locator("section[id]").evaluateAll((s) => s.map((x) => x.id));
-  expect(ids.indexOf("care-plan")).toBeLessThan(ids.indexOf("trends"));
+  expect(ids.indexOf("healthspan")).toBeLessThan(ids.indexOf("lifetime"));
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
 });
@@ -69,11 +69,11 @@ test("'Make my insurance cheaper today' leads to the Black Box", async ({ page }
   await mockWeather(page, 12);
   await seedPet(page);
   await page.goto("/walk");
-  await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: /Make my insurance cheaper today/ })).toHaveCount(1); // the next-week stop that repeated it is gone
   await page.getByRole("link", { name: /Make my insurance cheaper today/ }).first().click();
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances");
-  await expect(page.locator("#compare")).toContainText("What you pay now vs with Petra");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.locator("#compare")).toContainText("Your price today");
 });
 
 test("the poo moment: scroll to it, Pick it up, land on Savings", async ({ page }) => {
@@ -83,10 +83,10 @@ test("the poo moment: scroll to it, Pick it up, land on Savings", async ({ page 
   await page.goto("/walk");
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment).toContainText("Uh oh. Your insurance isn't working for you.");
-  await moment.getByRole("button", { name: "Pick it up: lower your insurance costs" }).click();
+  await expect(moment).toContainText("You're probably overpaying for Biscuit's insurance.");
+  await moment.getByRole("button", { name: "Pick it up" }).click();
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances a walk in the park.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
   await expect(page.getByText("First-time owner? Start lower.")).toBeVisible();
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
@@ -99,11 +99,13 @@ test("the poo moment resets on refresh: unpicked, then Pick it up lands on Savin
   await page.reload();
   const moment = page.locator("#uh-oh");
   await moment.scrollIntoViewIfNeeded();
-  await expect(moment).toContainText("You could be paying around £");
+  await expect(moment.getByTestId("overpay")).toHaveText(/^Up to £\d+ a year\.$/);
+  await expect(moment).toContainText("Your premium ignores the walks and care you already do.");
   await expect(moment.getByText("Picked up")).toHaveCount(0);
-  await moment.getByRole("button", { name: "Pick it up: lower your insurance costs" }).click();
+  await moment.getByRole("button", { name: "Pick it up" }).click();
+  await expect(moment.getByRole("status")).toHaveText("Picked up");
   await page.waitForURL("**/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances a walk in the park.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
   await noHorizontalScroll(page);
   expect(errors).toEqual([]);
 });

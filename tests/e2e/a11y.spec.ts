@@ -63,9 +63,7 @@ test("keyboard only: onboarding from the landing page to the walk", async ({ pag
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("How much does Rex weigh?");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("neutered");
-  await page.keyboard.press("Enter"); // "Yes" is focused
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("How active");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Roughly how active is Rex?");
   await page.keyboard.press("Enter"); // "moderate" is focused
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("What can we share?");
   await page.keyboard.press("Space"); // first switch is focused

@@ -2,9 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { animate } from "motion/react";
 import { ArrowUpRight, Pause, Play, Stop } from "@phosphor-icons/react";
 import { RouteThumb } from "./WalkMap";
-import { addWalk, haversine, simulatedLoop, type WalkRecord } from "@/lib/blackbox";
+import { addWalk, estimateDiscount, haversine, simulatedLoop, type WalkRecord } from "@/lib/blackbox";
+import { basePremium } from "@/lib/discount";
 import { updatePet, type PetRecord } from "@/lib/store";
 
 const WalkMap = dynamic(() => import("./WalkMap").then((m) => m.WalkMap), {
@@ -16,10 +18,14 @@ type Phase = "idle" | "running" | "paused" | "done";
 type Source = "phone" | "simulated";
 
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const gbp2 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+/** The example walk replays 35 minutes in about 15 seconds. */
+export const SIM_SPEED = 140;
 
 /**
- * Walk mode: Strava for dog walks. Phone GPS (watchPosition) or a simulated 35-minute loop for indoor demos.
- * The route stays in this browser. With a collar paired, steps and heart rate ride along.
+ * Walk mode: Strava for dog walks. "Start a walk" replays an example 35-minute loop in about 15 seconds (no GPS
+ * prompt); "Use real GPS" tracks with the phone (watchPosition). The route stays in this browser. With a collar
+ * paired, steps and heart rate ride along. At the end the price ticks down to what a week like today would earn.
  */
 export function WalkMode({
   rec,
@@ -27,6 +33,7 @@ export function WalkMode({
   todayBefore,
   collar,
   liveHr,
+  discountPct = 0,
   onFinished,
 }: {
   rec: PetRecord;
@@ -34,11 +41,14 @@ export function WalkMode({
   todayBefore: number;
   collar: boolean;
   liveHr: number | null;
+  /** The discount the pet is on now, so the finish card can tick down from today's price. */
+  discountPct?: number;
   onFinished: (w: WalkRecord) => void;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [source, setSource] = useState<Source>("phone");
-  const [speed, setSpeed] = useState(10);
+  const [source, setSource] = useState<Source>("simulated");
+  const speed = SIM_SPEED;
+  const [pctAtStart, setPctAtStart] = useState(discountPct);
   const [points, setPoints] = useState<[number, number][]>([]);
   const [elapsed, setElapsed] = useState(0); // seconds of walk time
   const [km, setKm] = useState(0);
@@ -51,9 +61,6 @@ export function WalkMode({
   const lastWall = useRef(0);
   const route = useRef<[number, number][]>([]);
   const speedRef = useRef(speed);
-  useEffect(() => {
-    speedRef.current = speed;
-  }, [speed]);
   const dist = useRef(0);
   const name = rec.pet.name;
 
@@ -71,7 +78,7 @@ export function WalkMode({
 
   function runPhone() {
     if (!("geolocation" in navigator)) {
-      setError("This browser cannot share location. Try Simulate a walk.");
+      setError("This browser cannot share location. Start an example walk instead.");
       return;
     }
     lastWall.current = performance.now();
@@ -89,7 +96,7 @@ export function WalkMode({
         setPoints(route.current);
         setKm(dist.current);
       },
-      (e) => setError(e.code === 1 ? "Location permission was denied. You can still use Simulate a walk." : "Location is unavailable here (indoors?). Try Simulate a walk."),
+      (e) => setError(e.code === 1 ? "Location permission was denied. You can still start an example walk." : "Location is unavailable here (indoors?). Start an example walk instead."),
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
     );
     tick.current = setInterval(() => {
@@ -123,6 +130,7 @@ export function WalkMode({
     route.current = [];
     dist.current = 0;
     setLast(null);
+    setPctAtStart(discountPct);
     enrol();
     if (src === "simulated") {
       sim.current = simulatedLoop();
@@ -164,26 +172,19 @@ export function WalkMode({
   const hr = liveHr ?? (collar ? simulatedHr : null);
 
   if (phase === "done" && last)
-    return <FinishCard rec={rec} walk={last} target={target} todayBefore={todayBefore} onAgain={() => setPhase("idle")} />;
+    return <FinishCard rec={rec} walk={last} target={target} todayBefore={todayBefore} discountPct={pctAtStart} onAgain={() => setPhase("idle")} />;
 
   return (
     <div className="space-y-5">
       {phase === "idle" ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => start("phone")} className="btn btn-primary min-h-14 px-6 text-lg">
-            <Play size={20} weight="fill" aria-hidden /> Start walk
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <button type="button" onClick={() => start("simulated")} className="btn btn-primary min-h-14 px-7 text-lg">
+            <Play size={20} weight="fill" aria-hidden /> Start a walk
           </button>
-          <button type="button" onClick={() => start("simulated")} className="btn btn-ghost min-h-14 px-6 text-lg">
-            Simulate a walk
+          <span className="text-sm text-muted">An example 35-minute walk, replayed in 15 seconds.</span>
+          <button type="button" onClick={() => start("phone")} className="link min-h-11 text-sm">
+            Use real GPS
           </button>
-          <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
-            Replay speed
-            <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="rounded-brand border border-line bg-white/60 px-2 py-1 text-ink">
-              <option value={10}>10x (3.5 min)</option>
-              <option value={30}>30x (70 s)</option>
-              <option value={60}>60x (35 s)</option>
-            </select>
-          </label>
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
@@ -199,7 +200,7 @@ export function WalkMode({
           <button type="button" onClick={() => finish()} className="btn btn-primary min-h-14 px-6 text-lg">
             <Stop size={20} weight="fill" aria-hidden /> Finish
           </button>
-          <span className="text-sm text-muted">{source === "simulated" ? `Simulated walk, ${speed}x speed` : "Tracking with your phone"}</span>
+          <span className="text-sm text-muted">{source === "simulated" ? "Example walk, sped up" : "Tracking with your phone"}</span>
         </div>
       )}
       {error && (
@@ -245,6 +246,8 @@ export function WalkMode({
         )}
       </dl>
 
+      {phase !== "idle" && target > 0 && <TargetBar today={todayBefore + elapsed / 60} target={target} />}
+
       <WalkMap points={points} live={phase === "running"} />
       <p className="text-xs text-muted">
         Only you see this map. The route stays on this device; map tiles load from OpenStreetMap. {name}&apos;s target today: {target} minutes.
@@ -253,9 +256,48 @@ export function WalkMode({
   );
 }
 
-function FinishCard({ rec, walk, target, todayBefore, onAgain }: { rec: PetRecord; walk: WalkRecord; target: number; todayBefore: number; onAgain: () => void }) {
+/** Minutes counting toward today's target while the walk runs. */
+function TargetBar({ today, target }: { today: number; target: number }) {
+  const done = Math.min(target, Math.floor(today));
+  return (
+    <div>
+      <p className="flex items-baseline justify-between gap-4 text-sm">
+        <span className="font-semibold">Today&apos;s target</span>
+        <span className="tnum" data-testid="live-target">
+          {done} of {target} min
+        </span>
+      </p>
+      <div className="mt-1.5 h-2.5 rounded-full bg-ink/10" aria-hidden>
+        <div className="h-2.5 rounded-full bg-accent ring-1 ring-ink/20 transition-[width] duration-200" style={{ width: `${(done / target) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** Counts from one price to another once, then holds. Instant with reduced motion. */
+function TickingPrice({ from, to }: { from: number; to: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.textContent = gbp2(to);
+      return;
+    }
+    const c = animate(from, to, { duration: 1.4, delay: 0.3, ease: "easeOut", onUpdate: (v) => (el.textContent = gbp2(v)) });
+    return () => c.stop();
+  }, [from, to]);
+  return <span ref={ref}>{gbp2(from)}</span>;
+}
+
+function FinishCard({ rec, walk, target, todayBefore, discountPct, onAgain }: { rec: PetRecord; walk: WalkRecord; target: number; todayBefore: number; discountPct: number; onAgain: () => void }) {
   const today = todayBefore + walk.minutes;
   const pct = target ? Math.min(100, (today / target) * 100) : 100;
+  const monthly = basePremium(rec.pet) / 12;
+  const week = estimateDiscount(7, today, target);
+  const pctAfter = Math.max(discountPct, week.total);
+  const before = monthly * (1 - discountPct / 100);
+  const after = monthly * (1 - pctAfter / 100);
   return (
     <article className="fade-up space-y-6 rounded-brand border border-line bg-white/60 p-5 sm:p-7" aria-live="polite">
       <p className="eyebrow">Walk saved</p>
@@ -286,7 +328,17 @@ function FinishCard({ rec, walk, target, todayBefore, onAgain }: { rec: PetRecor
           <div className="h-3 rounded-full bg-ink transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <p className="text-sm text-muted">Your price below has been updated with this walk. Only &ldquo;target met this week: yes or no&rdquo; would ever reach your insurer.</p>
+      <div className="rounded-brand bg-dark p-5 text-white" data-testid="finish-saving">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">A week like today</p>
+        <p className="tnum mt-1 text-4xl font-semibold tracking-[-0.03em] text-accent sm:text-5xl">
+          <TickingPrice from={before} to={after} />
+          <span className="text-base font-medium text-white/70"> a month</span>
+        </p>
+        <p className="mt-1 text-sm text-white/70">
+          {pctAfter > discountPct ? `Down from ${gbp2(before)}: ${pctAfter}% off with weekly check-ins.` : `Keep walking to move up a tier.`} Illustrative.
+        </p>
+      </div>
+      <p className="text-sm text-muted">Only &ldquo;target met this week: yes or no&rdquo; ever reaches your insurer.</p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <a href="#your-price" className="btn btn-primary">
           See my new price <ArrowUpRight size={18} weight="bold" aria-hidden />

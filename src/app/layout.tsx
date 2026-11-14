@@ -68,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </Link>
               <DeleteAllData />
             </span>
-            <span>{PETRA_TAGLINE} Built for the Gillmore Hackathon 2026</span>
+            <span>Built for the Gillmore Hackathon 2026</span>
           </div>
         </footer>
         <ThemeSync />

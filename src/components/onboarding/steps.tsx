@@ -32,7 +32,10 @@ export function Primary({ children, ...props }: React.ButtonHTMLAttributes<HTMLB
   );
 }
 
-const big = "min-h-14 w-full border-b-2 border-ink/30 bg-transparent py-2 text-[clamp(2rem,6vw,3.5rem)] font-semibold tracking-[-0.03em] placeholder:text-ink/20 focus:border-ink focus:outline-none";
+/** A clean underline input: no box, the line darkens on focus. */
+const big = "input-underline min-h-14 w-full border-b-2 border-ink/25 bg-transparent py-2 text-[clamp(2rem,6vw,3.5rem)] font-semibold tracking-[-0.03em] placeholder:text-ink/20 focus:border-ink";
+/** Capitalises the first letter as the owner types: "biscuit" becomes "Biscuit". */
+const capFirst = (v: string) => v.replace(/^\s*\p{Ll}/u, (c) => c.toUpperCase());
 
 // ---------- 2. Name ----------
 
@@ -50,7 +53,7 @@ export function NameStep({ initial, species, onSubmit }: { initial: string; spec
       <Question eyebrow="Let's start with the important one">What&apos;s your {species && species !== "other" ? SPECIES_THEME[species].label.toLowerCase() : "pet"} called?</Question>
       <label className="block max-w-xl">
         <span className="sr-only">Pet name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoFocus autoComplete="off" autoCapitalize="words" placeholder="Biscuit" className={big} />
+        <input value={name} onChange={(e) => setName(capFirst(e.target.value))} maxLength={40} autoFocus autoComplete="off" autoCapitalize="words" enterKeyHint="next" placeholder="Biscuit" className={big} />
       </label>
       <Primary type="submit" disabled={!clean}>
         Continue
@@ -126,7 +129,10 @@ export function BreedStep({ rec, next }: StepProps) {
   }
 
   const guessed = rec.twinSource === "gemini" && rec.profile.breedGuess;
-  const suggestions = rec.twinSource === "gemini" ? (rec.profile.breedSuggestions?.length ? rec.profile.breedSuggestions : rec.profile.breedGuess ? [{ breed: rec.profile.breedGuess, confidence: rec.profile.breedConfidence }] : []) : [];
+  const suggestions = (rec.twinSource === "gemini" ? (rec.profile.breedSuggestions?.length ? rec.profile.breedSuggestions : rec.profile.breedGuess ? [{ breed: rec.profile.breedGuess, confidence: rec.profile.breedConfidence }] : []) : []).slice(0, 3);
+  const top = suggestions[0];
+  const theyre = rec.pet.pronoun === "he" ? "he's" : rec.pet.pronoun === "she" ? "she's" : "they're";
+  const article = (b: string) => (/^[aeiou]/i.test(b) ? "an" : "a");
   const idFor = (name: string) => findBreed(name, species)?.id ?? `custom:${name}`;
   const option = (id: string, label: ReactNode, hint?: string) => (
     <li key={id}>
@@ -153,9 +159,16 @@ export function BreedStep({ rec, next }: StepProps) {
   return (
     <div className="grid gap-10 lg:grid-cols-12">
       <div className="space-y-8 lg:col-span-7">
-        <Question eyebrow={guessed ? "From the photo" : "Breed"} sub={guessed ? "Our best guesses from the photo. Tap one, or search below." : undefined}>
-          What breed is {rec.pet.name}?
-        </Question>
+        {guessed && top ? (
+          <div className="max-w-3xl">
+            <p className="eyebrow">Breed</p>
+            <h1 className="display mt-3 text-[clamp(2rem,5vw,3.75rem)]">
+              From {rec.pet.name}&apos;s photo, we think {theyre} {article(top.breed)} <span className="accent-word">{top.breed}</span> ({Math.round(top.confidence * 100)}% sure).
+            </h1>
+          </div>
+        ) : (
+          <Question eyebrow="Breed">What breed is {rec.pet.name}?</Question>
+        )}
         {suggestions.length > 0 && (
           <div role="radiogroup" aria-label="Breed suggestions from the photo" className="flex max-w-xl flex-wrap gap-2">
             {suggestions.map((b) => {
@@ -180,11 +193,11 @@ export function BreedStep({ rec, next }: StepProps) {
               onClick={() => choose(NOT_SURE)}
               className={`min-h-12 rounded-brand border-2 px-4 font-semibold transition-colors ${selected === NOT_SURE ? ON_CARD : OFF_CARD}`}
             >
-              Mixed or not sure
+              Mixed / not sure
             </button>
           </div>
         )}
-        <label className="flex max-w-xl items-center gap-3 border-b-2 border-ink/30 focus-within:border-ink">
+        <label className="flex max-w-xl items-center gap-3 border-b-2 border-ink/25 focus-within:border-ink">
           <MagnifyingGlass size={22} aria-hidden className="text-muted" />
           <span className="sr-only">Search breeds</span>
           <input
@@ -192,10 +205,10 @@ export function BreedStep({ rec, next }: StepProps) {
             onChange={(e) => setQuery(e.target.value)}
             autoFocus={!selected}
             placeholder={`Search ${SPECIES_THEME[species].plural}`}
-            className="min-h-12 w-full bg-transparent py-2 text-xl focus:outline-none"
+            className="input-underline min-h-12 w-full bg-transparent py-2 text-xl"
           />
         </label>
-        <ul role="radiogroup" aria-label="Breeds" className="max-h-[22rem] max-w-xl overflow-y-auto pr-1">
+        <ul role="radiogroup" aria-label="Breeds" className={`max-h-[22rem] max-w-xl overflow-y-auto pr-1 ${suggestions.length && !q ? "hidden" : ""}`}>
           {!q && option(NOT_SURE, species === "dog" ? "Mixed or not sure" : "Not sure")}
           {q && !matches.length && option(`custom:${query.trim()}`, <>Use &ldquo;{query.trim()}&rdquo;</>)}
           {custom && !q && option(`custom:${custom}`, custom, "your answer")}
@@ -340,44 +353,7 @@ export function WeightStep({ rec, fresh, next }: StepProps) {
   );
 }
 
-// ---------- 7. Neutered ----------
-
-export function NeuteredStep({ rec, fresh, next }: StepProps) {
-  const current = rec.pet.neutered;
-  const choose = (neutered: boolean | undefined) => {
-    updatePet(rec.id, (p) => ({ pet: { ...p.pet, neutered } }));
-    setTimeout(next, 180);
-  };
-  const options: [string, boolean | undefined][] = [
-    ["Yes", true],
-    ["No", false],
-    ["Not sure", undefined],
-  ];
-  return (
-    <div className="space-y-10">
-      <Question eyebrow="Neutering" sub="It changes how much energy they need and which checks matter.">
-        Is {rec.pet.name} {rec.pet.species === "horse" ? "gelded or spayed" : "neutered or spayed"}?
-      </Question>
-      <div className="grid max-w-xl grid-cols-3 gap-3" role="radiogroup" aria-label="Neutered">
-        {options.map(([label, v], i) => (
-          <button
-            key={label}
-            type="button"
-            role="radio"
-            aria-checked={!fresh && current === v}
-            autoFocus={i === 0}
-            onClick={() => choose(v)}
-            className={`min-h-20 rounded-brand border-2 text-xl font-semibold transition-colors ${!fresh && current === v ? ON_CARD : OFF_CARD}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------- 8. Activity ----------
+// ---------- 7. Activity ----------
 
 const ACTIVITY: Record<Species, Record<ActivityLevel, string>> = {
   dog: { low: "Short strolls and plenty of naps", moderate: "About an hour of walks a day", high: "Long runs, working or sporty" },
@@ -394,7 +370,7 @@ export function ActivityStep({ rec, next }: StepProps) {
   };
   return (
     <div className="space-y-10">
-      <Question eyebrow="Activity">How active is {rec.pet.name} day to day?</Question>
+      <Question eyebrow="Activity">Roughly how active is {rec.pet.name}?</Question>
       <div className="grid max-w-3xl gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Activity level">
         {(["low", "moderate", "high"] as const).map((a) => (
           <button
@@ -415,7 +391,7 @@ export function ActivityStep({ rec, next }: StepProps) {
   );
 }
 
-// ---------- 9. Consent ----------
+// ---------- 8. Consent ----------
 
 const CONSENTS: { key: keyof Omit<Consent, "updatedAt">; title: string; detail: string; note?: string }[] = [
   { key: "vet", title: "Share check-ins with my vet", detail: "Your vet sees the brief, the trends and any video you choose to send." },

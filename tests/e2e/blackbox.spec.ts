@@ -11,15 +11,14 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
   const { errors, requests } = watch(page);
   await seedPet(page);
   await page.goto("/savings");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Make managing your pet's finances");
-  await expect(page.locator("#compare")).toContainText("What you pay now vs with Petra");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Save on Biscuit's insurance with every walk.");
+  await expect(page.locator("#compare")).toContainText("Your price today");
   const priceBefore = await page.locator("#your-price").textContent();
 
-  await page.locator("#walk-mode select").selectOption("60");
-  await page.getByRole("button", { name: "Simulate a walk" }).click();
-  await expect(page.getByText("Simulated walk, 60x speed")).toBeVisible();
+  await page.getByRole("button", { name: "Start a walk" }).click();
+  await expect(page.getByText("Example walk, sped up")).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
-  await expect(page.getByText("Walk saved")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Walk saved")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Target: \d+ of \d+ minutes today/)).toBeVisible();
   await expect(page.getByText(/35 min/)).toBeVisible();
 

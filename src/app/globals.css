@@ -79,6 +79,13 @@ body::before {
   border-radius: 2px;
 }
 
+/* Underline inputs show focus with the line itself (it darkens), not the yellow focus box. */
+.input-underline:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 /* Number inputs use our own +/- steppers; hide the browser spinners. */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

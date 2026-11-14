@@ -2,83 +2,129 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, ListChecks, MapPin, ShieldCheck, Thermometer } from "@phosphor-icons/react";
+import { ArrowUpRight, ShieldCheck } from "@phosphor-icons/react";
 import { EmptyPetState } from "@/components/EmptyPetState";
-import { PetAvatar } from "@/components/PetAvatar";
-import { Sheet } from "@/components/Sheet";
+import { PilotSheet, Sheet } from "@/components/Sheet";
+import { CompanionTag } from "@/components/blackbox/CompanionTag";
 import { WalkMode } from "@/components/blackbox/WalkMode";
 import { Connect, DataRules, Diagnostics, PriceCard, Today } from "@/components/blackbox/sections";
 import { CoverStop } from "@/components/walk/CoverStop";
-import { PrintShape } from "@/components/walk/WalkPath";
-import { BB_CAP, blackBoxDiscount, dailyTarget, diagnostics, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
+import { AVG_MEMBER_PCT, BB_CAP, UK_AVG_PREMIUM, blackBoxDiscount, dailyTarget, diagnostics, estimateDiscount, todayMinutes, useCollarDays, useWalks, weeks } from "@/lib/blackbox";
 import { basePremium } from "@/lib/discount";
 import { useScans } from "@/lib/video/scans";
 import { isDemoScan, mobilitySummary } from "@/components/gait/scan";
+import type { PetRecord } from "@/lib/store";
 import { useActivePet, useCheckins, useNow } from "@/lib/usePets";
 
+const YELLOW = "#FFD43B";
 const gbp2 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const gbp = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
 
-/** The walk's paw-print trail, carried on from /walk into the top of this page. Decorative. */
-function Trail({ species }: { species: Parameters<typeof PrintShape>[0]["species"] }) {
+function Section({ id, eyebrow, title, children }: { id?: string; eyebrow: string; title: React.ReactNode; children: React.ReactNode }) {
   return (
-    <svg viewBox="0 0 360 24" className="h-6 w-full max-w-[360px] text-ink" fill="currentColor" aria-hidden>
-      {Array.from({ length: 8 }, (_, i) => (
-        <g key={i} transform={`translate(${14 + i * 44} ${i % 2 ? 8 : 16}) rotate(90)`} opacity={0.12 + i * 0.06}>
-          <PrintShape species={species} scale={0.55} />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-/** What you pay now vs with Petra: two bars for this pet, at the current tier with the maximum marked. Illustrative. */
-function Compare({ yearly, current }: { yearly: number; current: number }) {
-  const withPetra = yearly * (1 - current / 100);
-  const atMax = yearly * (1 - BB_CAP / 100);
-  const money = (y: number) => `${gbp2(y / 12)} a month · ${gbp(y)} a year`;
-  return (
-    <div className="space-y-5">
-      <dl className="space-y-4">
-        <div>
-          <dt className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
-            <span className="font-semibold">Now</span>
-            <span className="tnum text-muted">{money(yearly)}</span>
-          </dt>
-          <dd className="mt-1.5 h-6 rounded-[4px] bg-ink" aria-hidden />
-        </div>
-        <div>
-          <dt className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
-            <span className="font-semibold">With Petra, at your current {current}% tier</span>
-            <span className="tnum text-muted">{money(withPetra)}</span>
-          </dt>
-          <dd className="relative mt-1.5 h-6" aria-hidden>
-            <span className="absolute inset-y-0 left-0 rounded-[4px] bg-accent ring-1 ring-ink/20" style={{ width: `${(withPetra / yearly) * 100}%` }} />
-            <span className="absolute -inset-y-1 w-0.5 bg-ink" style={{ left: `${(atMax / yearly) * 100}%` }} />
-          </dd>
-        </div>
-      </dl>
-      <p className="text-sm">
-        <strong>At the maximum {BB_CAP}%:</strong> <span className="tnum">{money(atMax)}</span>, saving {gbp(yearly - atMax)} a year (the black line).{" "}
-        <span className="text-muted">Illustrative: example premium for this pet; the discount can only lower it.</span>
-      </p>
-    </div>
-  );
-}
-
-function Block({ n, title, children, id }: { n: string; title: string; children: React.ReactNode; id?: string }) {
-  return (
-    <section id={id} className="scroll-mt-32 space-y-6">
-      <h2 className="eyebrow border-t border-line pt-3">
-        <span className="tnum text-ink">{n}</span> / {title}
-      </h2>
+    <section id={id} className="scroll-mt-32 space-y-6" aria-labelledby={id ? `${id}-title` : undefined}>
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id={id ? `${id}-title` : undefined} className="display mt-2 text-[clamp(2rem,4.5vw,3.25rem)]">
+          {title}
+        </h2>
+      </div>
       {children}
     </section>
   );
 }
 
-/** Petra Savings (code name: Black Box): telematics for pet insurance. "Make managing your pet's finances a walk in the park." */
-export default function BlackBoxPage() {
+/** Your price today against the most Petra can take off: two big numbers and the monthly saving. Illustrative. */
+function Compare({ yearly }: { yearly: number }) {
+  const monthly = yearly / 12;
+  const best = monthly * (1 - BB_CAP / 100);
+  const avgSaving = Math.round((UK_AVG_PREMIUM * AVG_MEMBER_PCT) / 100);
+  return (
+    <div className="space-y-5">
+      <dl className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2">
+        <div className="bg-paper p-6">
+          <dt className="eyebrow">Your price today</dt>
+          <dd className="tnum mt-2 text-[clamp(2.75rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em]">
+            {gbp2(monthly)}
+            <span className="text-base font-medium tracking-normal text-muted"> a month</span>
+          </dd>
+        </div>
+        <div className="bg-accent-soft p-6">
+          <dt className="eyebrow">With Petra</dt>
+          <dd className="tnum mt-2 text-[clamp(2.75rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em]">
+            <span className="text-[0.4em] font-semibold tracking-normal">up to </span>
+            {gbp2(best)}
+            <span className="text-base font-medium tracking-normal text-muted"> a month</span>
+          </dd>
+        </div>
+      </dl>
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="tnum rounded-full bg-ink px-4 py-2 text-lg font-semibold text-paper" data-testid="monthly-saving">
+          Save up to {gbp2(monthly - best)} a month
+        </span>
+        <span className="text-sm text-muted">
+          Members save about {AVG_MEMBER_PCT}% on average (around £{avgSaving} a year on a £{UK_AVG_PREMIUM} premium). Up to {BB_CAP}% at the top tier. Illustrative.
+        </span>
+      </p>
+    </div>
+  );
+}
+
+/** "If you walked like this more often": walks a week and minutes a walk to an estimated tier and annual saving. */
+function Estimator({ rec, target, yearly }: { rec: PetRecord; target: number; yearly: number }) {
+  const [walks, setWalks] = useState(7);
+  const [minutes, setMinutes] = useState(Math.min(90, Math.max(10, Math.round((target || 30) / 5) * 5)));
+  const est = estimateDiscount(walks, minutes, target);
+  const who = rec.pet.breed ? `${rec.pet.ageYears}-year-old ${rec.pet.breed}` : `${rec.pet.ageYears}-year-old ${rec.pet.species}`;
+  const slider = (label: string, value: number, set: (n: number) => void, min: number, max: number, step: number, unit: string) => (
+    <label className="block">
+      <span className="flex items-baseline justify-between gap-4">
+        <span className="font-semibold">{label}</span>
+        <span className="tnum text-2xl font-semibold tracking-[-0.02em]">
+          {value}
+          <span className="text-sm font-medium text-muted"> {unit}</span>
+        </span>
+      </span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} aria-valuetext={`${value} ${unit}`} className="mt-2 w-full accent-[var(--ink)]" />
+    </label>
+  );
+  return (
+    <div className="grid gap-8 rounded-brand border border-line bg-white/60 p-6 sm:p-8 lg:grid-cols-12">
+      <div className="space-y-6 lg:col-span-7">
+        {slider("Walks a week", walks, setWalks, 0, 14, 1, walks === 1 ? "walk" : "walks")}
+        {slider("Minutes a walk", minutes, setMinutes, 5, 120, 5, "min")}
+        <p className="text-sm text-muted">
+          Target for a {who}: {target ? `${target} minutes a day` : "paused for rest"}. A week counts at five days of it.
+        </p>
+      </div>
+      <div className="lg:col-span-5" aria-live="polite">
+        <p className="eyebrow">Estimated saving, illustrative</p>
+        <p className="tnum mt-2 text-[clamp(3rem,7vw,4.5rem)] font-semibold leading-none tracking-[-0.05em]" data-testid="estimate-saving">
+          {gbp((yearly * est.total) / 100)}
+          <span className="text-base font-medium tracking-normal text-muted"> a year</span>
+        </p>
+        <p className="mt-3 text-lg">
+          <strong className="rounded-[4px] bg-accent px-1.5">{est.total}% tier</strong>{" "}
+          <span className="text-muted">
+            ({est.walking}% walking + {est.extra}% weekly check-ins)
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const PARTNERS: [string, string, string][] = [
+  ["Pet retailer", "Pawsmith & Co.", "10% off every order"],
+  ["Food", "Barkley Kitchen", "First bag half price"],
+  ["Vets", "Greenpaw Vets", "Free nurse health check"],
+  ["Insurer", "Harbourline", "An extra month free at renewal"],
+  ["Accessories", "Tagalong Supply", "15% off leads and harnesses"],
+  ["Grooming", "Suds & Tails", "£10 off your first groom"],
+];
+
+/** Petra Savings: the Walk Companion product page. Telematics for pet insurance, sharing minutes, never location. */
+export default function SavingsPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
   const walks = useWalks(rec?.id);
@@ -88,6 +134,7 @@ export default function BlackBoxPage() {
   const now = useNow();
   const [hr, setHr] = useState<{ name: string; bpm: number | null } | null>(null);
   const [rules, setRules] = useState(false);
+  const [pilot, setPilot] = useState(false);
 
   if (!ready) return <div className="min-h-[70svh]" aria-busy="true" />;
   if (!rec)
@@ -96,10 +143,10 @@ export default function BlackBoxPage() {
         where="Savings"
         title={
           <>
-            Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
+            Save on your pet&apos;s insurance <span className="accent-word">with every walk.</span>
           </>
         }
-        line="Meet your pet first: their savings targets are personal to their breed, age and health."
+        line="Meet your pet first: their targets are personal to their breed, age and health."
       />
     );
   if (rec.setupStep !== null)
@@ -107,9 +154,9 @@ export default function BlackBoxPage() {
       <section className="space-y-6 py-16">
         <p className="eyebrow">Petra / Savings</p>
         <h1 className="display text-[clamp(2.5rem,7vw,5rem)]">
-          Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
+          Save on {rec.pet.name}&apos;s insurance <span className="accent-word">with every walk.</span>
         </h1>
-        <p className="max-w-[48ch] text-lg text-muted">First, a minute to meet your pet. Their targets are personal to their breed, age and health.</p>
+        <p className="max-w-[48ch] text-lg text-muted">First, a minute to meet {rec.pet.name}. Targets are personal to breed, age and health.</p>
         <Link href="/" className="btn btn-primary text-lg">
           Carry on <ArrowUpRight size={18} weight="bold" aria-hidden />
         </Link>
@@ -124,59 +171,78 @@ export default function BlackBoxPage() {
   const diag = diagnostics(collar);
   const premium = basePremium(rec.pet);
   const isCollar = rec.blackBox?.device === "collar";
-  const species = rec.pet.species;
-  const activityWord = species === "cat" ? "play" : species === "rabbit" ? "free-roam time" : "walks";
 
   return (
-    <div className="space-y-16 py-6 pb-28 sm:py-10 lg:pb-10">
-      <header className="grid items-center gap-10 lg:grid-cols-12">
-        <div className="lg:col-span-8">
-          <Trail species={species} />
-          <p className="eyebrow mt-4">Petra / Savings</p>
-          <h1 className="display mt-4 text-[clamp(3rem,8vw,7rem)]">
-            Make managing your pet&apos;s finances <span className="accent-word">a walk in the park.</span>
-          </h1>
-          <p className="mt-6 max-w-[52ch] text-lg text-muted">
-            UK vet prices rose about 75% in ten years. The average pet insurance claim is £685. Petra Savings turns good care into a lower premium. Like a black box for car insurance, but for your pet.
-          </p>
-        </div>
-        <div className="flex justify-center lg:col-span-4">
-          <PetAvatar traits={rec.profile} size={220} title={`${name}'s avatar wearing a Petra Walk Companion`} collar />
+    <div className="space-y-20 pb-28 sm:space-y-24 lg:pb-10">
+      <header className="relative -mx-4 overflow-hidden bg-[#161616] px-6 py-12 text-white sm:mx-0 sm:rounded-brand sm:px-10 sm:py-16">
+        <div className="grid items-center gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: YELLOW }}>
+              Petra Walk Companion
+            </p>
+            <h1 className="display mt-4 text-[clamp(2.75rem,6vw,4.75rem)]">
+              Save on {name}&apos;s insurance <span style={{ color: YELLOW }}>with every walk.</span>
+            </h1>
+            <p className="mt-6 max-w-[44ch] text-lg text-white/75 sm:text-xl">
+              The Petra Walk Companion shares walking minutes, never your location. Hit {name}&apos;s target, pay less.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <button type="button" onClick={() => setPilot(true)} className="btn min-h-14 px-7 text-lg font-semibold text-[#141414]" style={{ background: YELLOW }}>
+                Get the Walk Companion <ArrowUpRight size={20} weight="bold" aria-hidden />
+              </button>
+              <a href="#walk-mode" className="min-h-11 content-center text-sm font-semibold text-white/80 underline-offset-4 hover:underline">
+                Try an example walk
+              </a>
+            </div>
+          </div>
+          <div className="flex justify-center lg:col-span-5">
+            <CompanionTag className="h-auto w-64 sm:w-80" />
+          </div>
         </div>
       </header>
 
       <div className="grid gap-12 lg:grid-cols-12">
-        <div className="min-w-0 space-y-16 lg:col-span-8">
-          <Block n="01" title="What you pay now vs with Petra" id="compare">
-            <Compare yearly={premium} current={discount.total} />
-          </Block>
+        <div className="min-w-0 space-y-20 sm:space-y-24 lg:col-span-8">
+          <Section id="compare" eyebrow="Your price" title={<>Your price today, and with Petra.</>}>
+            <Compare yearly={premium} />
+          </Section>
 
-          <Block n="02" title="How your Walk Companion lowers it">
-            <ol className="grid gap-px overflow-hidden rounded-brand border border-line bg-line md:grid-cols-3">
-              {[
-                ["Wear it", "Wear the Petra Walk Companion, or use your phone."],
-                ["Share only the basics", `It shares only walking minutes and whether ${name}'s target was met. Never your location or routes.`],
-                ["Move up the tiers", "Hitting the personal target plus weekly check-ins moves you up the discount tiers."],
-              ].map(([t, d], i) => (
-                <li key={t} className="bg-paper p-5">
-                  <p className="eyebrow">
-                    <span className="tnum text-ink">{String(i + 1).padStart(2, "0")}</span> / Step
-                  </p>
-                  <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">{t}</p>
-                  <p className="mt-1 text-sm text-muted">{d}</p>
-                </li>
-              ))}
-            </ol>
-          </Block>
-
-          <Block n="03" title={species === "dog" ? "Walk mode: the live map" : "Activity mode: the live map"} id="walk-mode">
-            <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} onFinished={() => undefined} />
-            {species !== "dog" && <p className="text-sm text-muted">For {name}, {activityWord} count. Use the Walk Companion, or log a session with your phone.</p>}
+          <Section id="walk-mode" eyebrow="Example walk" title={<>Take {name} for a walk.</>}>
+            <WalkMode rec={rec} target={target} todayBefore={today} collar={isCollar} liveHr={hr?.bpm ?? null} discountPct={discount.total} onFinished={() => undefined} />
             <Today rec={rec} target={target} today={today} weeksMet={discount.weeksMet} weeksCounted={discount.weeksCounted} />
             <PriceCard rec={rec} discount={discount} />
-          </Block>
+          </Section>
 
-          <Block n="04" title="Your Walk Companion">
+          <Section id="estimate" eyebrow="Illustrative" title="If you walked like this more often">
+            <Estimator rec={rec} target={target} yearly={premium} />
+          </Section>
+
+          <Section id="partners" eyebrow="Member offers" title="Members save more with partners">
+            <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+              {PARTNERS.map(([kind, brand, offer]) => (
+                <li key={brand} className="bg-paper p-5">
+                  <p className="eyebrow">{kind}</p>
+                  <p className="mt-3 text-xl font-semibold tracking-[-0.02em]">{offer}</p>
+                  <p className="mt-1 text-sm text-muted">{brand}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted">Example partners. Not real offers.</p>
+          </Section>
+
+          <Section id="plans" eyebrow="Cover" title="Pick your cover">
+            <CoverStop rec={rec} log={log} />
+          </Section>
+
+          <section aria-labelledby="first-time-title" className="rounded-brand border-2 border-ink bg-accent-soft p-6">
+            <p className="eyebrow">Illustrative offer</p>
+            <h2 id="first-time-title" className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+              First-time owner? Start lower.
+            </h2>
+            <p className="mt-2 max-w-[52ch] text-muted">For example, 10% off your first year and a free Walk Companion with a 2-year policy.</p>
+          </section>
+
+          <Section id="companion" eyebrow="Your Walk Companion" title={<>Pair it, and {name}&apos;s health rides along.</>}>
             <Connect rec={rec} target={target} now={now} hr={hr} onHr={setHr} />
             <Diagnostics rec={rec} days={collar} result={diag} now={now} />
             {mobility && (
@@ -189,42 +255,7 @@ export default function BlackBoxPage() {
                 </Link>
               </p>
             )}
-          </Block>
-
-          <Block n="05" title="Pick your cover" id="plans">
-            <CoverStop rec={rec} log={log} />
-          </Block>
-
-          <section aria-labelledby="first-time-title" className="rounded-brand border-2 border-ink bg-accent-soft p-6">
-            <p className="eyebrow">Illustrative offer</p>
-            <h2 id="first-time-title" className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
-              First-time owner? Start lower.
-            </h2>
-            <p className="mt-2 max-w-[56ch] text-muted">
-              An introductory discount on your first year, for example 10% off, plus a free Petra Walk Companion when you take a 2-year policy.
-            </p>
-          </section>
-
-          <section aria-labelledby="stress-free-title" className="space-y-4">
-            <h2 id="stress-free-title" className="text-2xl font-semibold tracking-[-0.03em]">
-              Stress-free walks with your companion
-            </h2>
-            <ul className="grid gap-px overflow-hidden rounded-brand border border-line bg-line sm:grid-cols-3">
-              {(
-                [
-                  [MapPin, "GPS if they wander off", `See where ${name} is on a map if they slip the lead.`],
-                  [ListChecks, "Walk logs for your dog walker", "Every walk is logged, so you know it happened and how long it was."],
-                  [Thermometer, "Heat and rest reminders", "A nudge to walk early on hot days and to rest after a long one."],
-                ] as const
-              ).map(([Icon, t, d]) => (
-                <li key={t} className="bg-paper p-5">
-                  <Icon size={22} aria-hidden />
-                  <p className="mt-3 font-semibold">{t}</p>
-                  <p className="mt-1 text-sm text-muted">{d}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
+          </Section>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link href="/dashboard" className="btn btn-ghost">
@@ -255,6 +286,7 @@ export default function BlackBoxPage() {
       <Sheet open={rules} onClose={() => setRules(false)} title="Your data, your rules">
         <DataRules compact />
       </Sheet>
+      <PilotSheet open={pilot} onClose={() => setPilot(false)} what="The Petra Walk Companion" />
     </div>
   );
 }

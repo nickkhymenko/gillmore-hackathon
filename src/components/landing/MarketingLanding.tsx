@@ -122,7 +122,6 @@ export function MarketingLanding({ onStart }: { onStart: (species?: Species) => 
           <p className="mt-6 max-w-[46ch] text-lg text-muted sm:text-xl">
             Petra helps you catch problems early and turns good care into a cheaper premium. Inside your insurer&apos;s app. Powered by Doctapet.
           </p>
-          <p className="mt-3 text-base font-medium">Petra. The rock your pet can rely on.</p>
           <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
             <a href="#start" className="btn btn-primary min-h-14 px-6 text-lg">
               Start with your pet <ArrowUpRight size={20} weight="bold" aria-hidden />

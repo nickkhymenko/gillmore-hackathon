@@ -12,9 +12,12 @@ test("landing: species card first, then name, photo (skipped), breed and the res
   await noHorizontalScroll(page);
   await page.getByRole("button", { name: /^Cat/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("What's your cat called?");
-  await page.getByPlaceholder("Biscuit").fill("Miso");
+  await expect(page.getByPlaceholder("Biscuit")).toBeFocused();
+  await page.getByPlaceholder("Biscuit").pressSequentially("miso");
+  await expect(page.getByPlaceholder("Biscuit")).toHaveValue("Miso");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Add a photo of Miso.");
+  await expect(page.getByLabel(/Step 3 of 8/)).toBeVisible();
   await page.getByRole("button", { name: "Skip, I'll add one later" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("What breed is Miso?");
   await page.getByPlaceholder("Search cats").fill("british");
@@ -24,16 +27,14 @@ test("landing: species card first, then name, photo (skipped), breed and the res
   await page.keyboard.press("Enter"); // age, prefilled
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("How much does Miso weigh?");
   await page.keyboard.press("Enter"); // weight, prefilled
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("neutered");
-  await page.getByRole("radio", { name: "Yes" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("How active");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Roughly how active is Miso?");
   await page.getByRole("radio", { name: /low/i }).click();
   await page.getByRole("switch", { name: /Share engagement/ }).click();
   await page.getByRole("button", { name: "Start the walk" }).click();
   await page.waitForURL("**/walk", { timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Hello, Miso.");
   const pet = await page.evaluate(() => JSON.parse(localStorage.getItem("prevently.household")!).pets[0].pet);
-  expect(pet).toMatchObject({ name: "Miso", species: "cat", breed: "British Shorthair", neutered: true, activity: "low" });
+  expect(pet).toMatchObject({ name: "Miso", species: "cat", breed: "British Shorthair", activity: "low" });
   expect(errors).toEqual([]);
 });
 
@@ -52,8 +53,11 @@ test("photo step: the twin uses the chosen species and offers the top breed sugg
   await page.getByRole("button", { name: /Looks right, continue/ }).click();
   const chips = page.getByRole("radiogroup", { name: "Breed suggestions from the photo" }).getByRole("radio");
   await expect(chips.first()).toBeVisible();
-  expect(await chips.count()).toBeGreaterThanOrEqual(2); // at least one suggestion plus "Mixed or not sure"
+  expect(await chips.count()).toBeGreaterThanOrEqual(2); // one to three suggestions plus "Mixed / not sure"
+  expect(await chips.count()).toBeLessThanOrEqual(4);
+  await expect(chips.last()).toHaveText("Mixed / not sure");
   await expect(chips.first()).toContainText("%");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/From Biscuit's photo, we think .+ \(\d+% sure\)\./);
 });
 
 test("empty dashboard: designed state with 'See a demo pet' loading Biscuit", async ({ page }) => {
