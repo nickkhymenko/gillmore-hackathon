@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { ResultSkeleton } from "@/components/ResultSkeleton";
 import { addCheckin, loadCheckins, loadPet, savePet, seedDemo, streakWeeks } from "@/lib/store";
 import type { Answers, CheckinResult, Pet } from "@/lib/types";
 
@@ -197,13 +198,15 @@ export default function CheckinPage() {
           disabled={loading}
           className="w-full rounded-full bg-teal-700 py-3 font-semibold text-white shadow hover:bg-teal-800 disabled:opacity-60"
         >
-          {loading ? "Assessing..." : "Submit check-in"}
+          {loading ? "Checking in" : "Submit check-in"}
         </button>
         {error && <p className="text-sm text-red-700">{error}</p>}
       </div>
 
       <div className="lg:sticky lg:top-20 lg:self-start">
-        {result ? (
+        {loading ? (
+          <ResultSkeleton petName={pet.name} />
+        ) : result ? (
           <ResultCard r={result} />
         ) : (
           <div className="rounded-3xl border-2 border-dashed border-teal-900/15 p-8 text-center text-sm text-teal-900/60">
