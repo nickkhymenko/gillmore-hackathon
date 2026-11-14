@@ -26,8 +26,8 @@ test("simulated walk end to end: finish screen, target, live price and dashboard
 
   await page.goto("/dashboard");
   await expect(page.locator("#savings-title")).toHaveText(/Petra Savings/);
-  await expect(page.getByText(/of \d+ minutes/).first()).toBeVisible();
   await page.getByRole("tab", { name: "Walks" }).click();
+  await expect(page.getByText(/of \d+ minutes/).first()).toBeVisible();
   await expect(page.locator("#your-price")).toContainText("Target met in");
   await expect(page.getByTestId("walk-history")).toContainText("35 min");
 
@@ -70,6 +70,7 @@ test("rest mode protects the discount", async ({ page }) => {
 
   await setup(8);
   await page.goto("/dashboard#walks");
+  await page.reload(); // same URL: a hash-only goto does not reload
   await expect(page.getByText("Rest mode: no target today.")).toBeVisible();
   await expect(page.locator("#your-price")).toContainText("Target met in 6 of 6 weeks");
   const pct = (t: string | null) => Number(/Petra Savings discount \(([\d.]+)%\)/.exec(t ?? "")?.[1] ?? -1);

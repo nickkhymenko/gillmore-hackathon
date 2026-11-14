@@ -29,14 +29,16 @@ export function SourcesLink() {
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Sources">
         <p className="text-sm text-muted">Prices, savings and healthy years in Petra are illustrative, built from these public sources.</p>
-        <ol className="max-h-[55vh] space-y-2 overflow-y-auto text-xs text-muted">
-          {[...Object.values(SOURCES), ...PREMIUM_SOURCES].map((s, i) => (
-            <li key={i} className="flex gap-2">
-              <span className="tnum w-5 shrink-0 font-semibold text-ink">{i + 1}</span>
-              <span>{s}</span>
-            </li>
-          ))}
-        </ol>
+        {open && (
+          <ol className="max-h-[55vh] space-y-2 overflow-y-auto text-xs text-muted">
+            {[...Object.values(SOURCES), ...PREMIUM_SOURCES].map((s, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="tnum w-5 shrink-0 font-semibold text-ink">{i + 1}</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </Sheet>
     </>
   );

@@ -81,6 +81,7 @@ test("empty dashboard: designed state with 'See a demo pet' loading Biscuit", as
 test("?demo=miso loads the cat with a play plan and an indoor tracker", async ({ page }) => {
   await page.goto("/dashboard?demo=miso");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Miso", { timeout: 10_000 });
+  await page.getByRole("tab", { name: "Health" }).click();
   await expect(page.getByText(/Help your cat drink more/)).toBeVisible();
   await page.goto("/walk");
   await expect(page.locator("#your-walk")).toContainText("here is her play plan");
