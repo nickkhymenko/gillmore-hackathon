@@ -11,6 +11,9 @@ import { PhotoControls } from "@/components/PhotoTwin";
 import { StatusPill } from "@/components/ResultCard";
 import { PilotSheet } from "@/components/Sheet";
 import { SavingsHero } from "@/components/dashboard/SavingsHero";
+import { BlackBoxHero } from "@/components/dashboard/BlackBoxHero";
+import { blackBoxDiscount, dailyTarget, minutesByDay, todayMinutes, useCollarDays, useWalks, weeks as bbWeeks } from "@/lib/blackbox";
+import type { Series } from "@/lib/metrics";
 import { TrendChart } from "@/components/walk/TrendsStop";
 import type { CareRec } from "@/data/careRules";
 import { SUPPLEMENT_WARNING, buildCarePlan, careContext } from "@/lib/careplan";
@@ -117,6 +120,8 @@ function CareItem({ r, i, onVet }: { r: CareRec; i: number; onVet: () => void })
 export default function DashboardPage() {
   const { pet: rec, ready } = useActivePet();
   const log = useCheckins(rec?.id, rec?.pet.name);
+  const walks = useWalks(rec?.id);
+  const collarDays = useCollarDays(rec?.id);
   const now = useNow();
   const reduce = Boolean(useReducedMotion());
   const [sheet, setSheet] = useState<string | null>(null);
@@ -136,7 +141,20 @@ export default function DashboardPage() {
   const { pet } = rec;
   const latest = log.at(-1) ?? null;
   const weeks = streak(log, now);
-  const plan = buildCarePlan(careContext(pet, rec.profile, log), 4);
+  const target = dailyTarget(rec, log, now);
+  const byDay = minutesByDay(walks, collarDays);
+  const recentDays = Array.from({ length: 14 }, (_, i) => new Date(now - (13 - i) * 864e5).toISOString().slice(0, 10));
+  const activity = rec.blackBox && byDay.size ? { recentAvg: recentDays.slice(-10).reduce((s, d) => s + (byDay.get(d) ?? 0), 0) / 10, target } : undefined;
+  const plan = buildCarePlan(careContext(pet, rec.profile, log, activity), 4);
+  const bb = rec.blackBox ? blackBoxDiscount(bbWeeks(rec, target, walks, collarDays, now), log, now) : null;
+  const activitySeries: Series | null = rec.blackBox && byDay.size
+    ? (() => {
+        const points = recentDays.map((d) => ({ week: new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), value: byDay.get(d) ?? 0, date: d }));
+        const vals = points.map((p) => p.value);
+        const hi = Math.max(target * 1.4, ...vals, 10);
+        return { key: "energy", points, baseline: target, band: [target, hi] as [number, number], latest: vals.at(-1) ?? 0, delta: null, unit: "min", domain: [0, Math.ceil(hi / 10) * 10] as [number, number] };
+      })()
+    : null;
   const hasWeights = log.filter((c) => typeof c.weightKg === "number").length >= 2;
   const series = metricsFor(pet, rec.profile, hasWeights).map((k) => buildSeries(k, log));
   const next = nextWeekSameDay(new Date(latest?.createdAt ?? now));
@@ -175,7 +193,32 @@ export default function DashboardPage() {
         </dl>
       </header>
 
-      <SavingsHero rec={rec} log={log} now={now} />
+      {bb ? <BlackBoxHero rec={rec} d={bb} /> : <SavingsHero rec={rec} log={log} now={now} />}
+
+      {rec.blackBox && (
+        <Section n="00" title="Black Box" aside={<Link href="/blackbox" className="link text-sm">Open</Link>}>
+          <div className="grid gap-8 lg:grid-cols-12">
+            <div className="space-y-3 lg:col-span-5">
+              <p className="eyebrow">Today</p>
+              <p className="text-3xl font-semibold tracking-[-0.03em]">
+                {rec.blackBox.restSince ? "Rest mode: no target" : `${Math.min(todayMinutes(walks, collarDays, now), target)} of ${target} minutes`}
+              </p>
+              <Link href="/blackbox#walk-mode" className="btn btn-primary">
+                Start a walk <ArrowUpRight size={16} weight="bold" aria-hidden />
+              </Link>
+            </div>
+            {activitySeries && (
+              <figure className="min-w-0 lg:col-span-7">
+                <figcaption>
+                  <p className="eyebrow">Activity, last 14 days</p>
+                  <p className="mt-1 text-sm font-medium">Shaded band: at or above {pet.name}&apos;s daily target of {target} minutes.</p>
+                </figcaption>
+                <TrendChart s={activitySeries} reduce={reduce} />
+              </figure>
+            )}
+          </div>
+        </Section>
+      )}
 
       <div className="grid gap-14 lg:grid-cols-12">
         <div className="lg:col-span-7">

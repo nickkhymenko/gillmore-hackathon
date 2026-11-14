@@ -42,7 +42,9 @@ export function PetAvatar({
   animated = true,
   ring = true,
   className = "",
+  collar = false,
 }: {
+  collar?: boolean;
   traits?: AvatarTraits;
   size?: number;
   title?: string;
@@ -112,11 +114,20 @@ export function PetAvatar({
             {eye(60 - e.x)}
             {eye(60 + e.x)}
           </g>
+          {collar && (
+            <g aria-hidden>
+              <path d={`M${60 - p.chest.rx * 0.62} ${COLLAR_Y[traits.species]} Q60 ${COLLAR_Y[traits.species] + 9} ${60 + p.chest.rx * 0.62} ${COLLAR_Y[traits.species]}`} fill="none" stroke="var(--dark)" strokeWidth="6" strokeLinecap="round" />
+              <rect x="55" y={COLLAR_Y[traits.species] + 3} width="10" height="8" rx="2" fill="var(--accent)" stroke="var(--dark)" strokeWidth="1.5" />
+            </g>
+          )}
         </g>
       </g>
     </svg>
   );
 }
+
+/** Where the collar sits for each species (just under the head). */
+const COLLAR_Y: Record<AvatarTraits["species"], number> = { dog: 99, cat: 95, rabbit: 99, horse: 107, other: 99 };
 
 type Ink = { c1: string; c2: string; shade: string; stripe: string; innerEar: string; c2Darker: boolean };
 

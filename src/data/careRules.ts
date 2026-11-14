@@ -137,6 +137,22 @@ export const CARE_RULES: CareRule[] = [
     ],
   },
   {
+    id: "low-activity",
+    when: (c) => Boolean(c.activity && c.activity.target > 0 && c.activity.recentAvg < c.activity.target * 0.7),
+    recs: (c) => [
+      {
+        id: "activity-build",
+        type: "habit",
+        title: c.pet.species === "cat" ? "More play, in short bursts" : "Build activity back up gently",
+        detail: c.pet.species === "cat" ? "Two or three 10-minute play sessions a day, and a puzzle feeder." : `${c.name} has averaged ${Math.round(c.activity!.recentAvg)} of ${c.activity!.target} minutes lately. Try sniff walks and scent games, and add about 10% a week.`,
+        why: "A sustained drop in activity can be boredom, weather or discomfort. If it does not pick up, or comes with other changes, ask a vet.",
+        evidence: "Moderate",
+        sources: ["pdsa"],
+        priority: 58,
+      },
+    ],
+  },
+  {
     id: "baseline",
     when: () => true,
     recs: (c) => [
