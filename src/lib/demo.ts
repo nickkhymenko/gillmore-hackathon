@@ -41,7 +41,7 @@ function checkin(rec: PetRecord, daysAgo: number, now: number, answers: Partial<
     flags: [],
     nextStep: flagged ? { action: "online_consult", rationale: "Triggered by: Increased thirst in an older pet" } : { action: "keep_monitoring", rationale: "Normal week." },
     preventionTips: [],
-    vetBrief: flagged ? `Patient: ${rec.pet.name}, ${rec.pet.species} (${rec.pet.breed}), ${rec.pet.ageYears}y, ${rec.pet.weightKg}kg. Owner-reported over 3 weeks: water=more, mobility=stiff. Black Box: activity down about 30% over 10 days against own baseline.` : "",
+    vetBrief: flagged ? `Patient: ${rec.pet.name}, ${rec.pet.species} (${rec.pet.breed}), ${rec.pet.ageYears}y, ${rec.pet.weightKg}kg. Owner-reported over 3 weeks: water=more, mobility=stiff. Black Box: activity well down over the last 10 days against own baseline; resting breathing up.` : "",
     source: "rules",
     safetyOverride: false,
     safetyReasons: flagged ? ["Increased thirst in an older pet"] : [],
@@ -82,7 +82,8 @@ export function seedDemoPet(which: DemoId, now = Date.now()): PetRecord {
       return checkin(rec, daysAgo, now, i >= 9 ? { water: "more", mobility: "stiff" } : {});
     });
     const target = dailyTarget(rec, log.slice(0, 9), now);
-    collar = simulateCollarHistory(rec, target, now, true, 0.5);
+    // A 10-day dip deep enough that the last week misses even his reduced (stiffness-adjusted) target: 5 of 6 weeks met.
+    collar = simulateCollarHistory(rec, target, now, true, 0.35);
     const loop = simulatedLoop().filter((_, i) => i % 6 === 0).map((p) => [p.lat, p.lon] as [number, number]);
     walks = Array.from({ length: 14 }, (_, i) => {
       const daysAgo = 41 - i * 3;

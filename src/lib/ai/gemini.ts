@@ -7,6 +7,8 @@ import type { SafetyResult } from "../safety";
  * while gemini-flash-latest did not answer within 120s on the same key.
  */
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
+/** Tried once when the main model is overloaded (503) or rate limited (429): a separate capacity pool. */
+export const GEMINI_BACKUP_MODEL = process.env.GEMINI_BACKUP_MODEL || "gemini-3.1-flash-lite";
 export const aiEnabled = () => Boolean(process.env.GEMINI_API_KEY);
 
 export const AI_TIMEOUT_MS = 12_000;
@@ -50,9 +52,9 @@ export async function generateJson(opts: {
     }, timeoutMs);
   });
 
-  const run = (thinkingConfig?: ThinkingConfig) =>
+  const run = (thinkingConfig?: ThinkingConfig, model = GEMINI_MODEL) =>
     ai.models.generateContent({
-      model: GEMINI_MODEL,
+      model,
       contents: [{ role: "user", parts }],
       config: {
         systemInstruction: system,
@@ -65,9 +67,15 @@ export async function generateJson(opts: {
     });
 
   const call = run(lowThinking(GEMINI_MODEL)).catch((err: unknown) => {
-    // A model override may not accept our thinking setting: retry once with the model default.
     const status = (err as { status?: number })?.status;
-    if (status === 400 && !controller.signal.aborted) return run();
+    if (controller.signal.aborted) throw err;
+    // A model override may not accept our thinking setting: retry once with the model default.
+    if (status === 400) return run();
+    // Overloaded or rate limited ("high demand" spikes happen): one try on the backup model, same deadline.
+    if ((status === 503 || status === 429) && GEMINI_BACKUP_MODEL !== GEMINI_MODEL) {
+      console.warn(`[ai] ${GEMINI_MODEL} returned ${status}, retrying on ${GEMINI_BACKUP_MODEL}`);
+      return run(lowThinking(GEMINI_BACKUP_MODEL), GEMINI_BACKUP_MODEL);
+    }
     throw err;
   });
   // If the timeout wins the race, the aborted call rejects later: do not leave it unhandled.

@@ -46,7 +46,9 @@ test("photo step: the twin uses the chosen species and offers the top breed sugg
   await page.getByPlaceholder("Biscuit").fill("Biscuit");
   await page.keyboard.press("Enter");
   await page.locator('input[type="file"]').setInputFiles(join(__dirname, "../fixtures/dog-golden.jpg"));
-  await expect(page.getByText(/sure\./)).toBeVisible({ timeout: 20_000 });
+  // Live AI: when Gemini itself is unavailable the app falls back to manual picks (tested elsewhere), so skip honestly.
+  await expect(page.getByText(/sure\.|photo reader is not available|could not reach the photo reader/)).toBeVisible({ timeout: 20_000 });
+  test.skip(await page.getByText(/photo reader is not available|could not reach the photo reader/).isVisible(), "Gemini unavailable during this run");
   await page.getByRole("button", { name: /Looks right, continue/ }).click();
   const chips = page.getByRole("radiogroup", { name: "Breed suggestions from the photo" }).getByRole("radio");
   await expect(chips.first()).toBeVisible();
