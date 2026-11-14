@@ -22,7 +22,7 @@ function Tip({ active, payload, label, unit }: TooltipContentProps<number, strin
 }
 
 /** One small multiple: a single series (no legend, the title names it) against the pet's own baseline band. */
-function TrendChart({ s, reduce }: { s: Series; reduce: boolean }) {
+export function TrendChart({ s, reduce }: { s: Series; reduce: boolean }) {
   const last = s.points.at(-1);
   return (
     <div className="h-[168px] w-full">

@@ -17,7 +17,12 @@ const EMERGENCY_KEYWORDS: { pattern: RegExp; reason: string }[] = [
   { pattern: /not breathing|can'?t breathe|choking/i, reason: "Breathing emergency reported" },
   { pattern: /poison|chocolate|xylitol|grape|raisin|rat bait|antifreeze|ibuprofen|paracetamol/i, reason: "Possible toxin ingestion" },
   { pattern: /\blil(y|ies)\b/i, reason: "Lily exposure (highly toxic to cats)" },
-  { pattern: /bloat|swollen (belly|stomach|abdomen)|retching/i, reason: "Possible bloat (GDV) signs" },
+  { pattern: /bloat|swollen (belly|stomach|abdomen|tummy)|(belly|stomach|abdomen|tummy) (is |looks |seems |feels )?(swollen|bloated|distended|hard and tight)|retch|trying to (be sick|vomit|throw up)|tries to (be sick|vomit)/i, reason: "Possible bloat (GDV) signs" },
+  {
+    pattern: /(nothing|little|no (wee|pee|urine)|only drops?) (comes?|coming|came) out|can'?t (wee|pee|urinate)|cannot (wee|pee|urinate)|unable to (wee|pee|urinate)|straining (to|in the) (wee|pee|urinate|litter)|blocked (bladder|cat)/i,
+    reason: "Unable to pass urine reported",
+  },
+  { pattern: /struggling to breathe|gasping|fighting for breath/i, reason: "Breathing difficulty reported" },
   { pattern: /hit by (a )?car|road accident|fell from/i, reason: "Trauma reported" },
   { pattern: /pale gums|blue gums|white gums/i, reason: "Abnormal gum colour" },
 ];
@@ -52,6 +57,14 @@ export function runSafetyRules(input: CheckinInput): SafetyResult {
   if (a.water === "more" && pet.ageYears >= 7) amber.push("Increased thirst in an older pet");
 
   for (const k of EMERGENCY_KEYWORDS) if (k.pattern.test(notes)) red.push(k.reason);
+  // Fast or heavy breathing in the notes: amber, like the tap answer (it can follow exercise or heat).
+  if (/breathing (really |very )?(fast|hard|heavily)|panting (a lot|heavily) at rest/i.test(notes)) amber.push("Fast breathing reported in notes");
+
+  // Not eating, described in the notes rather than tapped: same logic as the answer rules above.
+  if (/(not|isn'?t|hasn'?t|has not|won'?t|will not|stopped|refus\w*) (been )?(eat|eaten|eating|touching (his|her|its|their) food)/i.test(notes)) {
+    if (pet.species === "rabbit") red.push("Rabbit not eating (gut stasis risk)");
+    else amber.push("Not eating reported in notes");
+  }
 
   if (red.length) return { minimumStatus: "red", reasons: [...red, ...amber], emergency: true };
   if (amber.length) return { minimumStatus: "amber", reasons: amber, emergency: false };

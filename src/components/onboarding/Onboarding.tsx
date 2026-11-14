@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowUpRight, PawPrint } from "@phosphor-icons/react";
 import { PetAvatar } from "../PetAvatar";
@@ -112,25 +111,8 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
       );
     }
     if (ready && active) {
-      return (
-        <Landing
-          eyebrow="Welcome back"
-          title={
-            <>
-              {active.pet.name}&apos;s walk is <span className="accent-word">ready.</span>
-            </>
-          }
-          sub="A minute a week. Catch the small changes before they turn into big bills."
-          cta={`Continue to ${active.pet.name}'s walk`}
-          onStart={() => router.push("/walk")}
-          avatar={active}
-          secondary={
-            <Link href="/add" className="link min-h-11 py-2">
-              Add another pet
-            </Link>
-          }
-        />
-      );
+      // Returning users go straight to their dashboard.
+      return <GoTo href="/dashboard" />;
     }
     return (
       <Landing
@@ -242,6 +224,15 @@ export function Onboarding({ startNew = false }: { startNew?: boolean }) {
       {leaving && <WalkOff onDone={() => router.push("/walk")} />}
     </div>
   );
+}
+
+/** Client redirect after hydration (the page is static, so storage is only readable in the browser). */
+function GoTo({ href }: { href: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(href);
+  }, [router, href]);
+  return <div className="min-h-[70svh]" aria-busy="true" />;
 }
 
 function Landing({

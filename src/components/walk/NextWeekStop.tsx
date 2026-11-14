@@ -33,8 +33,8 @@ export function NextWeekStop({ rec, log }: { rec: PetRecord; log: StoredCheckin[
         <button type="button" onClick={() => downloadIcs(rec.pet.name, next)} className="btn btn-primary text-lg">
           <CalendarPlus size={20} aria-hidden /> Add a weekly reminder
         </button>
-        <Link href="/pet" className="link inline-flex min-h-11 items-center gap-1">
-          See {rec.pet.name}&apos;s history <ArrowUpRight size={16} aria-hidden />
+        <Link href="/dashboard" className="link inline-flex min-h-11 items-center gap-1">
+          Go to {rec.pet.name}&apos;s dashboard <ArrowUpRight size={16} aria-hidden />
         </Link>
       </div>
       <p className="text-sm text-muted">The reminder is a calendar file for your own calendar. Nothing is sent anywhere.</p>
